@@ -1,125 +1,130 @@
 # MemoPad
 
-A beautiful desktop widget and web dashboard for managing todos and countdowns with multi-device sync.
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org/)
+[![Vue](https://img.shields.io/badge/Vue-3.4+-4FC08D.svg)](https://vuejs.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0+-24C8D8.svg)](https://tauri.app/)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)
-![Vue](https://img.shields.io/badge/Vue-3.4+-4FC08D.svg)
-![Tauri](https://img.shields.io/badge/Tauri-2.0+-24C8D8.svg)
+一个桌面待办事项和倒计时工具，支持多设备同步。
 
-## Features
+## 功能特点
 
-- **Desktop Widget**: Floating transparent widget with glassmorphism effect, always on top
-- **Web Dashboard**: Modern responsive management interface with dark mode
-- **Multi-device Sync**: Single API serves all your devices
-- **Todo Management**: Priority levels, pin to top, categories, completion tracking
-- **Countdown Timers**: Track important dates with visual progress indicators
-- **i18n**: English and Chinese language support
-- **Secure**: API key authentication, input validation, CORS protection
+| 功能 | 描述 |
+|------|------|
+| 桌面小组件 | 悬浮透明窗口、毛玻璃效果、始终置顶 |
+| Web 管理面板 | 响应式界面、深色模式、完整 CRUD |
+| 多设备同步 | 统一 API，桌面和网页数据实时同步 |
+| 待办管理 | 优先级、置顶、分类、完成状态追踪 |
+| 倒计时 | 目标日期追踪、进度可视化、紧急提醒 |
+| 国际化 | 支持中文和英文 |
 
-## Screenshots
-
-Desktop Widget:
-- Gradient purple-blue theme with glassmorphism
-- Pinned items section for important tasks
-- Real-time countdown with color-coded urgency
-
-Web Dashboard:
-- Modern card-based UI with smooth animations
-- Statistics overview with progress visualization
-- Full CRUD operations for todos, countdowns, categories
-
-## Architecture
+## 技术栈
 
 ```
-┌─────────────────┐     ┌─────────────────┐
-│  Desktop Widget │     │  Web Interface  │
-│   (Tauri/Vue)   │     │    (Vue.js)     │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         └───────────┬───────────┘
-                     │
-              ┌──────┴──────┐
-              │   Go API    │
-              │  (Port 3000)│
-              └──────┬──────┘
-                     │
-              ┌──────┴──────┐
-              │   SQLite    │
-              └─────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                      MemoPad                            │
+├─────────────────────┬───────────────────────────────────┤
+│   Desktop Client    │          Web Dashboard            │
+│   Tauri + Vue 3     │        Vue 3 + Pinia              │
+│   TailwindCSS       │      Vue Router + TailwindCSS     │
+└─────────┬───────────┴───────────────┬───────────────────┘
+          │                           │
+          └───────────┬───────────────┘
+                      │
+          ┌───────────┴───────────┐
+          │      REST API         │
+          │   Go + Gin + GORM     │
+          └───────────┬───────────┘
+                      │
+          ┌───────────┴───────────┐
+          │       SQLite          │
+          └───────────────────────┘
 ```
 
-## Tech Stack
+## 快速开始
 
-- **Backend**: Go 1.23+ / Gin / GORM / SQLite
-- **Desktop**: Tauri v2 / Vue 3 / TailwindCSS
-- **Web**: Vue 3 / Vue Router / Pinia / TailwindCSS
-- **Deployment**: Docker / docker-compose
+### 本地开发
 
-## Quick Start
-
-### Prerequisites
-
-- Go 1.23+
-- Node.js 22+ (LTS)
-- Docker (for deployment)
-- Rust (for desktop build)
-
-### Development
-
-1. Start backend:
 ```bash
-cd backend
-go run main.go
+# 1. 启动后端
+cd backend && go run main.go
+
+# 2. 启动 Web（新终端）
+cd web && npm install && npm run dev
+
+# 3. 启动桌面端（新终端）
+cd desktop && npm install && npm run dev
 ```
 
-2. Start web interface:
-```bash
-cd web
-npm install
-npm run dev
-```
-
-3. Start desktop widget:
-```bash
-cd desktop
-npm install
-npm run dev
-```
-
-## Docker Deployment
+### Docker 部署
 
 ```bash
 docker-compose up -d
+docker logs memopad-backend  # 查看自动生成的 API Key
 ```
 
-The API key will be displayed on first startup. Save it securely.
+## API 文档
 
-## Environment Variables
+所有接口需要 `X-API-Key` 请求头认证。
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Server port |
+### Todos
 
-## API Endpoints
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/todos` | 获取列表 |
+| POST | `/api/todos` | 创建 |
+| PUT | `/api/todos/:id` | 更新 |
+| DELETE | `/api/todos/:id` | 删除 |
+| PATCH | `/api/todos/:id/toggle` | 切换完成状态 |
+| PATCH | `/api/todos/:id/pin` | 切换置顶 |
 
-All endpoints require `X-API-Key` header.
+### Countdowns
 
-- `GET /api/todos` - List all todos
-- `POST /api/todos` - Create todo
-- `PUT /api/todos/:id` - Update todo
-- `DELETE /api/todos/:id` - Delete todo
-- `PATCH /api/todos/:id/toggle` - Toggle done
-- `PATCH /api/todos/:id/pin` - Pin/unpin
-- `GET /api/countdowns` - List countdowns
-- `POST /api/countdowns` - Create countdown
-- `PUT /api/countdowns/:id` - Update countdown
-- `DELETE /api/countdowns/:id` - Delete countdown
-- `GET /api/categories` - List categories
-- `POST /api/categories` - Create category
-- `DELETE /api/categories/:id` - Delete category
-- `GET /api/stats` - Get statistics
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/countdowns` | 获取列表 |
+| POST | `/api/countdowns` | 创建 |
+| PUT | `/api/countdowns/:id` | 更新 |
+| DELETE | `/api/countdowns/:id` | 删除 |
 
-## License
+### Categories
 
-MIT
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/categories` | 获取列表 |
+| POST | `/api/categories` | 创建 |
+| PUT | `/api/categories/:id` | 更新 |
+| DELETE | `/api/categories/:id` | 删除 |
+
+### Stats
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/stats` | 获取统计数据 |
+
+## 项目结构
+
+```
+MemoPad/
+├── backend/          # Go 后端服务
+│   ├── main.go       # 主程序入口
+│   ├── Dockerfile    # Docker 构建文件
+│   └── go.mod        # Go 依赖
+├── web/              # Vue 3 Web 应用
+│   └── src/
+│       ├── views/    # 页面组件
+│       ├── stores/   # Pinia 状态管理
+│       └── api/      # API 客户端
+├── desktop/          # Tauri 桌面应用
+│   ├── src/          # Vue 前端
+│   └── src-tauri/    # Rust 后端配置
+├── docker-compose.yml
+├── INSTALL.md        # 安装指南
+└── DEPLOY.md         # 部署指南
+```
+
+## 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `PORT` | 3000 | 服务端口 |
+| `VITE_API_URL` | http://localhost:3000 | API 地址 |
