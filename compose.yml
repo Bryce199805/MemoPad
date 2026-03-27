@@ -2,8 +2,15 @@ services:
   backend:
     build: ./backend
     container_name: memopad-backend
-    ports:
-      - "3000:3000"
     volumes:
-      - ./backend/data:/app/data
+      - ./data:/app/data
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    container_name: memopad-web
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped

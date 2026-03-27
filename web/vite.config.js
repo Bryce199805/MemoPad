@@ -11,5 +11,7 @@ export default defineConfig({
         changeOrigin: true
       }
     }
-  }
+  },
+  // Use relative paths for production build
+  base: '/',
 })
