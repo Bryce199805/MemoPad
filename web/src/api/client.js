@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// In production (Docker), use relative URL (proxied by Nginx)
+// In development, use localhost:3000
+const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
 
 // Get API Key from localStorage
 const getAPIKey = () => localStorage.getItem('memo_api_key')
