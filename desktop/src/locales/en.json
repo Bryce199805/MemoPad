@@ -1,0 +1,11 @@
+{
+  "app": { "title": "MemoDesk" },
+  "todo": {
+    "add": "Add",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "countdown": { "add": "Add" },
+  "settings": { "position": "Position", "close": "Close" }
+}

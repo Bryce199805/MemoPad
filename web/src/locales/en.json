@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "MemoDesk",
+    "dashboard": "Dashboard",
+    "todos": "Todos",
+    "countdowns": "Countdowns",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalTodos": "Total Todos",
+    "completed": "Completed",
+    "pending": "Pending",
+    "completionRate": "Completion Rate",
+    "dueSoon": "Due Soon",
+    "overdue": "Overdue",
+    "pinned": "Pinned",
+    "recentActivity": "Recent Activity"
+  },
+  "todo": {
+    "title": "Todos",
+    "add": "Add Todo",
+    "edit": "Edit Todo",
+    "delete": "Delete",
+    "content": "Content",
+    "priority": "Priority",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "pinned": "Pinned",
+    "done": "Done",
+    "category": "Category",
+    "all": "All",
+    "search": "Search todos...",
+    "noTodos": "No todos yet",
+    "markDone": "Mark as done",
+    "markPending": "Mark as pending",
+    "pin": "Pin",
+    "unpin": "Unpin"
+  },
+  "countdown": {
+    "title": "Countdowns",
+    "add": "Add Countdown",
+    "edit": "Edit Countdown",
+    "delete": "Delete",
+    "name": "Title",
+    "targetDate": "Target Date",
+    "daysLeft": "days left",
+    "dayLeft": "day left",
+    "expired": "Expired",
+    "noCountdowns": "No countdowns yet"
+  },
+  "category": {
+    "title": "Categories",
+    "add": "Add Category",
+    "edit": "Edit Category",
+    "name": "Name",
+    "color": "Color",
+    "noCategory": "No Category"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  }
+}

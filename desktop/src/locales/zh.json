@@ -1,0 +1,11 @@
+{
+  "app": { "title": "MemoDesk" },
+  "todo": {
+    "add": "添加",
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  },
+  "countdown": { "add": "添加" },
+  "settings": { "position": "位置", "close": "关闭" }
+}

@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "MemoDesk",
+    "dashboard": "仪表盘",
+    "todos": "待办事项",
+    "countdowns": "倒计时",
+    "settings": "设置"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "totalTodos": "待办总数",
+    "completed": "已完成",
+    "pending": "待处理",
+    "completionRate": "完成率",
+    "dueSoon": "即将到期",
+    "overdue": "已过期",
+    "pinned": "置顶",
+    "recentActivity": "最近活动"
+  },
+  "todo": {
+    "title": "待办事项",
+    "add": "添加待办",
+    "edit": "编辑待办",
+    "delete": "删除",
+    "content": "内容",
+    "priority": "优先级",
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+    "pinned": "置顶",
+    "done": "已完成",
+    "category": "分类",
+    "all": "全部",
+    "search": "搜索待办...",
+    "noTodos": "暂无待办",
+    "markDone": "标记完成",
+    "markPending": "标记未完成",
+    "pin": "置顶",
+    "unpin": "取消置顶"
+  },
+  "countdown": {
+    "title": "倒计时",
+    "add": "添加倒计时",
+    "edit": "编辑倒计时",
+    "delete": "删除",
+    "name": "标题",
+    "targetDate": "目标日期",
+    "daysLeft": "天剩余",
+    "dayLeft": "天剩余",
+    "expired": "已过期",
+    "noCountdowns": "暂无倒计时"
+  },
+  "category": {
+    "title": "分类",
+    "add": "添加分类",
+    "edit": "编辑分类",
+    "name": "名称",
+    "color": "颜色",
+    "noCategory": "无分类"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "dark": "深色",
+    "light": "浅色"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功"
+  }
+}
