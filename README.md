@@ -58,7 +58,7 @@ cd desktop && npm install && npm run dev
 ### Docker Deployment
 
 ```bash
-docker-compose up -d
+docker compose up -d
 docker logs memopad-backend  # Get auto-generated API Key
 ```
 
@@ -117,7 +117,7 @@ MemoPad/
 ├── desktop/          # Tauri desktop app
 │   ├── src/          # Vue frontend
 │   └── src-tauri/    # Rust config
-├── docker-compose.yml
+├── compose.yml
 ├── INSTALL.md        # Installation guide
 └── DEPLOY.md         # Deployment guide
 ```

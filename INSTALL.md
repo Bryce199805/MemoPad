@@ -17,7 +17,7 @@ cd MemoPad
 
 2. Start with Docker Compose:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 3. Get the API Key from the container logs:
@@ -99,7 +99,7 @@ Save the API Key securely. If lost, delete `api_key.txt` on the server to regene
 
 ### Port
 
-Default port is 3000. To change, modify the `docker-compose.yml` or set `PORT` environment variable.
+Default port is 3000. To change, modify the `compose.yml` or set `PORT` environment variable.
 
 ## Troubleshooting
 

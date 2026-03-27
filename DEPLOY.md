@@ -25,7 +25,7 @@ git clone https://github.com/Bryce199805/MemoPad.git
 cd MemoPad
 
 # Start the backend
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Step 4: Get API Key
@@ -182,9 +182,9 @@ docker restart memopad-backend
 
 ```bash
 git pull
-docker-compose down
-docker-compose build
-docker-compose up -d
+docker compose down
+docker compose build
+docker compose up -d
 ```
 
 ## Troubleshooting
