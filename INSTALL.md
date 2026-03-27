@@ -2,49 +2,45 @@
 
 ## Prerequisites
 
-- **OS**: Windows 10/11, macOS, Linux
-- **Backend Server**: Any server with Docker or Go 1.23+
+- **Server**: Any server with Docker (for backend)
+- **Clients**: Windows 10/11 (desktop), any modern browser (web)
 
-## Server Installation
+## Server Setup
 
-### Option 1: Docker (Recommended)
+### 1. Deploy Backend
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/Bryce199805/MemoPad.git
 cd MemoPad
-```
-
-2. Start with Docker Compose:
-```bash
 docker compose up -d
 ```
 
-3. Get the API Key from the container logs:
+### 2. Get API Key
+
 ```bash
 docker logs memopad-backend
 ```
 
-### Option 2: Manual Installation
+Save the API key securely - you'll need it for all clients.
 
-1. Install Go 1.23+:
-```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install golang-go
+### 3. Access the API
 
-# macOS
-brew install go
+The API will be available at `http://YOUR_SERVER_IP:3000`
+
+## Client Setup
+
+### Web Dashboard
+
+**Option 1: Direct Access (Development)**
+
+Configure your server's firewall to allow port 3000, then access:
+```
+http://YOUR_SERVER_IP:3000
 ```
 
-2. Run the backend:
-```bash
-cd backend
-go run main.go
-```
+Note: The backend only serves the API. For a proper web interface, use Option 2.
 
-## Client Installation
-
-### Web Interface
+**Option 2: With Web Frontend (Recommended)**
 
 1. Build the web app:
 ```bash
@@ -53,38 +49,34 @@ npm install
 npm run build
 ```
 
-2. Serve the `dist` folder with any web server (Nginx, Caddy, etc.)
+2. Serve the `dist` folder with Nginx or Caddy (see [DEPLOY.md](DEPLOY.md))
 
-3. Access the web interface and enter your API Key
+3. Access via your domain or `http://YOUR_SERVER_IP`
 
 ### Desktop Widget (Windows)
 
-1. Install Rust and Node.js:
+**Option 1: Download from Releases (Recommended)**
+
+1. Go to [Releases](https://github.com/Bryce199805/MemoPad/releases)
+2. Download the latest `MemoDesk_x.x.x_x64-setup.exe`
+3. Install and run
+4. Enter your API Key in Settings
+
+**Option 2: Build from Source**
+
+Requirements: Rust, Node.js 22+
+
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Install Node.js
-# Download from https://nodejs.org/
-```
-
-2. Install Tauri CLI:
-```bash
-npm install -g @tauri-apps/cli
-```
-
-3. Build the desktop app:
-```bash
+# Build
 cd desktop
 npm install
 npm run tauri build
 ```
 
-4. Find the executable in:
-```
-desktop/src-tauri/target/release/MemoDesk.exe  # Windows
-desktop/src-tauri/target/release/MemoDesk      # Linux/macOS
-```
+The executable will be at `desktop/src-tauri/target/release/MemoDesk.exe`
 
 ## Configuration
 
@@ -93,27 +85,28 @@ desktop/src-tauri/target/release/MemoDesk      # Linux/macOS
 On first startup, the backend generates an API Key. You need this key to:
 - Access the web interface
 - Connect the desktop widget
-- Access from mobile devices
+- Access from other devices
 
-Save the API Key securely. If lost, delete `api_key.txt` on the server to regenerate.
+If lost, delete `api_key.txt` on the server to regenerate.
 
-### Port
+### Change Port
 
-Default port is 3000. To change, modify the `compose.yml` or set `PORT` environment variable.
+Default port is 3000. Edit `compose.yml`:
+
+```yaml
+services:
+  backend:
+    ports:
+      - "8080:3000"  # Change 8080 to your desired port
+```
 
 ## Troubleshooting
 
-### "API Key required" error
-- Make sure you're using the correct API Key
-- Check if the backend is running
-- Verify network connectivity to the server
+| Problem | Solution |
+|---------|----------|
+| API Key required error | Verify the API key is correct |
+| Connection refused | Check if backend is running, verify firewall rules |
+| Desktop widget blank | Set API Key in widget settings |
+| Docker container won't start | Run `docker logs memopad-backend` |
 
-### Desktop widget shows blank
-- Ensure API Key is configured in the widget settings
-- Check if backend URL is correct (default: http://localhost:3000)
-
-### Docker container won't start
-```bash
-docker logs memo-desk-backend
-```
-Check for error messages.
+For more details, see [DEPLOY.md](DEPLOY.md).
