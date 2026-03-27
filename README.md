@@ -1,4 +1,4 @@
-# MemoDesk
+# MemoPad
 
 A desktop widget and web manager for todos and countdowns with multi-device sync.
 
