@@ -4,20 +4,20 @@
 [![Vue](https://img.shields.io/badge/Vue-3.4+-4FC08D.svg)](https://vuejs.org/)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0+-24C8D8.svg)](https://tauri.app/)
 
-一个桌面待办事项和倒计时工具，支持多设备同步。
+A desktop todo and countdown widget with multi-device sync.
 
-## 功能特点
+## Features
 
-| 功能 | 描述 |
-|------|------|
-| 桌面小组件 | 悬浮透明窗口、毛玻璃效果、始终置顶 |
-| Web 管理面板 | 响应式界面、深色模式、完整 CRUD |
-| 多设备同步 | 统一 API，桌面和网页数据实时同步 |
-| 待办管理 | 优先级、置顶、分类、完成状态追踪 |
-| 倒计时 | 目标日期追踪、进度可视化、紧急提醒 |
-| 国际化 | 支持中文和英文 |
+| Feature | Description |
+|---------|-------------|
+| Desktop Widget | Floating transparent window, glassmorphism effect, always on top |
+| Web Dashboard | Responsive interface, dark mode, full CRUD operations |
+| Multi-device Sync | Unified API, real-time sync across devices |
+| Todo Management | Priority levels, pin to top, categories, completion tracking |
+| Countdown Timers | Target date tracking, progress visualization, urgency indicators |
+| i18n | English and Chinese support |
 
-## 技术栈
+## Tech Stack
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -40,91 +40,91 @@
           └───────────────────────┘
 ```
 
-## 快速开始
+## Quick Start
 
-### 本地开发
+### Development
 
 ```bash
-# 1. 启动后端
+# 1. Start backend
 cd backend && go run main.go
 
-# 2. 启动 Web（新终端）
+# 2. Start web (new terminal)
 cd web && npm install && npm run dev
 
-# 3. 启动桌面端（新终端）
+# 3. Start desktop (new terminal)
 cd desktop && npm install && npm run dev
 ```
 
-### Docker 部署
+### Docker Deployment
 
 ```bash
 docker-compose up -d
-docker logs memopad-backend  # 查看自动生成的 API Key
+docker logs memopad-backend  # Get auto-generated API Key
 ```
 
-## API 文档
+## API Reference
 
-所有接口需要 `X-API-Key` 请求头认证。
+All endpoints require `X-API-Key` header for authentication.
 
 ### Todos
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/todos` | 获取列表 |
-| POST | `/api/todos` | 创建 |
-| PUT | `/api/todos/:id` | 更新 |
-| DELETE | `/api/todos/:id` | 删除 |
-| PATCH | `/api/todos/:id/toggle` | 切换完成状态 |
-| PATCH | `/api/todos/:id/pin` | 切换置顶 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/todos` | List all todos |
+| POST | `/api/todos` | Create todo |
+| PUT | `/api/todos/:id` | Update todo |
+| DELETE | `/api/todos/:id` | Delete todo |
+| PATCH | `/api/todos/:id/toggle` | Toggle done status |
+| PATCH | `/api/todos/:id/pin` | Toggle pinned status |
 
 ### Countdowns
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/countdowns` | 获取列表 |
-| POST | `/api/countdowns` | 创建 |
-| PUT | `/api/countdowns/:id` | 更新 |
-| DELETE | `/api/countdowns/:id` | 删除 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/countdowns` | List all countdowns |
+| POST | `/api/countdowns` | Create countdown |
+| PUT | `/api/countdowns/:id` | Update countdown |
+| DELETE | `/api/countdowns/:id` | Delete countdown |
 
 ### Categories
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/categories` | 获取列表 |
-| POST | `/api/categories` | 创建 |
-| PUT | `/api/categories/:id` | 更新 |
-| DELETE | `/api/categories/:id` | 删除 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | List all categories |
+| POST | `/api/categories` | Create category |
+| PUT | `/api/categories/:id` | Update category |
+| DELETE | `/api/categories/:id` | Delete category |
 
 ### Stats
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/stats` | 获取统计数据 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stats` | Get statistics |
 
-## 项目结构
+## Project Structure
 
 ```
 MemoPad/
-├── backend/          # Go 后端服务
-│   ├── main.go       # 主程序入口
-│   ├── Dockerfile    # Docker 构建文件
-│   └── go.mod        # Go 依赖
-├── web/              # Vue 3 Web 应用
+├── backend/          # Go backend service
+│   ├── main.go       # Entry point
+│   ├── Dockerfile    # Docker build
+│   └── go.mod        # Dependencies
+├── web/              # Vue 3 web app
 │   └── src/
-│       ├── views/    # 页面组件
-│       ├── stores/   # Pinia 状态管理
-│       └── api/      # API 客户端
-├── desktop/          # Tauri 桌面应用
-│   ├── src/          # Vue 前端
-│   └── src-tauri/    # Rust 后端配置
+│       ├── views/    # Page components
+│       ├── stores/   # Pinia stores
+│       └── api/      # API client
+├── desktop/          # Tauri desktop app
+│   ├── src/          # Vue frontend
+│   └── src-tauri/    # Rust config
 ├── docker-compose.yml
-├── INSTALL.md        # 安装指南
-└── DEPLOY.md         # 部署指南
+├── INSTALL.md        # Installation guide
+└── DEPLOY.md         # Deployment guide
 ```
 
-## 环境变量
+## Environment Variables
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `PORT` | 3000 | 服务端口 |
-| `VITE_API_URL` | http://localhost:3000 | API 地址 |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 3000 | Server port |
+| `VITE_API_URL` | http://localhost:3000 | API base URL |
