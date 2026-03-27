@@ -1,0 +1,19 @@
+# Dependencies
+go.sum
+
+# Build artifacts
+main
+memo.db
+
+# Development files
+*.log
+.env
+.git
+.gitignore
+README.md
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
