@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
-    container_name: memo-desk-backend
+    container_name: memopad-backend
     ports:
       - "3000:3000"
     volumes:
