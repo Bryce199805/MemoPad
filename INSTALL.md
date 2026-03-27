@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **OS**: Windows 10/11, macOS, Linux
-- **Backend Server**: Any server with Docker or Go 1.21+
+- **Backend Server**: Any server with Docker or Go 1.23+
 
 ## Server Installation
 
@@ -11,8 +11,8 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/memo-desk.git
-cd memo-desk
+git clone https://github.com/Bryce199805/MemoPad.git
+cd MemoPad
 ```
 
 2. Start with Docker Compose:
@@ -22,12 +22,12 @@ docker-compose up -d
 
 3. Get the API Key from the container logs:
 ```bash
-docker logs memo-desk-backend
+docker logs memopad-backend
 ```
 
 ### Option 2: Manual Installation
 
-1. Install Go 1.21+:
+1. Install Go 1.23+:
 ```bash
 # Ubuntu/Debian
 sudo apt update && sudo apt install golang-go
@@ -82,7 +82,8 @@ npm run tauri build
 
 4. Find the executable in:
 ```
-desktop/src-tauri/target/release/memo-desk-desktop.exe
+desktop/src-tauri/target/release/MemoDesk.exe  # Windows
+desktop/src-tauri/target/release/MemoDesk      # Linux/macOS
 ```
 
 ## Configuration

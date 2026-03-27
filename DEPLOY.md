@@ -21,8 +21,8 @@ sudo usermod -aG docker $USER
 
 ```bash
 # On your server
-git clone https://github.com/yourusername/memo-desk.git
-cd memo-desk
+git clone https://github.com/Bryce199805/MemoPad.git
+cd MemoPad
 
 # Start the backend
 docker-compose up -d
@@ -31,7 +31,7 @@ docker-compose up -d
 ### Step 4: Get API Key
 
 ```bash
-docker logs memo-desk-backend
+docker logs memopad-backend
 ```
 
 Look for output like:
@@ -74,7 +74,7 @@ server {
     listen 80;
     server_name yourdomain.com;
 
-    root /path/to/memo-desk/web/dist;
+    root /path/to/MemoPad/web/dist;
     index index.html;
 
     location / {
@@ -90,7 +90,7 @@ server {
 
 3. Enable and restart Nginx:
 ```bash
-sudo ln -s /etc/nginx/sites-available/memo-desk /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/MemoPad /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -99,7 +99,7 @@ sudo systemctl restart nginx
 
 ```Caddyfile
 yourdomain.com {
-    root * /path/to/memo-desk/web/dist
+    root * /path/to/MemoPad/web/dist
     file_server
 
     reverse_proxy /api/* localhost:3000
@@ -168,14 +168,14 @@ docker exec memo-desk-backend tail -f /dev/stdout
 ### Backup Database
 
 ```bash
-docker cp memo-desk-backend:/app/memo.db ./backup-memo.db
+docker cp memopad-backend:/app/memo.db ./backup-memo.db
 ```
 
 ### Restore Database
 
 ```bash
-docker cp ./backup-memo.db memo-desk-backend:/app/memo.db
-docker restart memo-desk-backend
+docker cp ./backup-memo.db memopad-backend:/app/memo.db
+docker restart memopad-backend
 ```
 
 ## Updating
@@ -193,7 +193,7 @@ docker-compose up -d
 
 Check logs:
 ```bash
-docker logs memo-desk-backend
+docker logs memopad-backend
 ```
 
 ### API returns 401

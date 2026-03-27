@@ -33,5 +33,17 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Lock files (optional - uncomment if you want to track them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
 # Tauri
 desktop/src-tauri/target/
+desktop/src-tauri/WixTools/
+desktop/src-tauri/Cargo.lock
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
