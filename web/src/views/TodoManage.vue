@@ -1,83 +1,161 @@
 <template>
-  <div class="space-y-4">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-      <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{{ $t('todo.title') }}</h1>
-      <button @click="showAddModal = true" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg w-full sm:w-auto">
-        + {{ $t('todo.add') }}
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $t('todo.title') }}</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          {{ pendingCount }} pending · {{ doneCount }} completed
+        </p>
+      </div>
+      <button 
+        @click="showAddModal = true" 
+        class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 flex items-center gap-2"
+      >
+        <span class="text-lg">+</span>
+        <span>{{ $t('todo.add') }}</span>
       </button>
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-col md:flex-row gap-2">
-      <input v-model="search" type="text" :placeholder="$t('todo.search')" class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-      <select v-model="filterPriority" class="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white md:w-40">
-        <option value="">{{ $t('todo.all') }}</option>
-        <option value="high">{{ $t('todo.high') }}</option>
-        <option value="medium">{{ $t('todo.medium') }}</option>
-        <option value="low">{{ $t('todo.low') }}</option>
-      </select>
-      <select v-model="filterDone" class="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white md:w-40">
-        <option value="">{{ $t('todo.all') }}</option>
-        <option value="false">{{ $t('todo.pending') }}</option>
-        <option value="true">{{ $t('todo.done') }}</option>
-      </select>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+      <div class="flex flex-col md:flex-row gap-3">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <input 
+            v-model="search" 
+            type="text" 
+            :placeholder="$t('todo.search')" 
+            class="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
+        <select 
+          v-model="filterPriority" 
+          class="px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white md:w-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">{{ $t('todo.all') }} Priority</option>
+          <option value="high">{{ $t('todo.high') }}</option>
+          <option value="medium">{{ $t('todo.medium') }}</option>
+          <option value="low">{{ $t('todo.low') }}</option>
+        </select>
+        <select 
+          v-model="filterDone" 
+          class="px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white md:w-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">{{ $t('todo.all') }}</option>
+          <option value="false">{{ $t('todo.pending') }}</option>
+          <option value="true">{{ $t('todo.done') }}</option>
+        </select>
+      </div>
     </div>
 
-    <!-- Todo List -->
-    <div class="space-y-2">
-      <div v-for="todo in filteredTodos" :key="todo.id" class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-4">
-        <div class="flex items-start gap-3">
-          <input type="checkbox" :checked="todo.done" @change="toggleTodo(todo.id)" class="w-5 h-5 mt-0.5 rounded" />
-          <div class="flex-1 min-w-0">
-            <p :class="{ 'line-through text-gray-400': todo.done }" class="text-gray-900 dark:text-white break-words">{{ todo.content }}</p>
-            <div class="flex flex-wrap gap-1 mt-2">
-              <span :class="priorityClass(todo.priority)" class="text-xs px-2 py-0.5 rounded">{{ $t(`todo.${todo.priority}`) }}</span>
-              <span v-if="todo.category" class="text-xs px-2 py-0.5 rounded" :style="{ backgroundColor: todo.category.color + '20', color: todo.category.color }">{{ todo.category.name }}</span>
-            </div>
-          </div>
-          <div class="flex gap-1">
-            <button @click="pinTodo(todo.id)" :class="todo.pinned ? 'text-orange-500' : 'text-gray-400'" class="p-1 md:p-2 text-lg">📌</button>
-            <button @click="editTodo(todo)" class="p-1 md:p-2 text-lg">✏️</button>
-            <button @click="deleteTodo(todo.id)" class="p-1 md:p-2 text-lg">🗑️</button>
-          </div>
-        </div>
+    <!-- Pinned Section -->
+    <div v-if="pinnedTodos.length > 0" class="space-y-3">
+      <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+        <span>📌</span> Pinned
+      </h2>
+      <div class="grid gap-3">
+        <TodoItem
+          v-for="todo in pinnedTodos"
+          :key="todo.id"
+          :todo="todo"
+          :categories="categories"
+          @toggle="toggleTodo"
+          @pin="pinTodo"
+          @edit="editTodo"
+          @delete="deleteTodo"
+        />
       </div>
-      <p v-if="filteredTodos.length === 0" class="text-center text-gray-500 dark:text-gray-400 py-8">{{ $t('todo.noTodos') }}</p>
+    </div>
+
+    <!-- Regular Todos -->
+    <div class="space-y-3">
+      <h2 v-if="pinnedTodos.length > 0" class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        All Tasks
+      </h2>
+      <div class="grid gap-3">
+        <TodoItem
+          v-for="todo in regularTodos"
+          :key="todo.id"
+          :todo="todo"
+          :categories="categories"
+          @toggle="toggleTodo"
+          @pin="pinTodo"
+          @edit="editTodo"
+          @delete="deleteTodo"
+        />
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-if="filteredTodos.length === 0" class="text-center py-16">
+      <div class="text-6xl mb-4 opacity-30">📝</div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('todo.noTodos') }}</h3>
+      <p class="text-gray-500 dark:text-gray-400 mt-2">Create your first task to get started</p>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">{{ editingTodo ? $t('todo.edit') : $t('todo.add') }}</h2>
-        <form @submit.prevent="saveTodo">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-700 dark:text-gray-300">{{ $t('todo.content') }}</label>
-              <textarea v-model="form.content" required rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+    <Transition name="modal">
+      <div v-if="showAddModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white">
+            {{ editingTodo ? $t('todo.edit') : 'New Task' }}
+          </h2>
+          <form @submit.prevent="saveTodo">
+            <div class="space-y-5">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.content') }}</label>
+                <textarea 
+                  v-model="form.content" 
+                  required 
+                  rows="3" 
+                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="What needs to be done?"
+                ></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.priority') }}</label>
+                  <select 
+                    v-model="form.priority" 
+                    class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="high">{{ $t('todo.high') }}</option>
+                    <option value="medium">{{ $t('todo.medium') }}</option>
+                    <option value="low">{{ $t('todo.low') }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.category') }}</label>
+                  <select 
+                    v-model="form.category_id" 
+                    class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option :value="null">{{ $t('category.noCategory') }}</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 dark:text-gray-300">{{ $t('todo.priority') }}</label>
-              <select v-model="form.priority" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="high">{{ $t('todo.high') }}</option>
-                <option value="medium">{{ $t('todo.medium') }}</option>
-                <option value="low">{{ $t('todo.low') }}</option>
-              </select>
+            <div class="flex gap-3 mt-8">
+              <button 
+                type="button" 
+                @click="closeModal" 
+                class="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                {{ $t('common.cancel') }}
+              </button>
+              <button 
+                type="submit" 
+                class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg shadow-blue-500/25"
+              >
+                {{ $t('common.save') }}
+              </button>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 dark:text-gray-300">{{ $t('todo.category') }}</label>
-              <select v-model="form.category_id" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option :value="null">{{ $t('category.noCategory') }}</option>
-                <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6">
-            <button type="button" @click="closeModal" class="px-4 py-2 border rounded-lg dark:border-gray-600 dark:text-white order-2 sm:order-1">{{ $t('common.cancel') }}</button>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg order-1 sm:order-2">{{ $t('common.save') }}</button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -86,6 +164,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useTodoStore } from '../stores/todo'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
+import TodoItem from '../components/TodoItem.vue'
 
 const todoStore = useTodoStore()
 const categoryStore = useCategoryStore()
@@ -108,11 +187,10 @@ const filteredTodos = computed(() => {
   })
 })
 
-const priorityClass = (priority) => ({
-  'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': priority === 'high',
-  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300': priority === 'medium',
-  'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300': priority === 'low'
-})
+const pinnedTodos = computed(() => filteredTodos.value.filter(t => t.pinned && !t.done))
+const regularTodos = computed(() => filteredTodos.value.filter(t => !t.pinned || t.done))
+const pendingCount = computed(() => todos.value.filter(t => !t.done).length)
+const doneCount = computed(() => todos.value.filter(t => t.done).length)
 
 const toggleTodo = async (id) => { await todoStore.toggleTodo(id) }
 const pinTodo = async (id) => { await todoStore.pinTodo(id) }
@@ -144,3 +222,18 @@ onMounted(() => {
   categoryStore.fetchCategories()
 })
 </script>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from > div,
+.modal-leave-to > div {
+  transform: scale(0.95);
+}
+</style>

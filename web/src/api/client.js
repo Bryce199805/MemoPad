@@ -7,12 +7,11 @@ const getAPIKey = () => localStorage.getItem('memo_api_key')
 
 // Create axios instance with auth
 const createApiClient = () => {
-  const key = getAPIKey()
   return axios.create({
     baseURL: API_BASE,
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': key || ''
+      'X-API-Key': getAPIKey() || ''
     }
   })
 }
@@ -37,15 +36,11 @@ export const verifyAPIKey = async (key) => {
     const res = await axios.get(`${API_BASE}/api/verify`, {
       headers: { 'X-API-Key': key }
     })
-    return res.data.status === 'valid'
+    return res.data.success && res.data.data?.status === 'valid'
   } catch {
     return false
   }
 }
 
-export default {
-  get todos() { return api },
-  get countdowns() { return api },
-  get categories() { return api },
-  get stats() { return api }
-}
+// Export the axios instance directly
+export default api

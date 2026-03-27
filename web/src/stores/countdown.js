@@ -10,28 +10,32 @@ export const useCountdownStore = defineStore('countdown', {
   actions: {
     async fetchCountdowns() {
       this.loading = true
+      this.error = null
       try {
-        const res = await api.countdowns.get('/api/countdowns')
-        this.countdowns = res.data
+        const res = await api.get('/api/countdowns')
+        this.countdowns = res.data.data || res.data
       } catch (err) {
-        this.error = err.message
+        this.error = err.response?.data?.error || err.message
+        throw err
       } finally {
         this.loading = false
       }
     },
     async createCountdown(countdown) {
-      const res = await api.countdowns.post('/api/countdowns', countdown)
-      this.countdowns.push(res.data)
-      return res.data
+      const res = await api.post('/api/countdowns', countdown)
+      const newCountdown = res.data.data || res.data
+      this.countdowns.push(newCountdown)
+      return newCountdown
     },
     async updateCountdown(id, updates) {
-      const res = await api.countdowns.put(`/api/countdowns/${id}`, updates)
+      const res = await api.put(`/api/countdowns/${id}`, updates)
+      const updatedCountdown = res.data.data || res.data
       const idx = this.countdowns.findIndex(c => c.id === id)
-      if (idx !== -1) this.countdowns[idx] = res.data
-      return res.data
+      if (idx !== -1) this.countdowns[idx] = updatedCountdown
+      return updatedCountdown
     },
     async deleteCountdown(id) {
-      await api.countdowns.delete(`/api/countdowns/${id}`)
+      await api.delete(`/api/countdowns/${id}`)
       this.countdowns = this.countdowns.filter(c => c.id !== id)
     }
   }
