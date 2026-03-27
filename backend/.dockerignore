@@ -1,6 +1,3 @@
-# Dependencies
-go.sum
-
 # Build artifacts
 main
 memo.db
