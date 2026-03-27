@@ -51,6 +51,23 @@ A desktop todo and countdown widget with multi-device sync.
 
 ## Quick Start
 
+### Docker Deployment (Recommended)
+
+```bash
+# 1. Clone and start
+git clone https://github.com/Bryce199805/MemoPad.git
+cd MemoPad
+docker compose up -d
+
+# 2. Get API Key
+docker logs memopad-backend
+
+# 3. Access web interface
+# Open http://YOUR_SERVER_IP in browser
+```
+
+**Ports**: Only port 80 needs to be open. The backend API is proxied internally through Nginx.
+
 ### Development
 
 ```bash
@@ -64,19 +81,18 @@ cd web && npm install && npm run dev
 cd desktop && npm install && npm run dev
 ```
 
-### Docker Deployment
+## Desktop App
 
-```bash
-docker compose up -d
-docker logs memopad-backend  # Get auto-generated API Key
-```
+Download the Windows desktop widget from [Releases](https://github.com/Bryce199805/MemoPad/releases).
+
+After installation, enter your server URL and API Key in settings.
 
 ## Project Structure
 
 ```
 MemoPad/
 ├── backend/          # Go REST API
-├── web/              # Vue 3 web dashboard
+├── web/              # Vue 3 web dashboard (Docker + Nginx)
 ├── desktop/          # Tauri desktop widget
 ├── compose.yml       # Docker compose config
 ├── INSTALL.md        # Detailed installation guide

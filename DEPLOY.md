@@ -1,208 +1,131 @@
 # Deployment Guide
 
-## Cloud Server Deployment
-
-### Step 1: Prepare Your Server
-
-Requirements:
-- Ubuntu 20.04+ (recommended)
-- Docker installed
-- Firewall ports: 3000 (API), 80/443 (Web if hosted)
-
-### Step 2: Install Docker
+## Quick Deploy
 
 ```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+# Install Docker
+curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-```
 
-### Step 3: Upload and Deploy
-
-```bash
-# On your server
+# Deploy MemoPad
 git clone https://github.com/Bryce199805/MemoPad.git
 cd MemoPad
-
-# Start the backend
 docker compose up -d
-```
 
-### Step 4: Get API Key
-
-```bash
+# Get API Key
 docker logs memopad-backend
 ```
 
-Look for output like:
+Access: `http://YOUR_SERVER_IP`
+
+## Architecture
+
 ```
-========================================
-       MemoDesk API Server
-========================================
-API Key: sk-memo-abc123...
-========================================
+                    ┌─────────────────┐
+                    │   Nginx (80)    │
+                    │   Web + Proxy   │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+    ┌─────────┴─────────┐       ┌──────────┴──────────┐
+    │   Static Files    │       │   /api/* proxied    │
+    │   (Web Frontend)  │       │   to backend:3000   │
+    └───────────────────┘       └──────────┬──────────┘
+                                           │
+                                ┌──────────┴──────────┐
+                                │   Go Backend (3000)  │
+                                │   REST API + SQLite  │
+                                └─────────────────────┘
 ```
 
-**IMPORTANT**: Save this API Key securely. You'll need it to access the web interface and desktop widget.
+**All internal communication happens within Docker network. Only port 80 is exposed.**
 
-### Step 5: Access the API
+## Firewall
 
-The API will be available at:
-```
-http://YOUR_SERVER_IP:3000
-```
+Only open port 80:
 
-Test it:
 ```bash
-curl -H "X-API-Key: sk-memo-abc123..." http://YOUR_SERVER_IP:3000/api/stats
+sudo ufw allow 80
 ```
 
-## Web Interface Deployment
+The backend API is not directly exposed - it's proxied through Nginx.
 
-### Option 1: Serve with Nginx
+## SSL/HTTPS (Optional)
 
-1. Build the web app:
-```bash
-cd web
-npm install
-npm run build
+### Using Caddy (Automatic HTTPS)
+
+Create `Caddyfile`:
+
 ```
-
-2. Configure Nginx:
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    root /path/to/MemoPad/web/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_set_header X-API-Key $http_x_api_key;
-    }
-}
-```
-
-3. Enable and restart Nginx:
-```bash
-sudo ln -s /etc/nginx/sites-available/MemoPad /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### Option 2: Serve with Caddy
-
-```Caddyfile
 yourdomain.com {
-    root * /path/to/MemoPad/web/dist
-    file_server
-
-    reverse_proxy /api/* localhost:3000
+    reverse_proxy memopad-web:80
 }
 ```
 
-## Desktop Widget Configuration
+Run:
+```bash
+docker run -d --name caddy \
+  -v ./Caddyfile:/etc/caddy/Caddyfile \
+  -p 80:80 -p 443:443 \
+  caddy:latest
+```
 
-### Configure API URL
+### Using Nginx + Let's Encrypt
 
-1. Run the desktop widget
-2. Click the ⚙️ settings button
-3. Enter your API Key
-4. The widget will automatically connect to `http://YOUR_SERVER_IP:3000`
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com
+```
+
+## Data Persistence
+
+| File | Description |
+|------|-------------|
+| `data/memo.db` | SQLite database |
+| `data/api_key.txt` | API key |
+
+Backup:
+```bash
+cp -r data/ backup/
+```
+
+## Desktop Widget
+
+1. Download from [Releases](https://github.com/Bryce199805/MemoPad/releases)
+2. Install and run
+3. Enter API Key in Settings
 
 ### Auto-start on Windows
 
-To run widget on Windows startup:
-
-1. Create a shortcut to the executable
+1. Create shortcut to `MemoDesk.exe`
 2. Press `Win + R`, type `shell:startup`
 3. Paste the shortcut
-
-## Security Considerations
-
-### Firewall
-
-Only expose necessary ports:
-```bash
-sudo ufw allow 22    # SSH
-sudo ufw allow 80    # HTTP (if serving web)
-sudo ufw allow 443   # HTTPS (if using SSL)
-sudo ufw allow 3000  # API (consider limiting to your IPs)
-```
-
-### SSL/HTTPS
-
-For production, use HTTPS. Options:
-- Let's Encrypt (free)
-- Cloudflare (free CDN)
-- Commercial SSL certificate
-
-### API Key Security
-
-- Never commit `api_key.txt` to version control
-- Consider rotating API keys periodically
-- Use strong, randomly generated keys
-
-## Monitoring
-
-### Check Container Status
-
-```bash
-docker ps
-docker logs -f memo-desk-backend
-```
-
-### View API Logs
-
-```bash
-docker exec memo-desk-backend tail -f /dev/stdout
-```
-
-## Backup
-
-### Backup Database
-
-```bash
-docker cp memopad-backend:/app/memo.db ./backup-memo.db
-```
-
-### Restore Database
-
-```bash
-docker cp ./backup-memo.db memopad-backend:/app/memo.db
-docker restart memopad-backend
-```
 
 ## Updating
 
 ```bash
 git pull
 docker compose down
-docker compose build
-docker compose up -d
+docker compose up -d --build
 ```
 
 ## Troubleshooting
 
-### Container won't start
+| Problem | Solution |
+|---------|----------|
+| Can't access web | Check firewall allows port 80 |
+| API returns 401 | Verify API key is correct |
+| Container won't start | `docker logs memopad-backend` |
+| Web can't connect to API | Check both containers running: `docker ps` |
 
-Check logs:
+## Monitoring
+
 ```bash
-docker logs memopad-backend
+# View logs
+docker logs -f memopad-backend
+docker logs -f memopad-web
+
+# Check status
+docker ps
 ```
-
-### API returns 401
-
-- Verify API Key is correct
-- Check if key was regenerated (check `api_key.txt` on server)
-
-### Web interface can't connect to API
-
-- Verify CORS settings
-- Check if API is running: `curl http://localhost:3000/health`
-- Check firewall rules
