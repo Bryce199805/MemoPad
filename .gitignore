@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+target/
+*.exe
+*.msi
+*.dmg
+*.app
+
+# Database
+*.db
+
+# API keys and secrets
+api_key.txt
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tauri
+desktop/src-tauri/target/
