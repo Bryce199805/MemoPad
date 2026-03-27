@@ -8,37 +8,46 @@ A desktop todo and countdown widget with multi-device sync.
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| Desktop Widget | Floating transparent window, glassmorphism effect, always on top |
-| Web Dashboard | Responsive interface, dark mode, full CRUD operations |
-| Multi-device Sync | Unified API, real-time sync across devices |
-| Todo Management | Priority levels, pin to top, categories, completion tracking |
-| Countdown Timers | Target date tracking, progress visualization, urgency indicators |
-| i18n | English and Chinese support |
+### Desktop Widget
+
+- **Floating Window**: Transparent, always-on-top widget that stays on your desktop
+- **Glassmorphism UI**: Beautiful gradient background with blur effect
+- **Quick Add**: Create todos instantly without opening the main app
+- **Pinned Items**: Important tasks and countdowns displayed at the top
+- **Position & Opacity**: Customize widget position and transparency
+
+### Web Dashboard
+
+- **Modern Interface**: Clean card-based design with smooth animations
+- **Dark Mode**: Full dark theme support
+- **Statistics**: Visual progress tracking and completion rates
+- **Category Management**: Organize todos with custom categories and colors
+- **Responsive**: Works on desktop, tablet, and mobile browsers
+
+### Todo Management
+
+- **Priority Levels**: High, Medium, Low with color coding
+- **Pin to Top**: Keep important tasks visible
+- **Categories**: Group and filter todos by custom categories
+- **Completion Tracking**: Mark tasks done with visual feedback
+
+### Countdown Timers
+
+- **Visual Progress**: Progress bars show time remaining
+- **Urgency Indicators**: Color-coded urgency (overdue, due soon, upcoming)
+- **Pin Important Dates**: Keep critical countdowns at the top
+
+### Multi-Device Sync
+
+- **Unified API**: Single backend serves all clients
+- **Real-time Updates**: Changes sync across devices instantly
+- **Secure Access**: API key authentication for all endpoints
 
 ## Tech Stack
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      MemoPad                            │
-├─────────────────────┬───────────────────────────────────┤
-│   Desktop Client    │          Web Dashboard            │
-│   Tauri + Vue 3     │        Vue 3 + Pinia              │
-│   TailwindCSS       │      Vue Router + TailwindCSS     │
-└─────────┬───────────┴───────────────┬───────────────────┘
-          │                           │
-          └───────────┬───────────────┘
-                      │
-          ┌───────────┴───────────┐
-          │      REST API         │
-          │   Go + Gin + GORM     │
-          └───────────┬───────────┘
-                      │
-          ┌───────────┴───────────┐
-          │       SQLite          │
-          └───────────────────────┘
-```
+- **Backend**: Go 1.23 / Gin / GORM / SQLite
+- **Desktop**: Tauri v2 / Vue 3 / TailwindCSS
+- **Web**: Vue 3 / Vue Router / Pinia / TailwindCSS
 
 ## Quick Start
 
@@ -62,69 +71,19 @@ docker compose up -d
 docker logs memopad-backend  # Get auto-generated API Key
 ```
 
-## API Reference
-
-All endpoints require `X-API-Key` header for authentication.
-
-### Todos
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/todos` | List all todos |
-| POST | `/api/todos` | Create todo |
-| PUT | `/api/todos/:id` | Update todo |
-| DELETE | `/api/todos/:id` | Delete todo |
-| PATCH | `/api/todos/:id/toggle` | Toggle done status |
-| PATCH | `/api/todos/:id/pin` | Toggle pinned status |
-
-### Countdowns
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/countdowns` | List all countdowns |
-| POST | `/api/countdowns` | Create countdown |
-| PUT | `/api/countdowns/:id` | Update countdown |
-| DELETE | `/api/countdowns/:id` | Delete countdown |
-
-### Categories
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/categories` | List all categories |
-| POST | `/api/categories` | Create category |
-| PUT | `/api/categories/:id` | Update category |
-| DELETE | `/api/categories/:id` | Delete category |
-
-### Stats
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/stats` | Get statistics |
-
 ## Project Structure
 
 ```
 MemoPad/
-├── backend/          # Go backend service
-│   ├── main.go       # Entry point
-│   ├── Dockerfile    # Docker build
-│   └── go.mod        # Dependencies
-├── web/              # Vue 3 web app
-│   └── src/
-│       ├── views/    # Page components
-│       ├── stores/   # Pinia stores
-│       └── api/      # API client
-├── desktop/          # Tauri desktop app
-│   ├── src/          # Vue frontend
-│   └── src-tauri/    # Rust config
-├── compose.yml
-├── INSTALL.md        # Installation guide
+├── backend/          # Go REST API
+├── web/              # Vue 3 web dashboard
+├── desktop/          # Tauri desktop widget
+├── compose.yml       # Docker compose config
+├── INSTALL.md        # Detailed installation guide
 └── DEPLOY.md         # Deployment guide
 ```
 
-## Environment Variables
+## Documentation
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Server port |
-| `VITE_API_URL` | http://localhost:3000 | API base URL |
+- [Installation Guide](INSTALL.md) - Step-by-step setup instructions
+- [Deployment Guide](DEPLOY.md) - Production deployment with Docker
