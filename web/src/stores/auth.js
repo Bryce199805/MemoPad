@@ -11,6 +11,9 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref(null)
   const initialized = ref(false)
 
+  // Computed
+  const isAdmin = computed(() => user.value?.role === 'admin')
+
   // Actions
   async function login(username, password) {
     loading.value = true
@@ -108,6 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     initialized,
+    isAdmin,
     // Actions
     login,
     register,

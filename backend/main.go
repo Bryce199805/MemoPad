@@ -32,6 +32,8 @@ type User struct {
 	Email     string    `json:"email" gorm:"size:100;index"`
 	Password  string    `json:"-" gorm:"size:255;not null"`
 	APIKey    string    `json:"-" gorm:"size:64;uniqueIndex;not null"`
+	Role      string    `json:"role" gorm:"size:20;default:user"`      // "admin" or "user"
+	Disabled  bool      `json:"disabled" gorm:"default:false"`         // 禁用状态
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -72,10 +74,14 @@ type Category struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// Stats for dashboard
-type Stats struct {
-	Todos      TodoStats      `json:"todos"`
-	Countdowns CountdownStats `json:"countdowns"`
+// SystemConfig 系统配置
+
+type SystemConfig struct {
+	ID           uint   `json:"id" gorm:"primaryKey"`
+	Key          string `json:"key" gorm:"size:50;uniqueIndex;not null"`
+	Value        string `json:"value" gorm:"size:500"`
+	Description  string `json:"description" gorm:"size:200"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type TodoStats struct {
@@ -121,15 +127,21 @@ func main() {
 	}
 
 	// Auto migrate
-	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{})
+	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{})
+
+	// Initialize default system config
+	initSystemConfig()
+
+	// Initialize admin user from environment variables
+	initAdminUser()
 
 	fmt.Println("========================================")
-	fmt.Println("       MemoPad API Server v2.0")
+	fmt.Println("       MemoPad API Server v2.1")
 	fmt.Println("========================================")
 	fmt.Printf("Database: %s\n", dbPath)
-	fmt.Println("========================================")
 	fmt.Println("Register via /api/auth/register")
 	fmt.Println("Login via /api/auth/login")
+	fmt.Println("Admin: /api/admin/*")
 	fmt.Println("========================================\n")
 
 	r := gin.Default()
@@ -148,6 +160,7 @@ func main() {
 		auth.POST("/register", registerHandler)
 		auth.POST("/login", loginHandler)
 		auth.GET("/verify", authMiddleware(), verifyHandler)
+		auth.GET("/check-admin", checkAdminHandler) // 检查是否已配置管理员
 	}
 
 	// API routes (auth required)
@@ -180,6 +193,24 @@ func main() {
 		// API Key
 		api.GET("/auth/api-key", getApiKeyHandler)
 		api.POST("/auth/api-key/regenerate", regenerateApiKeyHandler)
+	}
+
+	// Admin routes (admin only)
+	admin := r.Group("/api/admin")
+	admin.Use(authMiddleware(), adminMiddleware())
+	{
+		// User management
+		admin.GET("/users", adminGetUsers)
+		admin.PATCH("/users/:id/disable", adminDisableUser)
+		admin.PATCH("/users/:id/enable", adminEnableUser)
+		admin.DELETE("/users/:id", adminDeleteUser)
+
+		// System config
+		admin.GET("/config", adminGetConfig)
+		admin.PUT("/config", adminUpdateConfig)
+
+		// Statistics
+		admin.GET("/stats", adminGetStats)
 	}
 
 	r.Run(":3000")
@@ -234,9 +265,37 @@ func authMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Check if user is disabled
+		if user.Disabled {
+			c.JSON(http.StatusForbidden, Response{
+				Success:   false,
+				Error:     "Account has been disabled",
+				ErrorCode: "ACCOUNT_DISABLED",
+			})
+			c.Abort()
+			return
+		}
+
 		// Store user in context
 		c.Set("user", user)
 		c.Set("userID", user.ID)
+		c.Next()
+	}
+}
+
+// Admin middleware
+func adminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := c.MustGet("user").(User)
+		if user.Role != "admin" {
+			c.JSON(http.StatusForbidden, Response{
+				Success:   false,
+				Error:     "Admin access required",
+				ErrorCode: "ADMIN_REQUIRED",
+			})
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
@@ -280,6 +339,15 @@ func sanitizeString(s string) string {
 
 // Auth handlers
 func registerHandler(c *gin.Context) {
+	// Check if registration is enabled
+	var config SystemConfig
+	if err := db.Where("key = ?", "registration_enabled").First(&config).Error; err == nil {
+		if config.Value == "false" {
+			c.JSON(http.StatusForbidden, errorResponse("Registration is currently disabled", "REGISTRATION_DISABLED"))
+			return
+		}
+	}
+
 	var input struct {
 		Username string `json:"username" binding:"required,min=3,max=50"`
 		Password string `json:"password" binding:"required,min=6"`
@@ -304,6 +372,7 @@ func registerHandler(c *gin.Context) {
 		Password: hashPassword(input.Password),
 		Email:    sanitizeString(input.Email),
 		APIKey:   generateAPIKey(),
+		Role:     "user",
 	}
 
 	if err := db.Create(&user).Error; err != nil {
@@ -361,6 +430,7 @@ func verifyHandler(c *gin.Context) {
 			"id":       user.ID,
 			"username": user.Username,
 			"email":    user.Email,
+			"role":     user.Role,
 		},
 	}))
 }
@@ -709,4 +779,236 @@ func getStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, successResponse(stats))
+}
+
+// ==================== Admin Functions ====================
+
+// initAdminUser initializes admin user from environment variables
+func initAdminUser() {
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+	if adminUsername == "" || adminPassword == "" {
+		return // No admin configured via env
+	}
+
+	var existingUser User
+	if err := db.Where("username = ?", adminUsername).First(&existingUser).Error; err == nil {
+		// Admin already exists, update password if needed
+		if !checkPassword(adminPassword, existingUser.Password) {
+			db.Model(&existingUser).Update("password", hashPassword(adminPassword))
+			fmt.Printf("Admin password updated for: %s\n", adminUsername)
+		}
+		return
+	}
+
+	// Create admin user
+	admin := User{
+		Username: adminUsername,
+		Password: hashPassword(adminPassword),
+		APIKey:   generateAPIKey(),
+		Role:     "admin",
+	}
+
+	if err := db.Create(&admin).Error; err != nil {
+		log.Printf("Failed to create admin user: %v", err)
+		return
+	}
+
+	fmt.Println("========================================")
+	fmt.Println("  Admin user created from environment")
+	fmt.Printf("  Username: %s\n", adminUsername)
+	fmt.Println("========================================")
+}
+
+// initSystemConfig initializes default system config
+func initSystemConfig() {
+	defaults := []SystemConfig{
+		{Key: "registration_enabled", Value: "true", Description: "是否开放用户注册"},
+	}
+
+	for _, cfg := range defaults {
+		var existing SystemConfig
+		if err := db.Where("key = ?", cfg.Key).First(&existing).Error; err != nil {
+			db.Create(&cfg)
+		}
+	}
+}
+
+// checkAdminHandler checks if admin is configured
+func checkAdminHandler(c *gin.Context) {
+	var count int64
+	db.Model(&User{}).Where("role = ?", "admin").Count(&count)
+	c.JSON(http.StatusOK, successResponse(map[string]bool{"has_admin": count > 0}))
+}
+
+// Admin handlers
+
+func adminGetUsers(c *gin.Context) {
+	var users []User
+	db.Select("id, username, email, role, disabled, created_at, updated_at").Order("created_at DESC").Find(&users)
+
+	// Add stats for each user
+	type UserWithStats struct {
+		ID        uint      `json:"id"`
+		Username  string    `json:"username"`
+		Email     string    `json:"email"`
+		Role      string    `json:"role"`
+		Disabled  bool      `json:"disabled"`
+		TodoCount int64     `json:"todo_count"`
+		CountdownCount int64 `json:"countdown_count"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	var result []UserWithStats
+	for _, u := range users {
+		var todoCount, countdownCount int64
+		db.Model(&Todo{}).Where("user_id = ?", u.ID).Count(&todoCount)
+		db.Model(&Countdown{}).Where("user_id = ?", u.ID).Count(&countdownCount)
+		result = append(result, UserWithStats{
+			ID:             u.ID,
+			Username:       u.Username,
+			Email:          u.Email,
+			Role:           u.Role,
+			Disabled:       u.Disabled,
+			TodoCount:      todoCount,
+			CountdownCount: countdownCount,
+			CreatedAt:      u.CreatedAt,
+			UpdatedAt:      u.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, successResponse(result))
+}
+
+func adminDisableUser(c *gin.Context) {
+	id := c.Param("id")
+	currentUser := c.MustGet("user").(User)
+
+	// Prevent disabling self
+	if fmt.Sprintf("%d", currentUser.ID) == id {
+		c.JSON(http.StatusBadRequest, errorResponse("Cannot disable yourself", "INVALID_OPERATION"))
+		return
+	}
+
+	result := db.Model(&User{}).Where("id = ?", id).Update("disabled", true)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "User disabled"}))
+}
+
+func adminEnableUser(c *gin.Context) {
+	id := c.Param("id")
+
+	result := db.Model(&User{}).Where("id = ?", id).Update("disabled", false)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "User enabled"}))
+}
+
+func adminDeleteUser(c *gin.Context) {
+	id := c.Param("id")
+	currentUser := c.MustGet("user").(User)
+
+	// Prevent deleting self
+	if fmt.Sprintf("%d", currentUser.ID) == id {
+		c.JSON(http.StatusBadRequest, errorResponse("Cannot delete yourself", "INVALID_OPERATION"))
+		return
+	}
+
+	// Delete user's data first
+	db.Where("user_id = ?", id).Delete(&Todo{})
+	db.Where("user_id = ?", id).Delete(&Countdown{})
+	db.Where("user_id = ?", id).Delete(&Category{})
+
+	// Delete user
+	result := db.Delete(&User{}, id)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "User deleted"}))
+}
+
+func adminGetConfig(c *gin.Context) {
+	var configs []SystemConfig
+	db.Find(&configs)
+
+	result := make(map[string]interface{})
+	for _, cfg := range configs {
+		// Convert string "true"/"false" to boolean
+		if cfg.Value == "true" || cfg.Value == "false" {
+			result[cfg.Key] = cfg.Value == "true"
+		} else {
+			result[cfg.Key] = cfg.Value
+		}
+	}
+
+	c.JSON(http.StatusOK, successResponse(result))
+}
+
+func adminUpdateConfig(c *gin.Context) {
+	var updates map[string]interface{}
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
+		return
+	}
+
+	for key, value := range updates {
+		var strValue string
+		switch v := value.(type) {
+		case bool:
+			if v {
+				strValue = "true"
+			} else {
+				strValue = "false"
+			}
+		case string:
+			strValue = v
+		default:
+			continue
+		}
+		db.Model(&SystemConfig{}).Where("key = ?", key).Update("value", strValue)
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Config updated"}))
+}
+
+func adminGetStats(c *gin.Context) {
+	var totalUsers, activeUsers, disabledUsers int64
+	var totalTodos, totalCategories, totalCountdowns int64
+
+	db.Model(&User{}).Count(&totalUsers)
+	db.Model(&User{}).Where("disabled = ?", false).Count(&activeUsers)
+	db.Model(&User{}).Where("disabled = ?", true).Count(&disabledUsers)
+	db.Model(&Todo{}).Count(&totalTodos)
+	db.Model(&Category{}).Count(&totalCategories)
+	db.Model(&Countdown{}).Count(&totalCountdowns)
+
+	// Recent registrations (last 7 days)
+	var recentUsers int64
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	db.Model(&User{}).Where("created_at > ?", sevenDaysAgo).Count(&recentUsers)
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
+		"users": map[string]int64{
+			"total":    totalUsers,
+			"active":   activeUsers,
+			"disabled": disabledUsers,
+			"recent":   recentUsers,
+		},
+		"data": map[string]int64{
+			"todos":      totalTodos,
+			"countdowns": totalCountdowns,
+			"categories": totalCategories,
+		},
+	}))
 }

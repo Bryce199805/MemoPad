@@ -7,6 +7,9 @@ services:
     environment:
       - DATA_DIR=/app/data
       - GIN_MODE=release
+      # Admin credentials (set these before first run)
+      # - ADMIN_USERNAME=admin
+      # - ADMIN_PASSWORD=your_secure_password
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
