@@ -24,8 +24,15 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apk --no-cache add ca-certificates
 
+# Create data directory
+RUN mkdir -p /app/data
+
 # Copy binary from builder
 COPY --from=builder /app/main .
+
+# Environment variables
+ENV DATA_DIR=/app/data
+ENV GIN_MODE=release
 
 EXPOSE 3000
 

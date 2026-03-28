@@ -1,421 +1,522 @@
 <template>
   <div 
-    class="h-screen flex flex-col transition-all duration-300"
-    :style="{ 
-      background: `linear-gradient(135deg, rgba(30, 41, 59, ${opacity/100}) 0%, rgba(51, 65, 85, ${opacity/100}) 50%, rgba(30, 41, 59, ${opacity/100}) 100%)`,
+    class="app-window"
+    :style="{
+      background: `linear-gradient(135deg, rgba(10, 10, 10, ${opacity/100}) 0%, rgba(20, 20, 20, ${opacity/100}) 50%, rgba(10, 10, 10, ${opacity/100}) 100%)`
     }"
   >
     <!-- Login Screen -->
-    <div v-if="!isConnected" class="flex-1 flex flex-col items-center justify-center p-6">
-      <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-blue-500/25">
-        <span class="text-3xl text-white">✓</span>
+    <div v-if="!store.isConnected" class="login-screen">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
       </div>
-      <h1 class="text-xl font-bold text-white mb-2">MemoDesk</h1>
-      <p class="text-white/50 text-sm mb-8">Connect to your server</p>
-      
-      <div class="w-full max-w-xs space-y-4">
-        <div>
-          <label class="text-xs text-white/60 uppercase tracking-wider block mb-2">Server URL</label>
-          <input 
-            v-model="serverUrl" 
-            type="text" 
-            placeholder="http://localhost:3000"
-            class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 focus:border-blue-500/50 focus:outline-none transition-colors text-sm"
-          />
-        </div>
-        <div>
-          <label class="text-xs text-white/60 uppercase tracking-wider block mb-2">API Key</label>
-          <input 
-            v-model="apiKey" 
-            type="password" 
-            placeholder="sk-memo-..."
-            class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 focus:border-blue-500/50 focus:outline-none transition-colors text-sm"
-          />
-        </div>
-        <button 
-          @click="connect" 
-          :disabled="isConnecting || !serverUrl.trim() || !apiKey.trim()"
-          class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-        >
-          <span v-if="isConnecting" class="flex items-center justify-center gap-2">
-            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Connecting...
-          </span>
+      <h1>MemoDesk</h1>
+      <p class="login-subtitle">Connect to your server</p>
+
+      <form @submit.prevent="handleConnect" class="login-form">
+        <input
+          v-model="store.serverUrl"
+          type="text"
+          placeholder="Server URL (e.g., http://localhost:3000)"
+        />
+        <input
+          v-model="store.apiKey"
+          type="password"
+          placeholder="API Key"
+        />
+        
+        <p v-if="store.error" class="error-msg">{{ store.error }}</p>
+        
+        <button type="submit" :disabled="store.loading" class="connect-btn">
+          <span v-if="store.loading" class="spinner"></span>
           <span v-else>Connect</span>
         </button>
-        <p v-if="error" class="text-red-400 text-xs text-center">{{ error }}</p>
-      </div>
+      </form>
     </div>
 
     <!-- Main App -->
     <template v-else>
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-white/10" data-tauri-drag-region>
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span class="text-sm text-white">✓</span>
+      <header class="app-header" data-tauri-drag-region>
+        <div class="header-left">
+          <div class="app-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <span class="text-sm font-semibold text-white/90">MemoDesk</span>
+          <span class="app-title">MemoDesk</span>
         </div>
-        <div class="flex items-center gap-1" data-tauri-drag-region>
-          <!-- Minimize Button -->
-          <button 
-            @click="minimizeWindow"
-            class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80 transition-colors flex items-center justify-center text-xs"
-            title="Minimize to tray"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+        
+        <div class="header-actions" data-tauri-drag-region>
+          <button class="header-btn" @click="showSettings = !showSettings" title="Settings">
+            ⚙️
+          </button>
+          <button class="header-btn minimize" @click="minimizeWindow" title="Minimize">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
-          <!-- Settings Button -->
-          <button 
-            @click="showSettings = !showSettings" 
-            class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80 transition-colors flex items-center justify-center text-sm"
-            :class="{ 'bg-white/15 text-white': showSettings }"
-          >
-            ⚙
-          </button>
         </div>
+      </header>
+
+      <!-- Settings Panel -->
+      <Transition name="slide">
+        <div v-if="showSettings" class="settings-panel">
+          <div class="setting-row">
+            <label>Opacity</label>
+            <input type="range" min="60" max="100" :value="store.opacity" @input="store.setOpacity($event.target.value)">
+          </div>
+          <div class="setting-row">
+            <label>Always on Top</label>
+            <button 
+              class="toggle-btn"
+              :class="{ active: store.alwaysOnTop }"
+              @click="toggleAlwaysOnTop"
+            >{{ store.alwaysOnTop ? 'ON' : 'OFF' }}</button>
+          </div>
+          <button class="disconnect-btn" @click="handleDisconnect">Disconnect</button>
+        </div>
+      </Transition>
+
+      <!-- Quick Add -->
+      <div class="quick-add">
+        <input
+          v-model="newTodo"
+          @keyup.enter="addTodo"
+          placeholder="Add a task..."
+        />
+        <select v-model="newPriority">
+          <option value="high">H</option>
+          <option value="medium">M</option>
+          <option value="low">L</option>
+        </select>
+        <button class="add-btn" @click="addTodo">+</button>
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto custom-scrollbar">
-        <!-- Settings Panel -->
-        <Transition name="slide">
-          <div v-if="showSettings" class="p-4 border-b border-white/10 space-y-4">
-            <div>
-              <label class="text-xs text-white/50 uppercase tracking-wider block mb-2">Opacity</label>
-              <input 
-                v-model.number="opacity" 
-                type="range" 
-                min="60" 
-                max="100" 
-                class="w-full accent-blue-500"
-              />
-              <div class="flex justify-between text-xs text-white/30 mt-1">
-                <span>60%</span>
-                <span>{{ opacity }}%</span>
-                <span>100%</span>
-              </div>
-            </div>
-            <div class="flex items-center justify-between">
-              <label class="text-xs text-white/50 uppercase tracking-wider">Always on Top</label>
-              <button 
-                @click="toggleAlwaysOnTop"
-                class="w-10 h-5 rounded-full transition-colors relative"
-                :class="alwaysOnTop ? 'bg-blue-500' : 'bg-white/20'"
-              >
-                <div class="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" :class="alwaysOnTop ? 'translate-x-5' : 'translate-x-0.5'"></div>
-              </button>
-            </div>
-            <button 
-              @click="disconnect" 
-              class="w-full py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs transition-colors"
-            >
-              Disconnect
-            </button>
-          </div>
-        </Transition>
-
-        <!-- Quick Add -->
-        <div class="p-4 border-b border-white/5">
-          <div class="flex gap-2">
-            <input 
-              v-model="newTodoContent" 
-              @keyup.enter="addTodo" 
-              placeholder="Add a task..." 
-              class="flex-1 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:border-blue-500/50 focus:outline-none transition-colors"
-            />
-            <select 
-              v-model="newTodoPriority" 
-              class="px-2 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none"
-            >
-              <option value="high" class="bg-slate-800">H</option>
-              <option value="medium" class="bg-slate-800">M</option>
-              <option value="low" class="bg-slate-800">L</option>
-            </select>
-            <button 
-              @click="addTodo" 
-              class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        <!-- Pinned Items -->
-        <div v-if="pinnedItems.length > 0" class="p-4 pb-2">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs text-orange-400 font-medium">📌 Pinned</span>
-          </div>
-          <div class="space-y-2">
-            <TodoCard 
-              v-for="item in pinnedItems" 
-              :key="'pinned-' + item.id" 
-              :item="item" 
-              @toggle="toggleTodo"
-              @pin="pinTodo"
-            />
-          </div>
-        </div>
-
-        <!-- Regular Items -->
-        <div class="p-4 pt-2 space-y-2">
-          <div v-if="pinnedItems.length > 0" class="text-xs text-white/40 mb-2">Tasks</div>
-          <TodoCard 
-            v-for="item in regularItems" 
-            :key="item.id" 
-            :item="item" 
-            @toggle="toggleTodo"
-            @pin="pinTodo"
+      <div class="app-content custom-scrollbar">
+        <!-- Pinned -->
+        <div v-if="store.pinnedTodos.length > 0" class="section">
+          <div class="section-title">📌 Pinned</div>
+          <TodoCard
+            v-for="todo in store.pinnedTodos"
+            :key="todo.id"
+            :todo="todo"
+            @toggle="store.toggleTodo"
+            @pin="store.pinTodo"
           />
         </div>
 
-        <!-- Empty State -->
-        <div v-if="todos.length === 0 && !loading" class="p-8 text-center">
-          <div class="text-4xl mb-3 opacity-20">📝</div>
-          <p class="text-white/40 text-sm">No tasks yet</p>
+        <!-- Tasks -->
+        <div class="section">
+          <div v-if="store.pinnedTodos.length > 0" class="section-title">Tasks</div>
+          <TodoCard
+            v-for="todo in store.regularTodos"
+            :key="todo.id"
+            :todo="todo"
+            @toggle="store.toggleTodo"
+            @pin="store.pinTodo"
+          />
         </div>
 
-        <!-- Loading State -->
-        <div v-if="loading" class="p-8 text-center">
-          <div class="inline-block w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
+        <!-- Empty -->
+        <div v-if="store.todos.length === 0 && !store.loading" class="empty-state">
+          <div class="empty-icon">📝</div>
+          <p>No tasks yet</p>
         </div>
 
-        <!-- Error State -->
-        <div v-if="error && isConnected" class="p-4">
-          <div class="bg-red-500/20 rounded-xl p-3 text-red-400 text-xs text-center">
-            {{ error }}
-          </div>
+        <!-- Loading -->
+        <div v-if="store.loading" class="loading-state">
+          <div class="spinner"></div>
         </div>
       </div>
 
-      <!-- Footer Stats -->
-      <div class="px-4 py-2 border-t border-white/10 flex justify-between items-center text-xs text-white/40">
-        <span>{{ pendingCount }} pending</span>
-        <span>{{ doneCount }} done</span>
-      </div>
+      <!-- Footer -->
+      <footer class="app-footer">
+        <span>{{ store.pendingCount }} pending</span>
+        <span>{{ store.doneCount }} done</span>
+      </footer>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { useAppStore } from './stores/app'
 import TodoCard from './components/TodoCard.vue'
 
-// State
-const isConnected = ref(false)
-const isConnecting = ref(false)
-const loading = ref(false)
-const error = ref('')
-const todos = ref([])
-const countdowns = ref([])
+const store = useAppStore()
 const showSettings = ref(false)
-const newTodoContent = ref('')
-const newTodoPriority = ref('medium')
-const opacity = ref(95)
-const alwaysOnTop = ref(false)
+const newTodo = ref('')
+const newPriority = ref('medium')
 
-// Connection settings
-const serverUrl = ref(localStorage.getItem('memo_server_url') || 'http://localhost:3000')
-const apiKey = ref(localStorage.getItem('memo_api_key') || '')
-
-// Computed
-const pinnedItems = computed(() => todos.value.filter(t => t.pinned && !t.done))
-const regularItems = computed(() => todos.value.filter(t => !t.pinned || t.done))
-const pendingCount = computed(() => todos.value.filter(t => !t.done).length)
-const doneCount = computed(() => todos.value.filter(t => t.done).length)
-
-// Methods
-const getApiHeaders = () => ({
-  'Content-Type': 'application/json',
-  'X-API-Key': apiKey.value
-})
-
-const fetchData = async () => {
-  loading.value = true
-  error.value = ''
-  
-  try {
-    const [todosRes, cdsRes] = await Promise.all([
-      fetch(`${serverUrl.value}/api/todos`, { headers: getApiHeaders() }),
-      fetch(`${serverUrl.value}/api/countdowns`, { headers: getApiHeaders() })
-    ])
-    
-    if (!todosRes.ok || !cdsRes.ok) {
-      throw new Error('Failed to fetch data')
-    }
-    
-    const todosData = await todosRes.json()
-    const cdsData = await cdsRes.json()
-    
-    todos.value = todosData.data || todosData
-    countdowns.value = cdsData.data || cdsData
-  } catch (e) {
-    error.value = 'Failed to fetch data'
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
+async function handleConnect() {
+  await store.connect()
 }
 
-const connect = async () => {
-  if (!serverUrl.value.trim() || !apiKey.value.trim()) {
-    error.value = 'Please enter server URL and API key'
-    return
-  }
-
-  isConnecting.value = true
-  error.value = ''
-
-  try {
-    const res = await fetch(`${serverUrl.value}/api/verify`, {
-      headers: getApiHeaders()
-    })
-    
-    if (res.ok) {
-      const data = await res.json()
-      if (data.success) {
-        localStorage.setItem('memo_server_url', serverUrl.value)
-        localStorage.setItem('memo_api_key', apiKey.value)
-        isConnected.value = true
-        fetchData()
-      } else {
-        error.value = 'Invalid API key'
-      }
-    } else {
-      error.value = 'Connection failed. Check server URL.'
-    }
-  } catch (e) {
-    error.value = 'Cannot connect to server'
-  } finally {
-    isConnecting.value = false
-  }
-}
-
-const disconnect = () => {
-  localStorage.removeItem('memo_api_key')
-  apiKey.value = ''
-  isConnected.value = false
-  todos.value = []
-  countdowns.value = []
+function handleDisconnect() {
+  store.disconnect()
   showSettings.value = false
 }
 
-const addTodo = async () => {
-  if (!newTodoContent.value.trim()) return
-  
-  try {
-    const res = await fetch(`${serverUrl.value}/api/todos`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify({
-        content: newTodoContent.value.trim(),
-        priority: newTodoPriority.value
-      })
-    })
-    
-    if (res.ok) {
-      const data = await res.json()
-      todos.value.unshift(data.data || data)
-      newTodoContent.value = ''
-    }
-  } catch (e) {
-    error.value = 'Failed to add task'
-  }
+async function addTodo() {
+  if (!newTodo.value.trim()) return
+  await store.addTodo(newTodo.value.trim(), newPriority.value)
+  newTodo.value = ''
 }
 
-const toggleTodo = async (id) => {
-  try {
-    const res = await fetch(`${serverUrl.value}/api/todos/${id}/toggle`, {
-      method: 'PATCH',
-      headers: getApiHeaders()
-    })
-    
-    if (res.ok) {
-      const data = await res.json()
-      const idx = todos.value.findIndex(t => t.id === id)
-      if (idx !== -1) todos.value[idx] = data.data || data
-    }
-  } catch (e) {
-    error.value = 'Failed to update task'
-  }
-}
-
-const pinTodo = async (id) => {
-  try {
-    const res = await fetch(`${serverUrl.value}/api/todos/${id}/pin`, {
-      method: 'PATCH',
-      headers: getApiHeaders()
-    })
-    
-    if (res.ok) {
-      const data = await res.json()
-      const idx = todos.value.findIndex(t => t.id === id)
-      if (idx !== -1) todos.value[idx] = data.data || data
-    }
-  } catch (e) {
-    error.value = 'Failed to pin task'
-  }
-}
-
-const minimizeWindow = async () => {
+async function minimizeWindow() {
   const window = getCurrentWindow()
   await window.hide()
 }
 
-const toggleAlwaysOnTop = async () => {
-  alwaysOnTop.value = !alwaysOnTop.value
+async function toggleAlwaysOnTop() {
+  const newVal = !store.alwaysOnTop
+  store.setAlwaysOnTop(newVal)
   const window = getCurrentWindow()
-  await window.setAlwaysOnTop(alwaysOnTop.value)
-  localStorage.setItem('memo_always_on_top', alwaysOnTop.value)
+  await window.setAlwaysOnTop(newVal)
 }
 
-// Watch opacity changes
-watch(opacity, (val) => {
-  localStorage.setItem('memo_opacity', val)
-})
-
-// Initialize
 onMounted(async () => {
-  // Load saved settings
-  opacity.value = parseInt(localStorage.getItem('memo_opacity')) || 95
-  alwaysOnTop.value = localStorage.getItem('memo_always_on_top') === 'true'
-  
-  // Apply always on top setting
-  if (alwaysOnTop.value) {
+  // Apply saved settings
+  if (store.alwaysOnTop) {
     const window = getCurrentWindow()
     await window.setAlwaysOnTop(true)
   }
   
-  // Auto-connect if credentials exist
-  if (apiKey.value) {
-    connect()
+  // Auto-connect if API key exists
+  if (store.apiKey) {
+    await store.connect()
   }
 })
 </script>
 
 <style scoped>
+.app-window {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Login */
+.login-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.login-logo svg {
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.login-screen h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.login-subtitle {
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form input {
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+}
+
+.login-form input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.error-msg {
+  color: #f87171;
+  font-size: 13px;
+  text-align: center;
+}
+
+.connect-btn {
+  padding: 14px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-logo svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.app-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.header-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.15s;
+}
+
+.header-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.header-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Settings */
+.settings-panel {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-row label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+}
+
+.setting-row input[type="range"] {
+  width: 100px;
+  accent-color: #6366f1;
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+}
+
+.toggle-btn.active {
+  background: #6366f1;
+  color: white;
+}
+
+.disconnect-btn {
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Quick Add */
+.quick-add {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.quick-add input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: white;
+  font-size: 13px;
+}
+
+.quick-add input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.quick-add select {
+  width: 40px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+}
+
+.add-btn {
+  width: 40px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 10px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Content */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+/* Empty & Loading */
+.empty-state, .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 40px;
+  opacity: 0.3;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+}
+
+/* Footer */
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255,255,255,0.15);
   border-radius: 2px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
 
+/* Transition */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.2s ease-out;
+  transition: all 0.2s ease;
 }
+
 .slide-enter-from,
 .slide-leave-to {
   opacity: 0;

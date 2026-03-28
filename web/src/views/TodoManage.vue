@@ -1,60 +1,45 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $t('todo.title') }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {{ pendingCount }} pending · {{ doneCount }} completed
-        </p>
+  <div class="todos-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1>Tasks</h1>
+        <p class="subtitle">{{ pendingCount }} pending · {{ doneCount }} completed</p>
       </div>
-      <button 
-        @click="showAddModal = true" 
-        class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 flex items-center gap-2"
-      >
-        <span class="text-lg">+</span>
-        <span>{{ $t('todo.add') }}</span>
-      </button>
+      <Button @click="openModal()" variant="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Task
+      </Button>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-      <div class="flex flex-col md:flex-row gap-3">
-        <div class="relative flex-1">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          <input 
-            v-model="search" 
-            type="text" 
-            :placeholder="$t('todo.search')" 
-            class="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          />
-        </div>
-        <select 
-          v-model="filterPriority" 
-          class="px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white md:w-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">{{ $t('todo.all') }} Priority</option>
-          <option value="high">{{ $t('todo.high') }}</option>
-          <option value="medium">{{ $t('todo.medium') }}</option>
-          <option value="low">{{ $t('todo.low') }}</option>
-        </select>
-        <select 
-          v-model="filterDone" 
-          class="px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white md:w-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">{{ $t('todo.all') }}</option>
-          <option value="false">{{ $t('todo.pending') }}</option>
-          <option value="true">{{ $t('todo.done') }}</option>
-        </select>
+    <div class="filters glass-card">
+      <div class="search-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input v-model="search" type="text" placeholder="Search tasks..." />
       </div>
+      <select v-model="filterPriority" class="filter-select">
+        <option value="">All Priority</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select v-model="filterDone" class="filter-select">
+        <option value="">All Status</option>
+        <option value="false">Pending</option>
+        <option value="true">Completed</option>
+      </select>
     </div>
 
     <!-- Pinned Section -->
-    <div v-if="pinnedTodos.length > 0" class="space-y-3">
-      <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-        <span>📌</span> Pinned
-      </h2>
-      <div class="grid gap-3">
+    <div v-if="pinnedTodos.length > 0" class="section">
+      <h2 class="section-title">📌 Pinned</h2>
+      <div class="todo-list">
         <TodoItem
           v-for="todo in pinnedTodos"
           :key="todo.id"
@@ -62,18 +47,16 @@
           :categories="categories"
           @toggle="toggleTodo"
           @pin="pinTodo"
-          @edit="editTodo"
+          @edit="openModal"
           @delete="deleteTodo"
         />
       </div>
     </div>
 
-    <!-- Regular Todos -->
-    <div class="space-y-3">
-      <h2 v-if="pinnedTodos.length > 0" class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-        All Tasks
-      </h2>
-      <div class="grid gap-3">
+    <!-- Regular Section -->
+    <div v-if="regularTodos.length > 0" class="section">
+      <h2 v-if="pinnedTodos.length > 0" class="section-title">All Tasks</h2>
+      <div class="todo-list">
         <TodoItem
           v-for="todo in regularTodos"
           :key="todo.id"
@@ -81,105 +64,77 @@
           :categories="categories"
           @toggle="toggleTodo"
           @pin="pinTodo"
-          @edit="editTodo"
+          @edit="openModal"
           @delete="deleteTodo"
         />
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-if="filteredTodos.length === 0" class="text-center py-16">
-      <div class="text-6xl mb-4 opacity-30">📝</div>
-      <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('todo.noTodos') }}</h3>
-      <p class="text-gray-500 dark:text-gray-400 mt-2">Create your first task to get started</p>
+    <div v-if="filteredTodos.length === 0 && !todoStore.loading" class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3>No tasks yet</h3>
+      <p>Create your first task to get started</p>
     </div>
 
-    <!-- Add/Edit Modal -->
-    <Transition name="modal">
-      <div v-if="showAddModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-          <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white">
-            {{ editingTodo ? $t('todo.edit') : 'New Task' }}
-          </h2>
-          <form @submit.prevent="saveTodo">
-            <div class="space-y-5">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.content') }}</label>
-                <textarea 
-                  v-model="form.content" 
-                  required 
-                  rows="3" 
-                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  placeholder="What needs to be done?"
-                ></textarea>
+    <!-- Modal -->
+    <Teleport to="body">
+      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+        <div class="modal glass-card">
+          <div class="modal-header">
+            <h2>{{ editingTodo ? 'Edit Task' : 'New Task' }}</h2>
+          </div>
+          <form @submit.prevent="saveTodo" class="modal-body">
+            <div class="form-group">
+              <label>Content</label>
+              <textarea
+                v-model="form.content"
+                required
+                rows="3"
+                placeholder="What needs to be done?"
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Priority</label>
+                <select v-model="form.priority">
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
               </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.priority') }}</label>
-                  <select 
-                    v-model="form.priority" 
-                    class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="high">{{ $t('todo.high') }}</option>
-                    <option value="medium">{{ $t('todo.medium') }}</option>
-                    <option value="low">{{ $t('todo.low') }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.category') }}</label>
-                  <select 
-                    v-model="form.category_id" 
-                    class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option :value="null">{{ $t('category.noCategory') }}</option>
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- Due Date (Optional) -->
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
-                  <label class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <input 
-                      type="checkbox" 
-                      v-model="enableDueDate" 
-                      class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-                    />
-                    Enable
-                  </label>
-                </div>
-                <input 
-                  v-if="enableDueDate"
-                  v-model="form.due_date" 
-                  type="datetime-local" 
-                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <p v-else class="text-sm text-gray-400 dark:text-gray-500 py-2">
-                  No due date set
-                </p>
+
+              <div class="form-group">
+                <label>Category</label>
+                <select v-model="form.category_id">
+                  <option :value="null">No Category</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                  </option>
+                </select>
               </div>
             </div>
-            <div class="flex gap-3 mt-8">
-              <button 
-                type="button" 
-                @click="closeModal" 
-                class="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-              <button 
-                type="submit" 
-                class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg shadow-blue-500/25"
-              >
-                {{ $t('common.save') }}
-              </button>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="enableDueDate" />
+                <span>Set due date</span>
+              </label>
+              <input
+                v-if="enableDueDate"
+                v-model="form.due_date"
+                type="datetime-local"
+              />
             </div>
           </form>
+          <div class="modal-footer">
+            <Button variant="secondary" @click="closeModal">Cancel</Button>
+            <Button variant="primary" @click="saveTodo">Save</Button>
+          </div>
         </div>
       </div>
-    </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -188,6 +143,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useTodoStore } from '../stores/todo'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
+import Button from '../components/ui/Button.vue'
 import TodoItem from '../components/TodoItem.vue'
 
 const todoStore = useTodoStore()
@@ -198,10 +154,15 @@ const { categories } = storeToRefs(categoryStore)
 const search = ref('')
 const filterPriority = ref('')
 const filterDone = ref('')
-const showAddModal = ref(false)
+const showModal = ref(false)
 const editingTodo = ref(null)
 const enableDueDate = ref(false)
-const form = ref({ content: '', priority: 'medium', category_id: null, due_date: '' })
+const form = ref({
+  content: '',
+  priority: 'medium',
+  category_id: null,
+  due_date: ''
+})
 
 const filteredTodos = computed(() => {
   return todos.value.filter(todo => {
@@ -217,42 +178,48 @@ const regularTodos = computed(() => filteredTodos.value.filter(t => !t.pinned ||
 const pendingCount = computed(() => todos.value.filter(t => !t.done).length)
 const doneCount = computed(() => todos.value.filter(t => t.done).length)
 
-const toggleTodo = async (id) => { await todoStore.toggleTodo(id) }
-const pinTodo = async (id) => { await todoStore.pinTodo(id) }
-const deleteTodo = async (id) => { await todoStore.deleteTodo(id) }
-
-const editTodo = (todo) => {
+function openModal(todo = null) {
   editingTodo.value = todo
-  const hasDueDate = !!todo.due_date
-  enableDueDate.value = hasDueDate
-  form.value = { 
-    content: todo.content, 
-    priority: todo.priority, 
-    category_id: todo.category_id,
-    due_date: hasDueDate ? todo.due_date.slice(0, 16) : ''
+  if (todo) {
+    enableDueDate.value = !!todo.due_date
+    form.value = {
+      content: todo.content,
+      priority: todo.priority,
+      category_id: todo.category_id,
+      due_date: todo.due_date ? todo.due_date.slice(0, 16) : ''
+    }
+  } else {
+    enableDueDate.value = false
+    form.value = { content: '', priority: 'medium', category_id: null, due_date: '' }
   }
-  showAddModal.value = true
+  showModal.value = true
 }
 
-const closeModal = () => {
-  showAddModal.value = false
+function closeModal() {
+  showModal.value = false
   editingTodo.value = null
-  enableDueDate.value = false
-  form.value = { content: '', priority: 'medium', category_id: null, due_date: '' }
 }
 
-const saveTodo = async () => {
-  const data = { 
+async function saveTodo() {
+  const data = {
     ...form.value,
     due_date: enableDueDate.value ? form.value.due_date : null
   }
-  
+
   if (editingTodo.value) {
     await todoStore.updateTodo(editingTodo.value.id, data)
   } else {
     await todoStore.createTodo(data)
   }
   closeModal()
+}
+
+const toggleTodo = (id) => todoStore.toggleTodo(id)
+const pinTodo = (id) => todoStore.pinTodo(id)
+const deleteTodo = (id) => {
+  if (confirm('Delete this task?')) {
+    todoStore.deleteTodo(id)
+  }
 }
 
 onMounted(() => {
@@ -262,16 +229,217 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
+.todos-page {
+  max-width: 900px;
+  margin: 0 auto;
 }
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
 }
-.modal-enter-from > div,
-.modal-leave-to > div {
-  transform: scale(0.95);
+
+.header-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.search-input {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input svg {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+.search-input input {
+  width: 100%;
+  padding: 10px 14px 10px 42px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.filter-select {
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  min-width: 120px;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 12px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-primary);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .filters {
+    flex-direction: column;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

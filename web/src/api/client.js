@@ -1,54 +1,55 @@
 import axios from 'axios'
 
-// In production (Docker), use relative URL (proxied by Nginx)
-// In development, use localhost:3000
+// API base URL - relative in production (proxied by Nginx)
 const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
 
-// Get API Key from localStorage
+// Get API key from storage
 const getAPIKey = () => localStorage.getItem('memo_api_key')
 
-// Check if API key is set (just checks existence, not validity)
-export const hasAPIKey = () => !!getAPIKey()
-
-// Create axios instance with auth
+// Create axios instance
 const createApiClient = () => {
-  return axios.create({
+  const instance = axios.create({
     baseURL: API_BASE,
     headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': getAPIKey() || ''
-    }
+      'Content-Type': 'application/json'
+    },
+    timeout: 30000
   })
+
+  // Request interceptor - add API key
+  instance.interceptors.request.use(
+    config => {
+      const key = getAPIKey()
+      if (key) {
+        config.headers['X-API-Key'] = key
+      }
+      return config
+    },
+    error => Promise.reject(error)
+  )
+
+  // Response interceptor - handle errors
+  instance.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.response?.status === 401) {
+        // Clear invalid API key
+        localStorage.removeItem('memo_api_key')
+        // Dispatch event for auth store
+        window.dispatchEvent(new CustomEvent('auth:invalid'))
+      }
+      return Promise.reject(error)
+    }
+  )
+
+  return instance
 }
 
-let api = createApiClient()
+// Export singleton
+const api = createApiClient()
 
-// Update API key and recreate client
-export const setAPIKey = (key) => {
-  localStorage.setItem('memo_api_key', key)
-  api = createApiClient()
-}
-
-// Get current API key
-export const getAPIKeyFromStorage = () => getAPIKey()
-
-// Verify API key is valid (calls backend)
-export const verifyAPIKey = async (key) => {
-  try {
-    const res = await axios.get(`${API_BASE}/api/verify`, {
-      headers: { 'X-API-Key': key }
-    })
-    return res.data.success && res.data.data?.status === 'valid'
-  } catch {
-    return false
-  }
-}
-
-// Clear API key (logout)
-export const clearAPIKey = () => {
-  localStorage.removeItem('memo_api_key')
-  api = createApiClient()
-}
-
-// Export the axios instance directly
 export default api
+
+// Utility functions
+export const hasAPIKey = () => !!getAPIKey()
+export const getAPIKeyFromStorage = () => getAPIKey()

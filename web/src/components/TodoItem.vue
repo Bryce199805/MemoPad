@@ -1,126 +1,74 @@
 <template>
-  <div 
-    class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border transition-all duration-200 hover:shadow-md"
-    :class="[
-      todo.pinned 
-        ? 'border-orange-200 dark:border-orange-800/50 bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-900/10' 
-        : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
-    ]"
-  >
-    <div class="p-4">
-      <div class="flex items-start gap-4">
-        <!-- Checkbox -->
-        <button 
-          @click="$emit('toggle', todo.id)"
-          class="mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0"
-          :class="todo.done 
-            ? 'bg-green-500 border-green-500 text-white' 
-            : 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400'"
-        >
-          <svg v-if="todo.done" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+  <div class="todo-item glass-card" :class="{ pinned: todo.pinned, done: todo.done }">
+    <div class="todo-content">
+      <button 
+        class="checkbox"
+        :class="{ checked: todo.done }"
+        @click="$emit('toggle', todo.id)"
+      >
+        <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="20,6 9,17 4,12" />
+        </svg>
+      </button>
 
-        <!-- Content -->
-        <div class="flex-1 min-w-0">
-          <p 
-            class="text-gray-900 dark:text-white transition-all duration-200"
-            :class="{ 'line-through text-gray-400 dark:text-gray-500': todo.done }"
-          >
-            {{ todo.content }}
-          </p>
-          <div class="flex flex-wrap items-center gap-2 mt-2">
-            <!-- Priority Badge -->
-            <span 
-              class="text-xs font-medium px-2.5 py-1 rounded-full"
-              :class="priorityClasses"
-            >
-              {{ priorityLabel }}
-            </span>
-            
-            <!-- Category Badge -->
-            <span 
-              v-if="todo.category" 
-              class="text-xs font-medium px-2.5 py-1 rounded-full"
-              :style="{ backgroundColor: todo.category.color + '20', color: todo.category.color }"
-            >
-              {{ todo.category.name }}
-            </span>
+      <div class="todo-info">
+        <p class="todo-text" :class="{ done: todo.done }">{{ todo.content }}</p>
+        <div class="todo-meta">
+          <Badge :variant="priorityVariant">{{ priorityLabel }}</Badge>
+          
+          <Badge v-if="todo.category" variant="info">
+            {{ todo.category.name }}
+          </Badge>
 
-            <!-- Due Date -->
-            <span 
-              v-if="todo.due_date" 
-              class="text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
-              :class="dueDateClass"
-            >
-              <span>📅</span>
-              {{ formatDueDate(todo.due_date) }}
-            </span>
-
-            <!-- Created Date -->
-            <span class="text-xs text-gray-400 dark:text-gray-500">
-              Created {{ formatDate(todo.created_at) }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button 
-            @click="$emit('pin', todo.id)"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            :class="todo.pinned ? 'text-orange-500' : 'text-gray-400 hover:text-gray-600'"
-            :title="todo.pinned ? 'Unpin' : 'Pin'"
-          >
-            📌
-          </button>
-          <button 
-            @click="$emit('edit', todo)"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 transition-colors"
-            title="Edit"
-          >
-            ✏️
-          </button>
-          <button 
-            @click="$emit('delete', todo.id)"
-            class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors"
-            title="Delete"
-          >
-            🗑️
-          </button>
+          <Badge v-if="todo.due_date" :variant="dueDateVariant">
+            {{ dueDateText }}
+          </Badge>
         </div>
       </div>
+    </div>
+
+    <div class="todo-actions">
+      <button 
+        class="action-btn"
+        :class="{ active: todo.pinned }"
+        @click="$emit('pin', todo.id)"
+        title="Pin"
+      >
+        📌
+      </button>
+      <button class="action-btn" @click="$emit('edit', todo)" title="Edit">
+        ✏️
+      </button>
+      <button class="action-btn danger" @click="$emit('delete', todo.id)" title="Delete">
+        🗑️
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import Badge from './ui/Badge.vue'
 
 const props = defineProps({
-  todo: Object,
-  categories: Array
+  todo: { type: Object, required: true },
+  categories: { type: Array, default: () => [] }
 })
 
 defineEmits(['toggle', 'pin', 'edit', 'delete'])
 
-const priorityClasses = computed(() => {
-  const p = props.todo.priority
-  return {
-    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': p === 'high',
-    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': p === 'medium',
-    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': p === 'low'
-  }
+const priorityVariant = computed(() => {
+  const map = { high: 'danger', medium: 'warning', low: 'success' }
+  return map[props.todo.priority] || 'default'
 })
 
 const priorityLabel = computed(() => {
-  const labels = { high: 'High', medium: 'Medium', low: 'Low' }
-  return labels[props.todo.priority] || 'Medium'
+  const map = { high: 'High', medium: 'Medium', low: 'Low' }
+  return map[props.todo.priority] || 'Medium'
 })
 
-const dueDateClass = computed(() => {
-  if (!props.todo.due_date || props.todo.done) return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+const dueDateVariant = computed(() => {
+  if (!props.todo.due_date || props.todo.done) return 'default'
   
   const now = new Date()
   const due = new Date(props.todo.due_date)
@@ -129,36 +77,145 @@ const dueDateClass = computed(() => {
   
   const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
   
-  if (diff < 0) return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'  // Overdue
-  if (diff === 0) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'  // Today
-  if (diff <= 3) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'  // Soon
-  return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'  // Upcoming
+  if (diff < 0) return 'danger'
+  if (diff === 0) return 'warning'
+  if (diff <= 3) return 'warning'
+  return 'info'
 })
 
-const formatDate = (date) => {
-  const d = new Date(date)
-  const now = new Date()
-  const diff = now - d
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+const dueDateText = computed(() => {
+  if (!props.todo.due_date) return ''
   
-  if (days === 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return `${days} days ago`
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const formatDueDate = (dateStr) => {
-  const d = new Date(dateStr)
   const now = new Date()
+  const due = new Date(props.todo.due_date)
   now.setHours(0, 0, 0, 0)
-  d.setHours(0, 0, 0, 0)
+  due.setHours(0, 0, 0, 0)
   
-  const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24))
+  const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
   
   if (diff < 0) return `${Math.abs(diff)}d overdue`
   if (diff === 0) return 'Today'
   if (diff === 1) return 'Tomorrow'
   if (diff <= 7) return `${diff} days`
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
+  return due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+})
 </script>
+
+<style scoped>
+.todo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  transition: all var(--transition-fast);
+}
+
+.todo-item.pinned {
+  border-color: rgba(251, 146, 60, 0.3);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, transparent 100%);
+}
+
+.todo-item.done {
+  opacity: 0.6;
+}
+
+.todo-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Checkbox */
+.checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  margin-top: 2px;
+}
+
+.checkbox:hover {
+  border-color: var(--accent-primary);
+}
+
+.checkbox.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.checkbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+/* Info */
+.todo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-text {
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.todo-text.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Actions */
+.todo-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.todo-item:hover .todo-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.action-btn.active {
+  opacity: 1;
+}
+
+.action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .todo-actions {
+    opacity: 1;
+  }
+}
+</style>

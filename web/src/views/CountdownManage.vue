@@ -1,179 +1,127 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $t('countdown.title') }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Track your important dates
-        </p>
+  <div class="countdowns-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1>Countdowns</h1>
+        <p class="subtitle">Track your important dates</p>
       </div>
-      <button 
-        @click="showAddModal = true" 
-        class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-purple-500/25 transition-all duration-200 flex items-center gap-2"
-      >
-        <span class="text-lg">+</span>
-        <span>{{ $t('countdown.add') }}</span>
-      </button>
+      <Button @click="openModal()" variant="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Countdown
+      </Button>
     </div>
 
-    <!-- Stats Bar -->
-    <div class="grid grid-cols-3 gap-4">
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white">
-        <p class="text-xs uppercase tracking-wider opacity-80">Upcoming</p>
-        <p class="text-2xl font-bold mt-1">{{ upcomingCount }}</p>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-item glass-card">
+        <span class="stat-value">{{ upcomingCount }}</span>
+        <span class="stat-label">Upcoming</span>
       </div>
-      <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 text-white">
-        <p class="text-xs uppercase tracking-wider opacity-80">Due Soon</p>
-        <p class="text-2xl font-bold mt-1">{{ dueSoonCount }}</p>
+      <div class="stat-item glass-card">
+        <span class="stat-value warning">{{ dueSoonCount }}</span>
+        <span class="stat-label">Due Soon</span>
       </div>
-      <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 text-white">
-        <p class="text-xs uppercase tracking-wider opacity-80">Overdue</p>
-        <p class="text-2xl font-bold mt-1">{{ overdueCount }}</p>
+      <div class="stat-item glass-card">
+        <span class="stat-value danger">{{ overdueCount }}</span>
+        <span class="stat-label">Overdue</span>
       </div>
     </div>
 
-    <!-- Countdown Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- Countdowns Grid -->
+    <div class="countdowns-grid">
       <div 
         v-for="cd in sortedCountdowns" 
-        :key="cd.id" 
-        class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200"
-        :class="{ 'ring-2 ring-orange-200 dark:ring-orange-800': cd.pinned }"
+        :key="cd.id"
+        class="countdown-card glass-card"
+        :class="{ pinned: cd.pinned }"
       >
-        <!-- Progress Bar -->
-        <div class="h-1.5 bg-gray-100 dark:bg-gray-700">
-          <div 
-            class="h-full transition-all duration-500"
-            :class="progressColor(cd.target_date)"
-            :style="{ width: progressWidth(cd.target_date) + '%' }"
-          ></div>
-        </div>
-
-        <div class="p-5">
-          <div class="flex justify-between items-start mb-4">
-            <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 pr-2">{{ cd.title }}</h3>
-            <span 
-              class="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-              :class="priorityClass(cd.priority)"
-            >
-              {{ priorityLabel(cd.priority) }}
+        <div class="countdown-progress" :style="{ background: progressColor(cd.target_date) }"></div>
+        
+        <div class="countdown-content">
+          <div class="countdown-header">
+            <h3>{{ cd.title }}</h3>
+            <Badge :variant="priorityVariant(cd.priority)">{{ priorityText(cd.priority) }}</Badge>
+          </div>
+          
+          <div class="countdown-time">
+            <span class="days" :class="daysClass(cd.target_date)">
+              {{ Math.abs(daysLeft(cd.target_date)) }}
             </span>
+            <span class="days-label">{{ daysLeft(cd.target_date) >= 0 ? 'days left' : 'days ago' }}</span>
           </div>
-
-          <!-- Countdown Display -->
-          <div class="text-center py-4">
-            <div class="flex items-baseline justify-center gap-1">
-              <span 
-                class="text-4xl font-bold"
-                :class="countdownColor(cd.target_date)"
-              >
-                {{ Math.abs(getDaysLeft(cd.target_date)) }}
-              </span>
-              <span class="text-sm text-gray-500 dark:text-gray-400">
-                {{ getDaysLeft(cd.target_date) >= 0 ? 'days left' : 'days ago' }}
-              </span>
-            </div>
-            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
-              {{ formatDate(cd.target_date) }}
-            </p>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
-            <button 
-              @click="togglePin(cd)"
-              class="text-sm px-3 py-1.5 rounded-lg transition-colors"
-              :class="cd.pinned 
-                ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' 
-                : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
-            >
-              📌 {{ cd.pinned ? 'Pinned' : 'Pin' }}
-            </button>
-            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                @click="editCountdown(cd)" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 transition-colors"
-              >
-                ✏️
-              </button>
-              <button 
-                @click="deleteCountdown(cd.id)" 
-                class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors"
-              >
-                🗑️
-              </button>
-            </div>
+          
+          <p class="countdown-date">{{ formatDate(cd.target_date) }}</p>
+        </div>
+        
+        <div class="countdown-footer">
+          <button 
+            class="action-btn"
+            :class="{ active: cd.pinned }"
+            @click="pinCountdown(cd)"
+          >
+            📌 {{ cd.pinned ? 'Pinned' : 'Pin' }}
+          </button>
+          <div class="action-group">
+            <button class="action-btn" @click="openModal(cd)">✏️</button>
+            <button class="action-btn danger" @click="deleteCountdown(cd.id)">🗑️</button>
           </div>
         </div>
-      </div>
-
-      <!-- Empty State -->
-      <div v-if="countdowns.length === 0" class="col-span-full text-center py-16">
-        <div class="text-6xl mb-4 opacity-30">⏰</div>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('countdown.noCountdowns') }}</h3>
-        <p class="text-gray-500 dark:text-gray-400 mt-2">Add a countdown to track important dates</p>
       </div>
     </div>
 
-    <!-- Add/Edit Modal -->
-    <Transition name="modal">
-      <div v-if="showAddModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-          <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white">
-            {{ editingCountdown ? $t('countdown.edit') : 'New Countdown' }}
-          </h2>
-          <form @submit.prevent="saveCountdown">
-            <div class="space-y-5">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('countdown.name') }}</label>
-                <input 
-                  v-model="form.title" 
-                  required 
-                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="What are you counting down to?"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('countdown.targetDate') }}</label>
-                <input 
-                  v-model="form.target_date" 
-                  type="datetime-local" 
-                  required 
-                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('todo.priority') }}</label>
-                <select 
-                  v-model="form.priority" 
-                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="high">{{ $t('todo.high') }}</option>
-                  <option value="medium">{{ $t('todo.medium') }}</option>
-                  <option value="low">{{ $t('todo.low') }}</option>
-                </select>
-              </div>
+    <!-- Empty State -->
+    <div v-if="countdowns.length === 0 && !countdownStore.loading" class="empty-state">
+      <div class="empty-icon">⏰</div>
+      <h3>No countdowns yet</h3>
+      <p>Add a countdown to track important dates</p>
+    </div>
+
+    <!-- Modal -->
+    <Teleport to="body">
+      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+        <div class="modal glass-card">
+          <div class="modal-header">
+            <h2>{{ editingCountdown ? 'Edit Countdown' : 'New Countdown' }}</h2>
+          </div>
+          <form @submit.prevent="saveCountdown" class="modal-body">
+            <div class="form-group">
+              <label>Title</label>
+              <input
+                v-model="form.title"
+                type="text"
+                required
+                placeholder="What are you counting down to?"
+              />
             </div>
-            <div class="flex gap-3 mt-8">
-              <button 
-                type="button" 
-                @click="closeModal" 
-                class="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-              <button 
-                type="submit" 
-                class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/25"
-              >
-                {{ $t('common.save') }}
-              </button>
+
+            <div class="form-group">
+              <label>Target Date</label>
+              <input
+                v-model="form.target_date"
+                type="datetime-local"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Priority</label>
+              <select v-model="form.priority">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
             </div>
           </form>
+          <div class="modal-footer">
+            <Button variant="secondary" @click="closeModal">Cancel</Button>
+            <Button variant="primary" @click="saveCountdown">Save</Button>
+          </div>
         </div>
       </div>
-    </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -181,133 +129,371 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCountdownStore } from '../stores/countdown'
 import { storeToRefs } from 'pinia'
+import Button from '../components/ui/Button.vue'
+import Badge from '../components/ui/Badge.vue'
 
-const store = useCountdownStore()
-const { countdowns } = storeToRefs(store)
+const countdownStore = useCountdownStore()
+const { countdowns } = storeToRefs(countdownStore)
 
-const showAddModal = ref(false)
+const showModal = ref(false)
 const editingCountdown = ref(null)
 const form = ref({ title: '', target_date: '', priority: 'medium' })
 
-// Computed
 const sortedCountdowns = computed(() => {
   return [...countdowns.value].sort((a, b) => {
-    // Pinned first, then by target date
     if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
     return new Date(a.target_date) - new Date(b.target_date)
   })
 })
 
-const upcomingCount = computed(() => countdowns.value.filter(c => getDaysLeft(c.target_date) > 7).length)
-const dueSoonCount = computed(() => countdowns.value.filter(c => getDaysLeft(c.target_date) >= 0 && getDaysLeft(c.target_date) <= 7).length)
-const overdueCount = computed(() => countdowns.value.filter(c => getDaysLeft(c.target_date) < 0).length)
+const upcomingCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) > 7).length)
+const dueSoonCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0 && daysLeft(c.target_date) <= 7).length)
+const overdueCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) < 0).length)
 
-// Methods
-const priorityClass = (priority) => ({
-  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': priority === 'high',
-  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': priority === 'medium',
-  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': priority === 'low'
-})
-
-const priorityLabel = (p) => ({ high: 'High', medium: 'Medium', low: 'Low' }[p] || 'Medium')
-
-const getDaysLeft = (targetDate) => {
-  const target = new Date(targetDate)
+function daysLeft(date) {
+  const target = new Date(date)
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   target.setHours(0, 0, 0, 0)
   return Math.ceil((target - now) / (1000 * 60 * 60 * 24))
 }
 
-const countdownColor = (targetDate) => {
-  const days = getDaysLeft(targetDate)
-  if (days < 0) return 'text-red-500'
-  if (days <= 3) return 'text-orange-500'
-  if (days <= 7) return 'text-yellow-500'
-  return 'text-blue-500'
-}
-
-const progressColor = (targetDate) => {
-  const days = getDaysLeft(targetDate)
-  if (days < 0) return 'bg-red-500'
-  if (days <= 3) return 'bg-orange-500'
-  if (days <= 7) return 'bg-yellow-500'
-  return 'bg-blue-500'
-}
-
-const progressWidth = (targetDate) => {
-  const days = getDaysLeft(targetDate)
-  const total = 30
-  if (days < 0) return 100
-  return Math.max(5, Math.min(100, ((total - days) / total) * 100))
-}
-
-const formatDate = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString(undefined, { 
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-US', { 
     weekday: 'short',
-    year: 'numeric', 
     month: 'short', 
-    day: 'numeric' 
+    day: 'numeric',
+    year: 'numeric'
   })
 }
 
-const togglePin = async (cd) => {
-  await store.updateCountdown(cd.id, { pinned: !cd.pinned })
+function progressColor(date) {
+  const days = daysLeft(date)
+  if (days < 0) return 'var(--danger)'
+  if (days <= 3) return 'var(--warning)'
+  if (days <= 7) return 'var(--warning)'
+  return 'var(--accent-primary)'
 }
 
-const editCountdown = (cd) => {
+function daysClass(date) {
+  const days = daysLeft(date)
+  if (days < 0) return 'overdue'
+  if (days <= 3) return 'soon'
+  if (days <= 7) return 'warning'
+  return 'normal'
+}
+
+function priorityVariant(p) {
+  const map = { high: 'danger', medium: 'warning', low: 'success' }
+  return map[p] || 'default'
+}
+
+function priorityText(p) {
+  return { high: 'High', medium: 'Medium', low: 'Low' }[p] || 'Medium'
+}
+
+function openModal(cd = null) {
   editingCountdown.value = cd
-  form.value = { 
-    title: cd.title, 
-    target_date: cd.target_date.slice(0, 16), 
-    priority: cd.priority,
-    pinned: cd.pinned
-  }
-  showAddModal.value = true
-}
-
-const closeModal = () => {
-  showAddModal.value = false
-  editingCountdown.value = null
-  form.value = { title: '', target_date: '', priority: 'medium' }
-}
-
-const saveCountdown = async () => {
-  if (editingCountdown.value) {
-    await store.updateCountdown(editingCountdown.value.id, form.value)
+  if (cd) {
+    form.value = {
+      title: cd.title,
+      target_date: cd.target_date.slice(0, 16),
+      priority: cd.priority
+    }
   } else {
-    await store.createCountdown(form.value)
+    form.value = { title: '', target_date: '', priority: 'medium' }
+  }
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editingCountdown.value = null
+}
+
+async function saveCountdown() {
+  if (editingCountdown.value) {
+    await countdownStore.updateCountdown(editingCountdown.value.id, form.value)
+  } else {
+    await countdownStore.createCountdown(form.value)
   }
   closeModal()
 }
 
-const deleteCountdown = async (id) => { 
+async function pinCountdown(cd) {
+  await countdownStore.updateCountdown(cd.id, { pinned: !cd.pinned })
+}
+
+async function deleteCountdown(id) {
   if (confirm('Delete this countdown?')) {
-    await store.deleteCountdown(id) 
+    await countdownStore.deleteCountdown(id)
   }
 }
 
-onMounted(() => { store.fetchCountdowns() })
+onMounted(() => countdownStore.fetchCountdowns())
 </script>
 
 <style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-.modal-enter-from > div,
-.modal-leave-to > div {
-  transform: scale(0.95);
+.countdowns-page {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.header-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Stats */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-value.warning {
+  color: var(--warning);
+}
+
+.stat-value.danger {
+  color: var(--danger);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Grid */
+.countdowns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.countdown-card {
   overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.countdown-card.pinned {
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.countdown-progress {
+  height: 3px;
+}
+
+.countdown-content {
+  padding: 20px;
+}
+
+.countdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.countdown-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.countdown-time {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.days {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.days.normal {
+  color: var(--accent-primary);
+}
+
+.days.warning {
+  color: var(--warning);
+}
+
+.days.soon, .days.overdue {
+  color: var(--danger);
+}
+
+.days-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.countdown-date {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.countdown-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.action-btn.active {
+  color: var(--warning);
+}
+
+.action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.action-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* Empty */
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
 }
 </style>

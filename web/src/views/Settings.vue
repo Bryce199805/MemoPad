@@ -1,81 +1,283 @@
 <template>
-  <div class="space-y-4">
-    <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{{ $t('settings.title') }}</h1>
-
-    <!-- Language -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ $t('settings.language') }}</h2>
-      <select v-model="locale" @change="changeLocale" class="w-full sm:w-auto px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-        <option value="en">English</option>
-        <option value="zh">中文</option>
-      </select>
+  <div class="settings-page">
+    <div class="page-header">
+      <h1>Settings</h1>
     </div>
 
-    <!-- Categories -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ $t('category.title') }}</h2>
-      <div class="flex flex-col sm:flex-row gap-2 mb-4">
-        <input v-model="newCategory.name" type="text" :placeholder="$t('category.name')" class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-        <input v-model="newCategory.color" type="color" class="w-12 h-10 border rounded cursor-pointer" />
-        <button @click="addCategory" class="bg-blue-500 text-white px-4 py-2 rounded-lg">{{ $t('category.add') }}</button>
-      </div>
-      <div class="space-y-2">
-        <div v-for="cat in categories" :key="cat.id" class="flex items-center gap-3 p-3 border rounded-lg dark:border-gray-600">
-          <span class="w-8 h-8 rounded" :style="{ backgroundColor: cat.color }"></span>
-          <span class="flex-1 text-gray-900 dark:text-white">{{ cat.name }}</span>
-          <button @click="deleteCategory(cat.id)" class="p-2 text-red-500">🗑️</button>
+    <!-- Profile Section -->
+    <Card class="section-card">
+      <template #header>Profile</template>
+      <div class="profile-info">
+        <div class="avatar">{{ userInitial }}</div>
+        <div class="profile-details">
+          <p class="username">{{ authStore.user?.username }}</p>
+          <p class="email">{{ authStore.user?.email || 'No email set' }}</p>
         </div>
-        <p v-if="categories.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-4">{{ $t('category.noCategory') }}</p>
       </div>
-    </div>
+    </Card>
 
-    <!-- API Key -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">API Key</h2>
-      <div class="flex flex-col sm:flex-row gap-2">
-        <input v-model="newAPIKey" type="password" placeholder="Enter new API Key" class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-        <button @click="updateAPIKey" class="bg-green-500 text-white px-4 py-2 rounded-lg">Update</button>
+    <!-- Categories Section -->
+    <Card class="section-card">
+      <template #header>Categories</template>
+      <div class="category-form">
+        <input 
+          v-model="newCategory.name" 
+          type="text" 
+          placeholder="Category name"
+        />
+        <input 
+          v-model="newCategory.color" 
+          type="color" 
+          class="color-input"
+        />
+        <Button variant="primary" @click="addCategory" :disabled="!newCategory.name.trim()">
+          Add
+        </Button>
       </div>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Current key: {{ currentKey ? currentKey.slice(0, 20) + '...' : 'Not set' }}</p>
-    </div>
+      <div class="category-list">
+        <div v-for="cat in categories" :key="cat.id" class="category-item">
+          <div class="category-color" :style="{ background: cat.color }"></div>
+          <span class="category-name">{{ cat.name }}</span>
+          <button class="delete-btn" @click="deleteCategory(cat.id)">🗑️</button>
+        </div>
+        <p v-if="categories.length === 0" class="empty-text">No categories yet</p>
+      </div>
+    </Card>
+
+    <!-- Theme Section -->
+    <Card class="section-card">
+      <template #header>Theme</template>
+      <div class="theme-options">
+        <button 
+          :class="['theme-btn', { active: theme === 'dark' }]"
+          @click="setTheme('dark')"
+        >
+          🌙 Dark
+        </button>
+        <button 
+          :class="['theme-btn', { active: theme === 'light' }]"
+          @click="setTheme('light')"
+        >
+          ☀️ Light
+        </button>
+      </div>
+    </Card>
+
+    <!-- Danger Zone -->
+    <Card class="section-card danger-zone">
+      <template #header>Danger Zone</template>
+      <p class="danger-text">Once you logout, you'll need to sign in again.</p>
+      <Button variant="danger" @click="handleLogout">Logout</Button>
+    </Card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
-import { setAPIKey, getAPIKeyFromStorage } from '../api/client'
+import Card from '../components/ui/Card.vue'
+import Button from '../components/ui/Button.vue'
 
-const { locale } = useI18n()
-const store = useCategoryStore()
-const { categories } = storeToRefs(store)
-const newCategory = ref({ name: '', color: '#3B82F6' })
-const newAPIKey = ref('')
-const currentKey = ref('')
+const router = useRouter()
+const authStore = useAuthStore()
+const categoryStore = useCategoryStore()
+const { categories } = storeToRefs(categoryStore)
 
-const changeLocale = () => { localStorage.setItem('locale', locale.value) }
+const theme = ref('dark')
+const newCategory = ref({ name: '', color: '#6366f1' })
 
-const addCategory = async () => {
-  if (newCategory.value.name) {
-    await store.createCategory(newCategory.value)
-    newCategory.value = { name: '', color: '#3B82F6' }
-  }
+const userInitial = computed(() => {
+  return authStore.user?.username?.charAt(0).toUpperCase() || '?'
+})
+
+function setTheme(t) {
+  theme.value = t
+  localStorage.setItem('theme', t)
+  document.documentElement.classList.toggle('light', t === 'light')
 }
 
-const deleteCategory = async (id) => { await store.deleteCategory(id) }
-
-const updateAPIKey = () => {
-  if (newAPIKey.value) {
-    setAPIKey(newAPIKey.value)
-    newAPIKey.value = ''
-    currentKey.value = getAPIKeyFromStorage()
-  }
+function handleLogout() {
+  authStore.logout()
+  router.push('/login')
 }
+
+async function addCategory() {
+  if (!newCategory.value.name.trim()) return
+  await categoryStore.createCategory(newCategory.value)
+  newCategory.value = { name: '', color: '#6366f1' }
+}
+
+const deleteCategory = (id) => categoryStore.deleteCategory(id)
 
 onMounted(() => {
-  store.fetchCategories()
-  currentKey.value = getAPIKeyFromStorage()
+  categoryStore.fetchCategories()
+  
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'dark'
+  theme.value = savedTheme
+  document.documentElement.classList.toggle('light', savedTheme === 'light')
 })
 </script>
+
+<style scoped>
+.settings-page {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.section-card {
+  margin-bottom: 20px;
+}
+
+/* Profile */
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-gradient);
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.username {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.email {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Categories */
+.category-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.category-form input[type="text"] {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.color-input {
+  width: 44px;
+  height: 42px;
+  padding: 2px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.category-color {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+}
+
+.category-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.delete-btn {
+  padding: 4px 8px;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
+
+.empty-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px;
+}
+
+/* Theme */
+.theme-options {
+  display: flex;
+  gap: 12px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 14px 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.theme-btn:hover {
+  background: var(--bg-hover);
+}
+
+.theme-btn.active {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: white;
+}
+
+/* Danger Zone */
+.danger-zone :deep(.card-header) {
+  color: var(--danger);
+}
+
+.danger-text {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+</style>

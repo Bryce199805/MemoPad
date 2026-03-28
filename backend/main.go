@@ -7,38 +7,54 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 // Response represents standard API response
 type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	Success   bool        `json:"success"`
+	Data      interface{} `json:"data,omitempty"`
+	Error     string      `json:"error,omitempty"`
+	ErrorCode string      `json:"error_code,omitempty"`
 }
 
-// Models
+// User model
+type User struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Username  string    `json:"username" gorm:"size:50;uniqueIndex;not null"`
+	Email     string    `json:"email" gorm:"size:100;index"`
+	Password  string    `json:"-" gorm:"size:255;not null"`
+	APIKey    string    `json:"-" gorm:"size:64;uniqueIndex;not null"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
+// Todo model with user relation
 type Todo struct {
-	ID         uint      `json:"id" gorm:"primaryKey"`
-	Content    string    `json:"content" gorm:"size:500;not null"`
-	Priority   string    `json:"priority" gorm:"size:10;default:medium"`
-	Pinned     bool      `json:"pinned" gorm:"default:false"`
-	Done       bool      `json:"done" gorm:"default:false"`
+	ID         uint       `json:"id" gorm:"primaryKey"`
+	UserID     uint       `json:"user_id" gorm:"index;not null"`
+	Content    string     `json:"content" gorm:"size:500;not null"`
+	Priority   string     `json:"priority" gorm:"size:10;default:medium"`
+	Pinned     bool       `json:"pinned" gorm:"default:false"`
+	Done       bool       `json:"done" gorm:"default:false"`
 	DueDate    *time.Time `json:"due_date"`
-	CategoryID *uint     `json:"category_id"`
-	Category   *Category `json:"category" gorm:"foreignKey:CategoryID"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	CategoryID *uint      `json:"category_id"`
+	Category   *Category  `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
+// Countdown model with user relation
 type Countdown struct {
 	ID         uint      `json:"id" gorm:"primaryKey"`
+	UserID     uint      `json:"user_id" gorm:"index;not null"`
 	Title      string    `json:"title" gorm:"size:200;not null"`
 	TargetDate time.Time `json:"target_date" gorm:"not null"`
 	Priority   string    `json:"priority" gorm:"size:10;default:medium"`
@@ -47,13 +63,16 @@ type Countdown struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+// Category model with user relation
 type Category struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
+	UserID    uint      `json:"user_id" gorm:"index;not null"`
 	Name      string    `json:"name" gorm:"size:100;not null"`
-	Color     string    `json:"color" gorm:"size:20;default:#3B82F6"`
+	Color     string    `json:"color" gorm:"size:20;default:#6366f1"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// Stats for dashboard
 type Stats struct {
 	Todos      TodoStats      `json:"todos"`
 	Countdowns CountdownStats `json:"countdowns"`
@@ -69,52 +88,48 @@ type TodoStats struct {
 }
 
 type CountdownStats struct {
-	Total    int `json:"total"`
-	DueSoon  int `json:"due_soon"`
-	Overdue  int `json:"overdue"`
-	Pinned   int `json:"pinned"`
+	Total   int `json:"total"`
+	DueSoon int `json:"due_soon"`
+	Overdue int `json:"overdue"`
+	Pinned  int `json:"pinned"`
 }
 
-type APIKeyConfig struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	Key       string    `json:"key" gorm:"size:64;unique"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-var (
-	db            *gorm.DB
-	apiKey        = ""
-	configFile    = "api_key.txt"
-	allowedOrigins = []string{
-		"http://localhost:5173",
-		"http://localhost:5174",
-		"http://localhost:3000",
-		"http://127.0.0.1:5173",
-		"http://127.0.0.1:5174",
-		"http://127.0.0.1:3000",
-	}
-)
+var db *gorm.DB
 
 func main() {
+	// Set Gin mode
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Initialize database
 	var err error
-	db, err = gorm.Open(sqlite.Open("memo.db"), &gorm.Config{})
+	dataDir := os.Getenv("DATA_DIR")
+	if dataDir == "" {
+		dataDir = "/app/data"
+	}
+
+	// Ensure data directory exists
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		log.Fatal("Failed to create data directory:", err)
+	}
+
+	dbPath := filepath.Join(dataDir, "memo.db")
+	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	db.AutoMigrate(&Todo{}, &Countdown{}, &Category{}, &APIKeyConfig{})
+	// Auto migrate
+	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{})
 
-	// Load or generate API Key
-	apiKey = loadOrGenerateAPIKey()
-
-	// Print startup info
 	fmt.Println("========================================")
-	fmt.Println("       MemoDesk API Server")
+	fmt.Println("       MemoPad API Server v2.0")
 	fmt.Println("========================================")
-	fmt.Printf("API Key: %s\n", apiKey)
+	fmt.Printf("Database: %s\n", dbPath)
 	fmt.Println("========================================")
-	fmt.Println("Copy this API Key and save it safely.")
-	fmt.Println("You will need it to access the API.")
+	fmt.Println("Register via /api/auth/register")
+	fmt.Println("Login via /api/auth/login")
 	fmt.Println("========================================\n")
 
 	r := gin.Default()
@@ -122,35 +137,24 @@ func main() {
 	// CORS middleware
 	r.Use(corsMiddleware())
 
-	// Auth middleware for /api routes
-	authMiddleware := func(c *gin.Context) {
-		key := c.GetHeader("X-API-Key")
-		if key == "" {
-			c.JSON(http.StatusUnauthorized, Response{Success: false, Error: "API key required"})
-			c.Abort()
-			return
-		}
-		if key != apiKey {
-			c.JSON(http.StatusUnauthorized, Response{Success: false, Error: "Invalid API key"})
-			c.Abort()
-			return
-		}
-		c.Next()
-	}
-
 	// Health check (no auth)
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, Response{Success: true, Data: gin.H{"status": "ok"}})
+		c.JSON(http.StatusOK, Response{Success: true, Data: map[string]string{"status": "ok"}})
 	})
 
-	// API routes (with auth)
-	api := r.Group("/api")
-	api.Use(authMiddleware)
+	// Auth routes (no auth required)
+	auth := r.Group("/api/auth")
 	{
-		api.GET("/verify", func(c *gin.Context) {
-			c.JSON(http.StatusOK, Response{Success: true, Data: gin.H{"status": "valid"}})
-		})
+		auth.POST("/register", registerHandler)
+		auth.POST("/login", loginHandler)
+		auth.GET("/verify", authMiddleware(), verifyHandler)
+	}
 
+	// API routes (auth required)
+	api := r.Group("/api")
+	api.Use(authMiddleware())
+	{
+		// Todos
 		api.GET("/todos", getTodos)
 		api.POST("/todos", createTodo)
 		api.PUT("/todos/:id", updateTodo)
@@ -158,44 +162,41 @@ func main() {
 		api.PATCH("/todos/:id/toggle", toggleTodo)
 		api.PATCH("/todos/:id/pin", pinTodo)
 
+		// Countdowns
 		api.GET("/countdowns", getCountdowns)
 		api.POST("/countdowns", createCountdown)
 		api.PUT("/countdowns/:id", updateCountdown)
 		api.DELETE("/countdowns/:id", deleteCountdown)
 
+		// Categories
 		api.GET("/categories", getCategories)
 		api.POST("/categories", createCategory)
 		api.PUT("/categories/:id", updateCategory)
 		api.DELETE("/categories/:id", deleteCategory)
 
+		// Stats
 		api.GET("/stats", getStats)
 	}
 
 	r.Run(":3000")
 }
 
+// CORS middleware
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		
-		// Check if origin is allowed
-		allowed := false
-		for _, o := range allowedOrigins {
-			if o == origin {
-				allowed = true
-				break
-			}
-		}
-		
-		// Allow if no origin (mobile apps, desktop) or in allowed list
-		if origin == "" || allowed {
+
+		// In development, allow all origins
+		if gin.Mode() != gin.ReleaseMode {
+			c.Header("Access-Control-Allow-Origin", "*")
+		} else if origin != "" {
 			c.Header("Access-Control-Allow-Origin", origin)
 		}
-		
+
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, X-API-Key, Authorization")
 		c.Header("Access-Control-Max-Age", "86400")
-		
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -204,22 +205,45 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-func loadOrGenerateAPIKey() string {
-	// Try to load existing key from config file
-	if data, err := os.ReadFile(configFile); err == nil {
-		key := string(data)
-		if len(key) >= 32 {
-			return key
+// Auth middleware
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := c.GetHeader("X-API-Key")
+		if apiKey == "" {
+			c.JSON(http.StatusUnauthorized, Response{
+				Success:   false,
+				Error:     "API key required",
+				ErrorCode: "AUTH_REQUIRED",
+			})
+			c.Abort()
+			return
 		}
+
+		var user User
+		if err := db.Where("api_key = ?", apiKey).First(&user).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, Response{
+				Success:   false,
+				Error:     "Invalid API key",
+				ErrorCode: "INVALID_API_KEY",
+			})
+			c.Abort()
+			return
+		}
+
+		// Store user in context
+		c.Set("user", user)
+		c.Set("userID", user.ID)
+		c.Next()
 	}
+}
 
-	// Generate new key
-	key := generateAPIKey()
+// Helper functions
+func successResponse(data interface{}) Response {
+	return Response{Success: true, Data: data}
+}
 
-	// Save to config file
-	os.WriteFile(configFile, []byte(key), 0600)
-
-	return key
+func errorResponse(err string, code string) Response {
+	return Response{Success: false, Error: err, ErrorCode: code}
 }
 
 func generateAPIKey() string {
@@ -227,17 +251,19 @@ func generateAPIKey() string {
 	if _, err := rand.Read(bytes); err != nil {
 		log.Fatal("Failed to generate API key:", err)
 	}
-	return "sk-memo-" + hex.EncodeToString(bytes)
+	return "mp_" + hex.EncodeToString(bytes)
 }
 
-// Helper functions
-
-func successResponse(data interface{}) Response {
-	return Response{Success: true, Data: data}
+func hashPassword(password string) string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal("Failed to hash password:", err)
+	}
+	return string(hash)
 }
 
-func errorResponse(err string) Response {
-	return Response{Success: false, Error: err}
+func checkPassword(password, hash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
 func validatePriority(priority string) bool {
@@ -248,66 +274,153 @@ func sanitizeString(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// Todo handlers
+// Auth handlers
+func registerHandler(c *gin.Context) {
+	var input struct {
+		Username string `json:"username" binding:"required,min=3,max=50"`
+		Password string `json:"password" binding:"required,min=6"`
+		Email    string `json:"email"`
+	}
 
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid input: "+err.Error(), "VALIDATION_ERROR"))
+		return
+	}
+
+	// Check if username exists
+	var existing User
+	if db.Where("username = ?", input.Username).First(&existing).Error == nil {
+		c.JSON(http.StatusConflict, errorResponse("Username already exists", "USERNAME_EXISTS"))
+		return
+	}
+
+	// Create user
+	user := User{
+		Username: sanitizeString(input.Username),
+		Password: hashPassword(input.Password),
+		Email:    sanitizeString(input.Email),
+		APIKey:   generateAPIKey(),
+	}
+
+	if err := db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to create user", "INTERNAL_ERROR"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, successResponse(map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		},
+		"api_key": user.APIKey,
+	}))
+}
+
+func loginHandler(c *gin.Context) {
+	var input struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid input", "VALIDATION_ERROR"))
+		return
+	}
+
+	var user User
+	if err := db.Where("username = ?", input.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, errorResponse("Invalid credentials", "INVALID_CREDENTIALS"))
+		return
+	}
+
+	if !checkPassword(input.Password, user.Password) {
+		c.JSON(http.StatusUnauthorized, errorResponse("Invalid credentials", "INVALID_CREDENTIALS"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		},
+		"api_key": user.APIKey,
+	}))
+}
+
+func verifyHandler(c *gin.Context) {
+	user := c.MustGet("user").(User)
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
+		"valid": true,
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		},
+	}))
+}
+
+// Todo handlers
 func getTodos(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var todos []Todo
-	db.Order("pinned DESC, created_at DESC").Preload("Category").Find(&todos)
+	db.Where("user_id = ?", userID).Order("pinned DESC, created_at DESC").Preload("Category").Find(&todos)
 	c.JSON(http.StatusOK, successResponse(todos))
 }
 
 func createTodo(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var todo Todo
 	if err := c.ShouldBindJSON(&todo); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate content
 	todo.Content = sanitizeString(todo.Content)
 	if todo.Content == "" {
-		c.JSON(http.StatusBadRequest, errorResponse("Content is required"))
+		c.JSON(http.StatusBadRequest, errorResponse("Content is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate priority
 	if !validatePriority(todo.Priority) {
 		todo.Priority = "medium"
 	}
 
+	todo.UserID = userID
 	db.Create(&todo)
 	db.Preload("Category").First(&todo, todo.ID)
 	c.JSON(http.StatusCreated, successResponse(todo))
 }
 
 func updateTodo(c *gin.Context) {
-	var todo Todo
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if err := db.First(&todo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, errorResponse("Todo not found"))
+
+	var todo Todo
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Todo not found", "NOT_FOUND"))
 		return
 	}
 
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate content if provided
 	if content, ok := updates["content"].(string); ok {
 		content = sanitizeString(content)
 		if content == "" {
-			c.JSON(http.StatusBadRequest, errorResponse("Content cannot be empty"))
+			c.JSON(http.StatusBadRequest, errorResponse("Content cannot be empty", "VALIDATION_ERROR"))
 			return
 		}
 		updates["content"] = content
 	}
 
-	// Validate priority if provided
 	if priority, ok := updates["priority"].(string); ok {
 		if !validatePriority(priority) {
-			c.JSON(http.StatusBadRequest, errorResponse("Invalid priority. Must be high, medium, or low"))
+			c.JSON(http.StatusBadRequest, errorResponse("Invalid priority", "VALIDATION_ERROR"))
 			return
 		}
 	}
@@ -318,105 +431,106 @@ func updateTodo(c *gin.Context) {
 }
 
 func deleteTodo(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if db.Delete(&Todo{}, id).RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, errorResponse("Todo not found"))
+
+	result := db.Where("id = ? AND user_id = ?", id, userID).Delete(&Todo{})
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("Todo not found", "NOT_FOUND"))
 		return
 	}
-	c.JSON(http.StatusOK, successResponse(gin.H{"message": "Todo deleted"}))
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Todo deleted"}))
 }
 
 func toggleTodo(c *gin.Context) {
-	var todo Todo
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if err := db.First(&todo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, errorResponse("Todo not found"))
+
+	var todo Todo
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Todo not found", "NOT_FOUND"))
 		return
 	}
+
 	todo.Done = !todo.Done
 	db.Save(&todo)
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
 func pinTodo(c *gin.Context) {
-	var todo Todo
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if err := db.First(&todo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, errorResponse("Todo not found"))
+
+	var todo Todo
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Todo not found", "NOT_FOUND"))
 		return
 	}
+
 	todo.Pinned = !todo.Pinned
 	db.Save(&todo)
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
 // Countdown handlers
-
 func getCountdowns(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var countdowns []Countdown
-	db.Order("pinned DESC, target_date ASC").Find(&countdowns)
+	db.Where("user_id = ?", userID).Order("pinned DESC, target_date ASC").Find(&countdowns)
 	c.JSON(http.StatusOK, successResponse(countdowns))
 }
 
 func createCountdown(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var countdown Countdown
 	if err := c.ShouldBindJSON(&countdown); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate title
 	countdown.Title = sanitizeString(countdown.Title)
 	if countdown.Title == "" {
-		c.JSON(http.StatusBadRequest, errorResponse("Title is required"))
+		c.JSON(http.StatusBadRequest, errorResponse("Title is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate target date
 	if countdown.TargetDate.IsZero() {
-		c.JSON(http.StatusBadRequest, errorResponse("Target date is required"))
+		c.JSON(http.StatusBadRequest, errorResponse("Target date is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate priority
 	if !validatePriority(countdown.Priority) {
 		countdown.Priority = "medium"
 	}
 
+	countdown.UserID = userID
 	db.Create(&countdown)
 	c.JSON(http.StatusCreated, successResponse(countdown))
 }
 
 func updateCountdown(c *gin.Context) {
-	var countdown Countdown
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if err := db.First(&countdown, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, errorResponse("Countdown not found"))
+
+	var countdown Countdown
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&countdown).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Countdown not found", "NOT_FOUND"))
 		return
 	}
 
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate title if provided
 	if title, ok := updates["title"].(string); ok {
 		title = sanitizeString(title)
 		if title == "" {
-			c.JSON(http.StatusBadRequest, errorResponse("Title cannot be empty"))
+			c.JSON(http.StatusBadRequest, errorResponse("Title cannot be empty", "VALIDATION_ERROR"))
 			return
 		}
 		updates["title"] = title
-	}
-
-	// Validate priority if provided
-	if priority, ok := updates["priority"].(string); ok {
-		if !validatePriority(priority) {
-			c.JSON(http.StatusBadRequest, errorResponse("Invalid priority. Must be high, medium, or low"))
-			return
-		}
 	}
 
 	db.Model(&countdown).Updates(updates)
@@ -424,64 +538,68 @@ func updateCountdown(c *gin.Context) {
 }
 
 func deleteCountdown(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if db.Delete(&Countdown{}, id).RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, errorResponse("Countdown not found"))
+
+	result := db.Where("id = ? AND user_id = ?", id, userID).Delete(&Countdown{})
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("Countdown not found", "NOT_FOUND"))
 		return
 	}
-	c.JSON(http.StatusOK, successResponse(gin.H{"message": "Countdown deleted"}))
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Countdown deleted"}))
 }
 
 // Category handlers
-
 func getCategories(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var categories []Category
-	db.Find(&categories)
+	db.Where("user_id = ?", userID).Find(&categories)
 	c.JSON(http.StatusOK, successResponse(categories))
 }
 
 func createCategory(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	var category Category
 	if err := c.ShouldBindJSON(&category); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate name
 	category.Name = sanitizeString(category.Name)
 	if category.Name == "" {
-		c.JSON(http.StatusBadRequest, errorResponse("Name is required"))
+		c.JSON(http.StatusBadRequest, errorResponse("Name is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate color (basic hex color check)
 	if category.Color == "" {
-		category.Color = "#3B82F6"
+		category.Color = "#6366f1"
 	}
 
+	category.UserID = userID
 	db.Create(&category)
 	c.JSON(http.StatusCreated, successResponse(category))
 }
 
 func updateCategory(c *gin.Context) {
-	var category Category
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	if err := db.First(&category, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, errorResponse("Category not found"))
+
+	var category Category
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&category).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Category not found", "NOT_FOUND"))
 		return
 	}
 
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: "+err.Error()))
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	// Validate name if provided
 	if name, ok := updates["name"].(string); ok {
 		name = sanitizeString(name)
 		if name == "" {
-			c.JSON(http.StatusBadRequest, errorResponse("Name cannot be empty"))
+			c.JSON(http.StatusBadRequest, errorResponse("Name cannot be empty", "VALIDATION_ERROR"))
 			return
 		}
 		updates["name"] = name
@@ -492,40 +610,43 @@ func updateCategory(c *gin.Context) {
 }
 
 func deleteCategory(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
-	db.Model(&Todo{}).Where("category_id = ?", id).Update("category_id", nil)
-	if db.Delete(&Category{}, id).RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, errorResponse("Category not found"))
+
+	// Unlink todos from this category
+	db.Model(&Todo{}).Where("category_id = ? AND user_id = ?", id, userID).Update("category_id", nil)
+
+	result := db.Where("id = ? AND user_id = ?", id, userID).Delete(&Category{})
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("Category not found", "NOT_FOUND"))
 		return
 	}
-	c.JSON(http.StatusOK, successResponse(gin.H{"message": "Category deleted"}))
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Category deleted"}))
 }
 
 // Stats handler
-
 func getStats(c *gin.Context) {
-	var totalTodos int64
-	var doneTodos int64
+	userID := c.MustGet("userID").(uint)
+
+	var totalTodos, doneTodos int64
 	var highPriority, mediumPriority, lowPriority int64
 	var pinnedTodos, pinnedCountdowns int64
 	var totalCountdowns int64
 
-	db.Model(&Todo{}).Count(&totalTodos)
-	db.Model(&Todo{}).Where("done = ?", true).Count(&doneTodos)
-	db.Model(&Todo{}).Where("priority = ? AND done = ?", "high", false).Count(&highPriority)
-	db.Model(&Todo{}).Where("priority = ? AND done = ?", "medium", false).Count(&mediumPriority)
-	db.Model(&Todo{}).Where("priority = ? AND done = ?", "low", false).Count(&lowPriority)
-	db.Model(&Todo{}).Where("pinned = ?", true).Count(&pinnedTodos)
-	db.Model(&Countdown{}).Where("pinned = ?", true).Count(&pinnedCountdowns)
-	db.Model(&Countdown{}).Count(&totalCountdowns)
+	db.Model(&Todo{}).Where("user_id = ?", userID).Count(&totalTodos)
+	db.Model(&Todo{}).Where("user_id = ? AND done = ?", userID, true).Count(&doneTodos)
+	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "high", false).Count(&highPriority)
+	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "medium", false).Count(&mediumPriority)
+	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "low", false).Count(&lowPriority)
+	db.Model(&Todo{}).Where("user_id = ? AND pinned = ?", userID, true).Count(&pinnedTodos)
+	db.Model(&Countdown{}).Where("user_id = ? AND pinned = ?", userID, true).Count(&pinnedCountdowns)
+	db.Model(&Countdown{}).Where("user_id = ?", userID).Count(&totalCountdowns)
 
 	now := time.Now()
 	sevenDaysLater := now.AddDate(0, 0, 7)
-	var dueSoon int64
-	db.Model(&Countdown{}).Where("target_date >= ? AND target_date <= ?", now, sevenDaysLater).Count(&dueSoon)
-
-	var overdue int64
-	db.Model(&Countdown{}).Where("target_date < ?", now).Count(&overdue)
+	var dueSoon, overdue int64
+	db.Model(&Countdown{}).Where("user_id = ? AND target_date >= ? AND target_date <= ?", userID, now, sevenDaysLater).Count(&dueSoon)
+	db.Model(&Countdown{}).Where("user_id = ? AND target_date < ?", userID, now).Count(&overdue)
 
 	completionRate := 0.0
 	if totalTodos > 0 {
@@ -546,10 +667,10 @@ func getStats(c *gin.Context) {
 			Pinned: int(pinnedTodos),
 		},
 		Countdowns: CountdownStats{
-			Total:    int(totalCountdowns),
-			DueSoon:  int(dueSoon),
-			Overdue:  int(overdue),
-			Pinned:   int(pinnedCountdowns),
+			Total:   int(totalCountdowns),
+			DueSoon: int(dueSoon),
+			Overdue: int(overdue),
+			Pinned:  int(pinnedCountdowns),
 		},
 	}
 
