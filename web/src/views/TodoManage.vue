@@ -236,7 +236,7 @@ const editingTodo = ref(null)
 const enableDueDate = ref(false)
 const showAddCategory = ref(false)
 const newCategoryName = ref('')
-const newCategoryColor = ref('#6366f1')
+const newCategoryColor = ref(generateRandomColor())
 const selectMode = ref(false)
 const selectedIds = ref(new Set())
 
@@ -368,6 +368,15 @@ function closeModal() {
 
 async function createCategory() {
   if (!newCategoryName.value.trim()) return
+  
+  // Check for duplicate category name
+  const isDuplicate = categories.value.some(
+    c => c.name.toLowerCase() === newCategoryName.value.trim().toLowerCase()
+  )
+  if (isDuplicate) {
+    alert('A category with this name already exists')
+    return
+  }
   
   await categoryStore.createCategory({
     name: newCategoryName.value.trim(),

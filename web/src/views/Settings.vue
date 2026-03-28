@@ -102,6 +102,19 @@ const categoryStore = useCategoryStore()
 const todoStore = useTodoStore()
 const { categories } = storeToRefs(categoryStore)
 
+// Color palette for categories
+const categoryColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
+
+// Generate random color different from existing categories
+function generateRandomColor() {
+  const usedColors = categories.value.map(c => c.color)
+  const available = categoryColors.filter(c => !usedColors.includes(c))
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)]
+  }
+  return categoryColors[Math.floor(Math.random() * categoryColors.length)]
+}
+
 const theme = ref('dark')
 const newCategory = ref({ name: '', color: '#6366f1' })
 const apiKey = ref('')
@@ -135,8 +148,18 @@ function handleLogout() {
 
 async function addCategory() {
   if (!newCategory.value.name.trim()) return
+  
+  // Check for duplicate category name
+  const isDuplicate = categories.value.some(
+    c => c.name.toLowerCase() === newCategory.value.name.trim().toLowerCase()
+  )
+  if (isDuplicate) {
+    alert('A category with this name already exists')
+    return
+  }
+  
   await categoryStore.createCategory(newCategory.value)
-  newCategory.value = { name: '', color: '#6366f1' }
+  newCategory.value = { name: '', color: generateRandomColor() }
 }
 
 function getCategoryUsage(catId) {
