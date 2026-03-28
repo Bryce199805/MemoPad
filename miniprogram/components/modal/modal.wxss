@@ -1,19 +1,11 @@
 @keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Mask */
@@ -23,7 +15,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 999;
   display: flex;
   align-items: flex-end;
@@ -40,7 +32,7 @@
 /* Bottom Sheet */
 .modal-sheet {
   width: 100%;
-  background: var(--bg-elevated);
+  background: #1a1a1a;
   border-radius: 32rpx 32rpx 0 0;
   padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
@@ -59,7 +51,7 @@
 .modal-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 /* Body */
@@ -82,7 +74,7 @@
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  border-radius: var(--radius-md);
+  border-radius: 12rpx;
   font-size: 28rpx;
   font-weight: 500;
 }
@@ -92,9 +84,8 @@
 }
 
 .modal-btn--cancel {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  background: #2a2a2a;
+  color: #a0a0a0;
 }
 
 .modal-btn--confirm {

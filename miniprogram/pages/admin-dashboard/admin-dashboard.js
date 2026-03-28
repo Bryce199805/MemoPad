@@ -33,7 +33,7 @@ Page({
     }
     if (!user || user.role !== 'admin') {
       wx.showToast({ title: 'Admin only', icon: 'none' })
-      setTimeout(() => wx.switchTab({ url: '/pages/dashboard/dashboard' }), 1000)
+      setTimeout(() => wx.reLaunch({ url: '/pages/login/login' }), 1000)
       return
     }
     this.setData({ user })

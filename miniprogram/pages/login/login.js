@@ -11,14 +11,24 @@ Page({
   },
 
   onLoad() {
+    const user = auth.getUser()
     if (auth.isLoggedIn()) {
-      wx.switchTab({ url: '/pages/dashboard/dashboard' })
+      if (user && user.role === 'admin') {
+        wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
+      } else {
+        wx.switchTab({ url: '/pages/dashboard/dashboard' })
+      }
     }
   },
 
   onShow() {
+    const user = auth.getUser()
     if (auth.isLoggedIn()) {
-      wx.switchTab({ url: '/pages/dashboard/dashboard' })
+      if (user && user.role === 'admin') {
+        wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
+      } else {
+        wx.switchTab({ url: '/pages/dashboard/dashboard' })
+      }
     }
   },
 
