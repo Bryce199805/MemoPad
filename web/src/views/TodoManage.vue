@@ -236,7 +236,6 @@ const editingTodo = ref(null)
 const enableDueDate = ref(false)
 const showAddCategory = ref(false)
 const newCategoryName = ref('')
-const newCategoryColor = ref(generateRandomColor())
 const selectMode = ref(false)
 const selectedIds = ref(new Set())
 
@@ -252,6 +251,9 @@ function generateRandomColor() {
   }
   return categoryColors[Math.floor(Math.random() * categoryColors.length)]
 }
+
+// Initialize after function definition
+const newCategoryColor = ref('#6366f1')
 
 const form = ref({
   content: '',
