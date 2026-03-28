@@ -38,7 +38,7 @@
         <picker mode="selector" range="{{colorLabels}}" value="{{newCatColorIdx}}" bindchange="onCatColorChange">
           <view class="cat-color-picker">
             <view class="cat-color-dot" style="background: {{newCatColor}}"></view>
-            <text class="chip-arrow">&#x25BE;</text>
+            <text class="chip-arrow">▾</text>
           </view>
         </picker>
         <view class="cat-add-btn" bind:tap="onAddCategory">
@@ -56,7 +56,7 @@
           <view class="cat-item-right">
             <text class="cat-item-count">{{catUsageCounts[item.id] || 0}}</text>
             <view class="cat-delete-btn" bind:tap="onDeleteCategory" data-id="{{item.id}}" data-name="{{item.name}}">
-              <text class="cat-delete-icon">&#x2715;</text>
+              <text class="cat-delete-icon">✕</text>
             </view>
           </view>
         </view>
@@ -64,7 +64,7 @@
 
       <view wx:if="{{categories.length === 0}}" class="cat-empty">
         <empty-state
-          icon="&#x1F3F7;"
+          icon="🏷"
           title="No categories"
           description="Add your first category above">
         </empty-state>

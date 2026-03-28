@@ -1,38 +1,31 @@
-const api = require('./utils/api')
-
 App({
   globalData: {
-    baseUrl: 'https://your-server.com',  // User needs to change this
-    apiKey: '',
-    user: null,
-    isAuthenticated: false
+    baseUrl: ''  // e.g. http://1.2.3.4 or https://your-domain.com
   },
 
   onLaunch() {
-    const apiKey = wx.getStorageSync('memo_api_key')
-    if (apiKey) {
-      this.globalData.apiKey = apiKey
-      this.verifyAuth()
+    // Sync baseUrl to storage for api.js to use
+    let url = this.globalData.baseUrl
+    if (url && url.endsWith('/')) {
+      url = url.slice(0, -1)
     }
-  },
+    if (url) {
+      wx.setStorageSync('memo_base_url', url)
+    }
 
-  async verifyAuth() {
-    try {
-      const res = await api.get('/api/auth/verify')
-      if (res.success) {
-        this.globalData.user = res.data.user
-        this.globalData.isAuthenticated = true
-      } else {
-        this.globalData.isAuthenticated = false
-        wx.removeStorageSync('memo_api_key')
-      }
-    } catch (e) {
-      this.globalData.isAuthenticated = false
+    // Auto verify if already logged in
+    if (wx.getStorageSync('memo_api_key')) {
+      const api = require('./utils/api')
+      api.get('/api/auth/verify').then(res => {
+        if (res.success) {
+          wx.setStorageSync('memo_user', JSON.stringify(res.data.user))
+        }
+      }).catch(() => {})
     }
   },
 
   loginRequired() {
-    if (!this.globalData.isAuthenticated) {
+    if (!wx.getStorageSync('memo_api_key')) {
       wx.redirectTo({ url: '/pages/login/login' })
       return false
     }

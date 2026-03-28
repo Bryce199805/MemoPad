@@ -53,35 +53,35 @@ module.exports = {
     <!-- Filters Bar -->
     <view class="filters-bar glass-card">
       <view class="search-box">
-        <text class="search-icon">&#x1F50D;</text>
+        <text class="search-icon">🔍</text>
         <input class="search-input" placeholder="Search tasks..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
-        <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">&#x2715;</text>
+        <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
       </view>
 
       <view class="filter-row">
         <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
           <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
             <text>{{priorityLabels[filterPriority]}}</text>
-            <text class="chip-arrow">&#x25BE;</text>
+            <text class="chip-arrow">▾</text>
           </view>
         </picker>
 
         <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
           <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
             <text>{{statusLabels[filterStatus]}}</text>
-            <text class="chip-arrow">&#x25BE;</text>
+            <text class="chip-arrow">▾</text>
           </view>
         </picker>
 
         <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
           <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
             <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
-            <text class="chip-arrow">&#x25BE;</text>
+            <text class="chip-arrow">▾</text>
           </view>
         </picker>
 
         <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
-          <text>{{selectMode ? '&#x2715;' : '&#x2611;'}}</text>
+          <text>{{selectMode ? '✕' : '☑'}}</text>
           <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
         </view>
       </view>
@@ -102,7 +102,7 @@ module.exports = {
       <!-- Pinned Section -->
       <view class="section" wx:if="{{pinned.length > 0}}">
         <view class="section-header">
-          <text class="section-icon">&#x1F4CC;</text>
+          <text class="section-icon">📌</text>
           <text class="section-title-text">Pinned</text>
           <badge text="{{pinned.length}}" variant="info"></badge>
         </view>
@@ -110,7 +110,7 @@ module.exports = {
           <view wx:for="{{pinned}}" wx:key="id" class="todo-row">
             <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
               <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
-                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">✓</text>
               </view>
             </view>
             <todo-item todo="{{item}}" categories="{{categories}}"
@@ -131,7 +131,7 @@ module.exports = {
           <view wx:for="{{regular}}" wx:key="id" class="todo-row">
             <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
               <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
-                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">✓</text>
               </view>
             </view>
             <todo-item todo="{{item}}" categories="{{categories}}"
@@ -145,7 +145,7 @@ module.exports = {
       <!-- Completed Section -->
       <view class="section completed-section" wx:if="{{completed.length > 0}}">
         <view class="section-header section-header--completed" bind:tap="onToggleCompleted">
-          <text class="collapse-arrow {{completedExpanded ? 'collapse-arrow--open' : ''}}">&#x25B6;</text>
+          <text class="collapse-arrow {{completedExpanded ? 'collapse-arrow--open' : ''}}">▶</text>
           <text class="section-title-text section-title-text--muted">Completed</text>
           <badge text="{{completed.length}}" variant="success"></badge>
           <view class="clear-btn" catchtap="onClearCompleted">
@@ -156,7 +156,7 @@ module.exports = {
           <view wx:for="{{completed}}" wx:key="id" class="todo-row">
             <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
               <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
-                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">✓</text>
               </view>
             </view>
             <todo-item todo="{{item}}" categories="{{categories}}"
@@ -170,7 +170,7 @@ module.exports = {
       <!-- Empty State: no tasks at all -->
       <view class="empty-full" wx:if="{{todos.length === 0}}">
         <empty-state
-          icon="&#x1F4CB;"
+          icon="📋"
           title="No tasks yet"
           description="Tap + to add your first task">
         </empty-state>
@@ -179,7 +179,7 @@ module.exports = {
       <!-- Empty State: filters produced no results -->
       <view class="empty-full" wx:if="{{todos.length > 0 && pinned.length === 0 && regular.length === 0 && (completed.length === 0 || !completedExpanded)}}">
         <empty-state
-          icon="&#x1F50D;"
+          icon="🔍"
           title="No matches"
           description="Try adjusting your filters">
         </empty-state>
@@ -203,7 +203,7 @@ module.exports = {
                 <view class="priority-dot priority-dot--{{form.priority}}"></view>
                 <text class="form-picker-text">{{formPriorityLabel}}</text>
               </view>
-              <text class="chip-arrow">&#x25BE;</text>
+              <text class="chip-arrow">▾</text>
             </view>
           </picker>
         </view>
@@ -215,7 +215,7 @@ module.exports = {
               <view class="form-picker-left">
                 <text class="form-picker-text">{{formCategoryName}}</text>
               </view>
-              <text class="chip-arrow">&#x25BE;</text>
+              <text class="chip-arrow">▾</text>
             </view>
           </picker>
         </view>
@@ -231,13 +231,13 @@ module.exports = {
             <picker mode="date" value="{{form.dueDate}}" bindchange="onFormDateChange">
               <view class="form-picker form-picker--half">
                 <text class="form-picker-text">{{form.dueDate || 'Select date'}}</text>
-                <text class="chip-arrow">&#x25BE;</text>
+                <text class="chip-arrow">▾</text>
               </view>
             </picker>
             <picker mode="time" value="{{form.dueTime}}" bindchange="onFormTimeChange">
               <view class="form-picker form-picker--half">
                 <text class="form-picker-text">{{form.dueTime || 'Select time'}}</text>
-                <text class="chip-arrow">&#x25BE;</text>
+                <text class="chip-arrow">▾</text>
               </view>
             </picker>
           </view>

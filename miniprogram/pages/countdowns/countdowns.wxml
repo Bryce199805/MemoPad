@@ -35,15 +35,15 @@
 
     <!-- Search Bar -->
     <view class="search-box glass-card">
-      <text class="search-icon">&#x1F50D;</text>
+      <text class="search-icon">🔍</text>
       <input class="search-input" placeholder="Search countdowns..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
-      <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">&#x2715;</text>
+      <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
     </view>
 
     <!-- Pinned Section -->
     <view class="section" wx:if="{{pinned.length > 0}}">
       <view class="section-header">
-        <text class="section-icon">&#x1F4CC;</text>
+        <text class="section-icon">📌</text>
         <text class="section-title-text">Pinned</text>
         <badge text="{{pinned.length}}" variant="info"></badge>
       </view>
@@ -70,7 +70,7 @@
     <!-- Empty State -->
     <view class="empty-full" wx:if="{{countdowns.length === 0}}">
       <empty-state
-        icon="&#x23F0;"
+        icon="⏰"
         title="No countdowns yet"
         description="Tap + to add your first countdown">
       </empty-state>
@@ -78,7 +78,7 @@
 
     <view class="empty-full" wx:if="{{countdowns.length > 0 && pinned.length === 0 && unpinned.length === 0}}">
       <empty-state
-        icon="&#x1F50D;"
+        icon="🔍"
         title="No matches"
         description="Try adjusting your search">
       </empty-state>
@@ -99,13 +99,13 @@
             <picker mode="date" value="{{form.targetDate}}" bindchange="onFormDateChange">
               <view class="form-picker form-picker--half">
                 <text class="form-picker-text">{{form.targetDate || 'Select date'}}</text>
-                <text class="chip-arrow">&#x25BE;</text>
+                <text class="chip-arrow">▾</text>
               </view>
             </picker>
             <picker mode="time" value="{{form.targetTime}}" bindchange="onFormTimeChange">
               <view class="form-picker form-picker--half">
                 <text class="form-picker-text">{{form.targetTime || 'Select time'}}</text>
-                <text class="chip-arrow">&#x25BE;</text>
+                <text class="chip-arrow">▾</text>
               </view>
             </picker>
           </view>
@@ -119,7 +119,7 @@
                 <view class="priority-dot priority-dot--{{form.priority}}"></view>
                 <text class="form-picker-text">{{formPriorityLabel}}</text>
               </view>
-              <text class="chip-arrow">&#x25BE;</text>
+              <text class="chip-arrow">▾</text>
             </view>
           </picker>
         </view>
