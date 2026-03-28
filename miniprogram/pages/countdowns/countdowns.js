@@ -9,6 +9,7 @@ Page({
     pinned: [],
     unpinned: [],
     searchText: '',
+    priorityFilter: '',
     upcomingCount: 0,
     dueSoonCount: 0,
     overdueCount: 0,
@@ -71,10 +72,14 @@ Page({
   },
 
   applyFilter() {
-    const { countdowns, searchText } = this.data
-    const filtered = searchText
-      ? countdowns.filter(c => c.title.toLowerCase().indexOf(searchText.toLowerCase()) !== -1)
-      : countdowns
+    const { countdowns, searchText, priorityFilter } = this.data
+    let filtered = countdowns
+    if (searchText) {
+      filtered = filtered.filter(c => c.title.toLowerCase().indexOf(searchText.toLowerCase()) !== -1)
+    }
+    if (priorityFilter) {
+      filtered = filtered.filter(c => c.priority === priorityFilter)
+    }
     const pinned = filtered.filter(c => c.pinned)
     const unpinned = filtered.filter(c => !c.pinned)
     this.setData({ pinned, unpinned })
@@ -87,6 +92,12 @@ Page({
 
   onSearchClear() {
     this.setData({ searchText: '' })
+    this.applyFilter()
+  },
+
+  onPriorityFilter(e) {
+    const priority = e.currentTarget.dataset.priority
+    this.setData({ priorityFilter: priority })
     this.applyFilter()
   },
 

@@ -21,7 +21,7 @@ import (
 // RateLimiter - simple in-memory rate limiter
 type RateLimiter struct {
 	requests map[string]*ClientInfo
-	mu       sync.RWMutex
+	mu       sync.Mutex
 }
 
 type ClientInfo struct {
@@ -35,26 +35,34 @@ var rateLimiter = &RateLimiter{
 	requests: make(map[string]*ClientInfo),
 }
 
+var rateLimitStop = make(chan struct{})
+
 // Cleanup old entries periodically
-func init() {
+func startRateLimitCleanup() {
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
-		for range ticker.C {
-			rateLimiter.mu.Lock()
-			now := time.Now()
-			for ip, info := range rateLimiter.requests {
-				// Remove entries older than 1 hour
-				if now.Sub(info.firstSeen) > time.Hour {
-					delete(rateLimiter.requests, ip)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				rateLimiter.mu.Lock()
+				now := time.Now()
+				for ip, info := range rateLimiter.requests {
+					// Remove entries older than 1 hour
+					if now.Sub(info.firstSeen) > time.Hour {
+						delete(rateLimiter.requests, ip)
+					}
+					// Unblock after 5 minutes
+					if info.blocked && now.Sub(info.blockedAt) > 5*time.Minute {
+						info.blocked = false
+						info.count = 0
+						info.firstSeen = now
+					}
 				}
-				// Unblock after 5 minutes
-				if info.blocked && now.Sub(info.blockedAt) > 5*time.Minute {
-					info.blocked = false
-					info.count = 0
-					info.firstSeen = now
-				}
+				rateLimiter.mu.Unlock()
+			case <-rateLimitStop:
+				return
 			}
-			rateLimiter.mu.Unlock()
 		}
 	}()
 }
@@ -120,6 +128,11 @@ func rateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 // loginRateLimitMiddleware - stricter limits for auth endpoints
 func loginRateLimitMiddleware() gin.HandlerFunc {
 	return rateLimitMiddleware(10, time.Minute) // 10 login attempts per minute
+}
+
+// registerRateLimitMiddleware - limits for registration
+func registerRateLimitMiddleware() gin.HandlerFunc {
+	return rateLimitMiddleware(5, time.Hour) // 5 registrations per hour per IP
 }
 
 // Response represents standard API response
@@ -259,6 +272,9 @@ func main() {
 	// Initialize admin user from environment variables
 	initAdminUser()
 
+	// Start rate limit cleanup goroutine
+	startRateLimitCleanup()
+
 	fmt.Println("========================================")
 	fmt.Println("       MemoPad API Server v2.1")
 	fmt.Println("========================================")
@@ -281,7 +297,7 @@ func main() {
 	// Auth routes (no auth required)
 	auth := r.Group("/api/auth")
 	{
-		auth.POST("/register", loginRateLimitMiddleware(), registerHandler)
+		auth.POST("/register", registerRateLimitMiddleware(), registerHandler)
 		auth.POST("/login", loginRateLimitMiddleware(), loginHandler)
 		auth.GET("/verify", authMiddleware(), verifyHandler)
 		auth.GET("/check-admin", checkAdminHandler) // 检查是否已配置管理员

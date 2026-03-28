@@ -45,6 +45,24 @@
       <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
     </view>
 
+    <!-- Priority Filter -->
+    <view class="filter-row">
+      <view class="filter-chips">
+        <view class="filter-chip {{priorityFilter === '' ? 'filter-chip--active' : ''}}" bind:tap="onPriorityFilter" data-priority="">
+          <text>All</text>
+        </view>
+        <view class="filter-chip {{priorityFilter === 'high' ? 'filter-chip--active' : ''}} filter-chip--high" bind:tap="onPriorityFilter" data-priority="high">
+          <text>High</text>
+        </view>
+        <view class="filter-chip {{priorityFilter === 'medium' ? 'filter-chip--active' : ''}} filter-chip--medium" bind:tap="onPriorityFilter" data-priority="medium">
+          <text>Medium</text>
+        </view>
+        <view class="filter-chip {{priorityFilter === 'low' ? 'filter-chip--active' : ''}} filter-chip--low" bind:tap="onPriorityFilter" data-priority="low">
+          <text>Low</text>
+        </view>
+      </view>
+    </view>
+
     <!-- Select Mode Actions -->
     <view class="select-actions" wx:if="{{selectMode}}">
       <text class="select-count">{{selectedIds.length}} selected</text>

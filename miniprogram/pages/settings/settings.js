@@ -13,7 +13,6 @@ Page({
     newCatColorIdx: 0,
     newCatColor: '#6366f1',
     colorLabels: ['Indigo', 'Purple', 'Pink', 'Red', 'Amber', 'Green', 'Cyan', 'Blue', 'Gray'],
-    baseUrl: '',
     editingCatId: null,
     editingCatName: '',
     editingCatColorIdx: 0,
@@ -25,10 +24,7 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
-    this.setData({
-      user: auth.getUser(),
-      baseUrl: wx.getStorageSync('memo_base_url') || ''
-    })
+    this.setData({ user: auth.getUser() })
     this.fetchData()
   },
 
@@ -200,12 +196,6 @@ Page({
         }
       }
     })
-  },
-
-  onBaseUrlInput(e) {
-    const url = e.detail.value.replace(/\/+$/, '')
-    this.setData({ baseUrl: url })
-    wx.setStorageSync('memo_base_url', url)
   },
 
   onGoAdmin() {

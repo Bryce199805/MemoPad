@@ -179,6 +179,53 @@
   padding: 8rpx;
 }
 
+/* Priority Filter */
+.filter-row {
+  margin-bottom: 24rpx;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 12rpx;
+}
+
+.filter-chip {
+  padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  color: #737373;
+}
+
+.filter-chip:active {
+  opacity: 0.8;
+}
+
+.filter-chip--active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.filter-chip--high.filter-chip--active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.filter-chip--medium.filter-chip--active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.filter-chip--low.filter-chip--active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
 /* Sections */
 .section {
   margin-bottom: 24rpx;
