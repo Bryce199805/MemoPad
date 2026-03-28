@@ -686,6 +686,7 @@ onMounted(() => countdownStore.fetchCountdowns())
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
+  color-scheme: dark;
 }
 
 .form-group input:focus,
