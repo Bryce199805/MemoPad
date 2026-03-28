@@ -6,6 +6,7 @@ Page({
     loading: true,
     user: null,
     activeTab: 'dashboard',
+    expandedCard: '',
     users: [],
     tickets: [],
     ticketFilter: '',
@@ -79,7 +80,21 @@ Page({
   // Tab switching
   onSwitchTab(e) {
     const tab = e.currentTarget.dataset.tab
-    this.setData({ activeTab: tab })
+    this.setData({ activeTab: tab, expandedCard: '' })
+  },
+
+  // Stat card tap - show preview
+  onStatTap(e) {
+    const card = e.currentTarget.dataset.card
+    if (this.data.expandedCard === card) {
+      this.setData({ expandedCard: '' })
+    } else {
+      this.setData({ expandedCard: card })
+    }
+  },
+
+  onCollapsePreview() {
+    this.setData({ expandedCard: '' })
   },
 
   // Ticket filter

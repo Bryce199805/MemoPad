@@ -16,7 +16,6 @@ module.exports = {
   <!-- Loading -->
   <view class="loading-skeleton" wx:if="{{loading}}">
     <view class="skeleton-header"></view>
-    <view class="skeleton-tabs"></view>
     <view class="skeleton-card" style="height: 300rpx;"></view>
   </view>
 
@@ -30,141 +29,185 @@ module.exports = {
       <text class="logout-btn" bind:tap="onLogout">Logout</text>
     </view>
 
-    <!-- Tabs -->
-    <view class="admin-tabs">
-      <view class="admin-tab {{activeTab === 'dashboard' ? 'admin-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="dashboard">
-        <text class="tab-icon">📊</text>
-        <text class="tab-text">Dashboard</text>
-      </view>
-      <view class="admin-tab {{activeTab === 'users' ? 'admin-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="users">
-        <text class="tab-icon">👥</text>
-        <text class="tab-text">Users</text>
-      </view>
-      <view class="admin-tab {{activeTab === 'tickets' ? 'admin-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="tickets">
-        <text class="tab-icon">🎫</text>
-        <text class="tab-text">Tickets</text>
-      </view>
-      <view class="admin-tab {{activeTab === 'config' ? 'admin-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="config">
-        <text class="tab-icon">⚙</text>
-        <text class="tab-text">Config</text>
-      </view>
-    </view>
+    <!-- Content Area -->
+    <view class="admin-content">
+      <!-- Dashboard Tab -->
+      <view class="tab-content" wx:if="{{activeTab === 'dashboard'}}">
+        <view class="stats-grid">
+          <view class="stat-card {{expandedCard === 'users' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="users">
+            <text class="stat-value">{{stats.totalUsers}}</text>
+            <text class="stat-label">Total Users</text>
+          </view>
+          <view class="stat-card {{expandedCard === 'active' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="active">
+            <text class="stat-value stat-value--success">{{stats.activeUsers}}</text>
+            <text class="stat-label">Active Users</text>
+          </view>
+          <view class="stat-card {{expandedCard === 'tickets' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="tickets">
+            <text class="stat-value stat-value--warning">{{stats.openTickets}}</text>
+            <text class="stat-label">Open Tickets</text>
+          </view>
+          <view class="stat-card {{expandedCard === 'all-tickets' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="all-tickets">
+            <text class="stat-value">{{stats.totalTickets}}</text>
+            <text class="stat-label">Total Tickets</text>
+          </view>
+        </view>
 
-    <!-- Dashboard Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'dashboard'}}">
-      <view class="stats-grid">
-        <view class="stat-card" bind:tap="onSwitchTab" data-tab="users">
-          <text class="stat-value">{{stats.totalUsers}}</text>
-          <text class="stat-label">Total Users</text>
+        <!-- Expanded Preview -->
+        <view class="expanded-section" wx:if="{{expandedCard}}">
+          <view class="expanded-header">
+            <text class="expanded-title">{{expandedCard === 'users' ? 'Users' : expandedCard === 'active' ? 'Active Users' : expandedCard === 'tickets' ? 'Open Tickets' : 'All Tickets'}}</text>
+            <text class="expanded-collapse" bind:tap="onCollapsePreview">Collapse</text>
+          </view>
+          <view class="expanded-list">
+            <!-- Users Preview -->
+            <block wx:if="{{expandedCard === 'users' || expandedCard === 'active'}}">
+              <view class="user-card" wx:for="{{users}}" wx:key="id" wx:if="{{expandedCard === 'users' || !item.disabled}}">
+                <view class="user-row">
+                  <view class="user-avatar">
+                    <text class="avatar-letter">{{item.username[0].toUpperCase()}}</text>
+                  </view>
+                  <view class="user-info">
+                    <view class="user-name-row">
+                      <text class="user-name">{{item.username}}</text>
+                      <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
+                      <text class="badge badge--disabled" wx:if="{{item.disabled}}">Disabled</text>
+                    </view>
+                    <text class="user-email">{{item.email || 'No email'}}</text>
+                  </view>
+                </view>
+              </view>
+            </block>
+            <!-- Tickets Preview -->
+            <block wx:else>
+              <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{expandedCard === 'all-tickets' || item.status === 'open' || item.status === 'in_progress'}}" bind:tap="onViewTicket" data-id="{{item.id}}">
+                <view class="ticket-header">
+                  <text class="ticket-title">{{item.title}}</text>
+                  <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
+                </view>
+                <view class="ticket-meta">
+                  <text class="ticket-user">{{item.username}}</text>
+                  <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
+                </view>
+              </view>
+            </block>
+          </view>
         </view>
-        <view class="stat-card" bind:tap="onSwitchTab" data-tab="users">
-          <text class="stat-value stat-value--success">{{stats.activeUsers}}</text>
-          <text class="stat-label">Active Users</text>
-        </view>
-        <view class="stat-card" bind:tap="onSwitchTab" data-tab="tickets">
-          <text class="stat-value stat-value--warning">{{stats.openTickets}}</text>
-          <text class="stat-label">Open Tickets</text>
-        </view>
-        <view class="stat-card" bind:tap="onSwitchTab" data-tab="tickets">
-          <text class="stat-value">{{stats.totalTickets}}</text>
-          <text class="stat-label">Total Tickets</text>
+
+        <!-- Recent Tickets -->
+        <view class="section" wx:if="{{tickets.length > 0 && !expandedCard}}">
+          <text class="section-title">Recent Tickets</text>
+          <view class="ticket-list">
+            <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
+              <view class="ticket-header">
+                <text class="ticket-title">{{item.title}}</text>
+                <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
+              </view>
+              <view class="ticket-meta">
+                <text class="ticket-user">{{item.username}}</text>
+                <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
+              </view>
+            </view>
+          </view>
         </view>
       </view>
 
-      <!-- Recent Tickets -->
-      <view class="section" wx:if="{{tickets.length > 0}}">
-        <text class="section-title">Recent Tickets</text>
+      <!-- Users Tab -->
+      <view class="tab-content" wx:if="{{activeTab === 'users'}}">
+        <view class="user-list">
+          <view class="user-card" wx:for="{{users}}" wx:key="id">
+            <view class="user-row">
+              <view class="user-avatar">
+                <text class="avatar-letter">{{item.username[0].toUpperCase()}}</text>
+              </view>
+              <view class="user-info">
+                <view class="user-name-row">
+                  <text class="user-name">{{item.username}}</text>
+                  <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
+                  <text class="badge badge--disabled" wx:if="{{item.disabled}}">Disabled</text>
+                </view>
+                <text class="user-email">{{item.email || 'No email'}}</text>
+                <text class="user-stats">{{item.todo_count}} tasks · {{item.countdown_count}} countdowns</text>
+              </view>
+            </view>
+            <view class="user-actions" wx:if="{{item.id !== user.id}}">
+              <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">Enable</text>
+              <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">Disable</text>
+              <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">Delete</text>
+            </view>
+            <view class="user-actions user-actions--self" wx:else>
+              <text class="self-label">(You)</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Tickets Tab -->
+      <view class="tab-content" wx:if="{{activeTab === 'tickets'}}">
+        <!-- Filter -->
+        <view class="filter-row">
+          <picker mode="selector" range="{{['All', 'Open', 'In Progress', 'Resolved', 'Closed']}}" value="{{ticketFilter ? ['open', 'in_progress', 'resolved', 'closed'].indexOf(ticketFilter) + 1 : 0}}" bindchange="onTicketFilterChange">
+            <view class="filter-picker">
+              <text>{{ticketFilter ? utils.statusLabel(ticketFilter) : 'All Tickets'}}</text>
+              <text class="chip-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
         <view class="ticket-list">
-          <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
+          <view class="ticket-card" wx:for="{{filteredTickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
             <view class="ticket-header">
               <text class="ticket-title">{{item.title}}</text>
               <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
             </view>
-            <view class="ticket-meta">
+            <view class="ticket-body">
+              <text class="ticket-desc">{{item.description || 'No description'}}</text>
+            </view>
+            <view class="ticket-footer">
               <text class="ticket-user">{{item.username}}</text>
               <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
             </view>
           </view>
         </view>
-      </view>
-    </view>
 
-    <!-- Users Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'users'}}">
-      <view class="user-list">
-        <view class="user-card" wx:for="{{users}}" wx:key="id">
-          <view class="user-row">
-            <view class="user-avatar">
-              <text class="avatar-letter">{{item.username[0].toUpperCase()}}</text>
+        <view class="empty-state" wx:if="{{filteredTickets.length === 0}}">
+          <text class="empty-text">No tickets found</text>
+        </view>
+      </view>
+
+      <!-- Config Tab -->
+      <view class="tab-content" wx:if="{{activeTab === 'config'}}">
+        <view class="config-card">
+          <view class="config-row">
+            <view class="config-info">
+              <text class="config-label">User Registration</text>
+              <text class="config-desc">Allow new users to register accounts</text>
             </view>
-            <view class="user-info">
-              <view class="user-name-row">
-                <text class="user-name">{{item.username}}</text>
-                <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
-                <text class="badge badge--disabled" wx:if="{{item.disabled}}">Disabled</text>
-              </view>
-              <text class="user-email">{{item.email || 'No email'}}</text>
-              <text class="user-stats">{{item.todo_count}} tasks · {{item.countdown_count}} countdowns</text>
-            </view>
-          </view>
-          <view class="user-actions" wx:if="{{item.id !== user.id}}">
-            <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">Enable</text>
-            <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">Disable</text>
-            <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">Delete</text>
-          </view>
-          <view class="user-actions user-actions--self" wx:else>
-            <text class="self-label">(You)</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- Tickets Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'tickets'}}">
-      <!-- Filter -->
-      <view class="filter-row">
-        <picker mode="selector" range="{{['All', 'Open', 'In Progress', 'Resolved', 'Closed']}}" value="{{ticketFilter ? ['open', 'in_progress', 'resolved', 'closed'].indexOf(ticketFilter) + 1 : 0}}" bindchange="onTicketFilterChange">
-          <view class="filter-picker">
-            <text>{{ticketFilter ? utils.statusLabel(ticketFilter) : 'All Tickets'}}</text>
-            <text class="chip-arrow">▾</text>
-          </view>
-        </picker>
-      </view>
-      <view class="ticket-list">
-        <view class="ticket-card" wx:for="{{filteredTickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
-          <view class="ticket-header">
-            <text class="ticket-title">{{item.title}}</text>
-            <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
-          </view>
-          <view class="ticket-body">
-            <text class="ticket-desc">{{item.description || 'No description'}}</text>
-          </view>
-          <view class="ticket-footer">
-            <text class="ticket-user">{{item.username}}</text>
-            <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
+            <switch checked="{{config.registration_enabled}}" bindchange="onToggleRegistration" color="#f59e0b" />
           </view>
         </view>
       </view>
 
-      <view class="empty-state" wx:if="{{filteredTickets.length === 0}}">
-        <text class="empty-text">No tickets found</text>
-      </view>
+      <view class="safe-bottom"></view>
     </view>
 
-    <!-- Config Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'config'}}">
-      <view class="config-card">
-        <view class="config-row">
-          <view class="config-info">
-            <text class="config-label">User Registration</text>
-            <text class="config-desc">Allow new users to register accounts</text>
-          </view>
-          <switch checked="{{config.registration_enabled}}" bindchange="onToggleRegistration" color="#14b8a6" />
-        </view>
+    <!-- Bottom Tabs -->
+    <view class="bottom-tabs">
+      <view class="bottom-tab {{activeTab === 'dashboard' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="dashboard">
+        <text class="bottom-tab-icon">📊</text>
+        <text class="bottom-tab-text">Dashboard</text>
+      </view>
+      <view class="bottom-tab {{activeTab === 'users' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="users">
+        <text class="bottom-tab-icon">👥</text>
+        <text class="bottom-tab-text">Users</text>
+      </view>
+      <view class="bottom-tab {{activeTab === 'tickets' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="tickets">
+        <text class="bottom-tab-icon">🎫</text>
+        <text class="bottom-tab-text">Tickets</text>
+      </view>
+      <view class="bottom-tab {{activeTab === 'config' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="config">
+        <text class="bottom-tab-icon">⚙</text>
+        <text class="bottom-tab-text">Config</text>
       </view>
     </view>
-
-    <view class="safe-bottom"></view>
   </block>
 
   <!-- Ticket Detail Modal -->
