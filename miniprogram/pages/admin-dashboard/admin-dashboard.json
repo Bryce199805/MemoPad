@@ -1,7 +1,8 @@
 {
   "usingComponents": {
     "badge": "../../components/badge/badge",
-    "empty-state": "../../components/empty-state/empty-state"
+    "empty-state": "../../components/empty-state/empty-state",
+    "modal": "../../components/modal/modal"
   },
   "navigationBarTitleText": "Admin Dashboard",
   "enablePullDownRefresh": true
