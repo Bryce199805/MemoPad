@@ -759,6 +759,61 @@ func deleteCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Category deleted"}))
 }
 
+// Ticket handlers
+func getTickets(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	var tickets []Ticket
+	db.Where("user_id = ?", userID).Order("created_at DESC").Find(&tickets)
+	c.JSON(http.StatusOK, successResponse(tickets))
+}
+
+func getTicket(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&ticket).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(ticket))
+}
+
+func createTicket(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var input struct {
+		Title       string `json:"title" binding:"required,min=3,max=200"`
+		Description string `json:"description" binding:"max=2000"`
+		Priority    string `json:"priority"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid input: "+err.Error(), "VALIDATION_ERROR"))
+		return
+	}
+
+	if !validatePriority(input.Priority) {
+		input.Priority = "medium"
+	}
+
+	ticket := Ticket{
+		UserID:      userID,
+		Title:       sanitizeString(input.Title),
+		Description: sanitizeString(input.Description),
+		Priority:    input.Priority,
+		Status:      "open",
+	}
+
+	if err := db.Create(&ticket).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to create ticket", "INTERNAL_ERROR"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, successResponse(ticket))
+}
+
 // Stats handler
 func getStats(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
@@ -810,6 +865,105 @@ func getStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, successResponse(stats))
+}
+
+// Admin ticket handlers
+func adminGetTickets(c *gin.Context) {
+	status := c.Query("status")
+	
+	var tickets []Ticket
+	query := db.Preload("User").Order("created_at DESC")
+	
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	
+	query.Find(&tickets)
+
+	// Return user info without sensitive data
+	type TicketWithUser struct {
+		ID          uint      `json:"id"`
+		UserID      uint      `json:"user_id"`
+		Username    string    `json:"username"`
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+		Priority    string    `json:"priority"`
+		Status      string    `json:"status"`
+		Reply       string    `json:"reply"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+	}
+
+	var result []TicketWithUser
+	for _, t := range tickets {
+		username := ""
+		if t.User != nil {
+			username = t.User.Username
+		}
+		result = append(result, TicketWithUser{
+			ID:          t.ID,
+			UserID:      t.UserID,
+			Username:    username,
+			Title:       t.Title,
+			Description: t.Description,
+			Priority:    t.Priority,
+			Status:      t.Status,
+			Reply:       t.Reply,
+			CreatedAt:   t.CreatedAt,
+			UpdatedAt:   t.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, successResponse(result))
+}
+
+func adminUpdateTicket(c *gin.Context) {
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.First(&ticket, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	var updates map[string]interface{}
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
+		return
+	}
+
+	// Validate status
+	if status, ok := updates["status"].(string); ok {
+		validStatuses := map[string]bool{"open": true, "in_progress": true, "resolved": true, "closed": true}
+		if !validStatuses[status] {
+			c.JSON(http.StatusBadRequest, errorResponse("Invalid status", "VALIDATION_ERROR"))
+			return
+		}
+	}
+
+	// Validate priority
+	if priority, ok := updates["priority"].(string); ok {
+		if !validatePriority(priority) {
+			c.JSON(http.StatusBadRequest, errorResponse("Invalid priority", "VALIDATION_ERROR"))
+			return
+		}
+	}
+
+	db.Model(&ticket).Updates(updates)
+	db.First(&ticket, id)
+	c.JSON(http.StatusOK, successResponse(ticket))
+}
+
+func adminDeleteTicket(c *gin.Context) {
+	id := c.Param("id")
+
+	result := db.Delete(&Ticket{}, id)
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Ticket deleted"}))
 }
 
 // ==================== Admin Functions ====================

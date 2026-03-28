@@ -42,6 +42,10 @@
       <button :class="['tab', { active: activeTab === 'users' }]" @click="activeTab = 'users'">
         Users
       </button>
+      <button :class="['tab', { active: activeTab === 'tickets' }]" @click="activeTab = 'tickets'">
+        Tickets
+        <span v-if="openTicketCount > 0" class="badge">{{ openTicketCount }}</span>
+      </button>
       <button :class="['tab', { active: activeTab === 'config' }]" @click="activeTab = 'config'">
         System Config
       </button>
@@ -116,6 +120,61 @@
       </Card>
     </div>
 
+    <!-- Tickets Tab -->
+    <div v-if="activeTab === 'tickets'" class="tab-content">
+      <Card>
+        <template #header>Tickets</template>
+        <div class="ticket-filters">
+          <select v-model="ticketFilter" @change="fetchTickets">
+            <option value="">All Tickets</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="tickets-container">
+          <div v-for="ticket in tickets" :key="ticket.id" class="ticket-item">
+            <div class="ticket-header">
+              <div class="ticket-title-row">
+                <span class="ticket-title">{{ ticket.title }}</span>
+                <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
+              </div>
+              <div class="ticket-meta">
+                <span class="ticket-user">by {{ ticket.username }}</span>
+                <span class="ticket-priority" :class="ticket.priority">{{ ticket.priority }}</span>
+                <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
+              </div>
+            </div>
+            <div v-if="ticket.description" class="ticket-description">
+              {{ ticket.description }}
+            </div>
+            <div v-if="ticket.reply" class="ticket-reply">
+              <strong>Reply:</strong> {{ ticket.reply }}
+            </div>
+            <div class="ticket-actions">
+              <select v-model="ticket.status" @change="updateTicketStatus(ticket)" class="status-select">
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+              <Button variant="secondary" size="sm" @click="openReplyModal(ticket)">
+                Reply
+              </Button>
+              <Button variant="danger" size="sm" @click="deleteTicket(ticket)">
+                Delete
+              </Button>
+            </div>
+          </div>
+          <div v-if="tickets.length === 0 && !ticketsLoading" class="empty-text">
+            No tickets found
+          </div>
+          <div v-if="ticketsLoading" class="loading-text">Loading...</div>
+        </div>
+      </Card>
+    </div>
+
     <!-- Config Tab -->
     <div v-if="activeTab === 'config'" class="tab-content">
       <Card>
@@ -134,11 +193,33 @@
         </div>
       </Card>
     </div>
+
+    <!-- Reply Modal -->
+    <Teleport to="body">
+      <div v-if="showReplyModal" class="modal-overlay" @click.self="showReplyModal = false">
+        <div class="modal glass-card">
+          <div class="modal-header">
+            <h2>Reply to Ticket</h2>
+            <button class="close-btn" @click="showReplyModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Your Reply</label>
+              <textarea v-model="replyText" rows="5" placeholder="Enter your reply..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <Button variant="secondary" @click="showReplyModal = false">Cancel</Button>
+            <Button variant="primary" @click="submitReply">Submit Reply</Button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Badge from '../components/ui/Badge.vue'
@@ -150,6 +231,12 @@ const stats = ref({})
 const config = ref({
   registration_enabled: true
 })
+const tickets = ref([])
+const ticketsLoading = ref(false)
+const ticketFilter = ref('')
+const showReplyModal = ref(false)
+const replyTicket = ref(null)
+const replyText = ref('')
 
 async function fetchUsers() {
   try {
@@ -176,6 +263,69 @@ async function fetchConfig() {
   } catch (e) {
     console.error('Failed to fetch config:', e)
   }
+}
+
+async function fetchTickets() {
+  ticketsLoading.value = true
+  try {
+    const params = ticketFilter.value ? { status: ticketFilter.value } : {}
+    const res = await api.get('/api/admin/tickets', { params })
+    tickets.value = res.data.data || []
+  } catch (e) {
+    console.error('Failed to fetch tickets:', e)
+  } finally {
+    ticketsLoading.value = false
+  }
+}
+
+const openTicketCount = computed(() => {
+  return tickets.value.filter(t => t.status === 'open' || t.status === 'in_progress').length
+})
+
+async function updateTicketStatus(ticket) {
+  try {
+    await api.put(`/api/admin/tickets/${ticket.id}`, { status: ticket.status })
+  } catch (e) {
+    alert(e.response?.data?.error || 'Failed to update ticket')
+    fetchTickets()
+  }
+}
+
+function openReplyModal(ticket) {
+  replyTicket.value = ticket
+  replyText.value = ticket.reply || ''
+  showReplyModal.value = true
+}
+
+async function submitReply() {
+  if (!replyTicket.value) return
+  try {
+    await api.put(`/api/admin/tickets/${replyTicket.value.id}`, { reply: replyText.value })
+    showReplyModal.value = false
+    fetchTickets()
+  } catch (e) {
+    alert(e.response?.data?.error || 'Failed to submit reply')
+  }
+}
+
+async function deleteTicket(ticket) {
+  if (!confirm(`Delete ticket "${ticket.title}"?`)) return
+  try {
+    await api.delete(`/api/admin/tickets/${ticket.id}`)
+    fetchTickets()
+  } catch (e) {
+    alert(e.response?.data?.error || 'Failed to delete ticket')
+  }
+}
+
+function formatStatus(status) {
+  const map = {
+    'open': 'Open',
+    'in_progress': 'In Progress',
+    'resolved': 'Resolved',
+    'closed': 'Closed'
+  }
+  return map[status] || status
 }
 
 async function updateConfig() {
@@ -224,6 +374,7 @@ onMounted(() => {
   fetchUsers()
   fetchStats()
   fetchConfig()
+  fetchTickets()
 })
 </script>
 
@@ -461,5 +612,225 @@ onMounted(() => {
   .data-table td:nth-child(4) {
     display: none;
   }
+}
+
+/* Tickets */
+.ticket-filters {
+  margin-bottom: 16px;
+}
+
+.ticket-filters select {
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.tickets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticket-item {
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.ticket-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ticket-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ticket-status {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ticket-status.open {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.ticket-status.in_progress {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+
+.ticket-status.resolved {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.ticket-status.closed {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6b7280;
+}
+
+.ticket-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ticket-priority {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.ticket-priority.high {
+  color: #ef4444;
+}
+
+.ticket-priority.medium {
+  color: #eab308;
+}
+
+.ticket-priority.low {
+  color: #6b7280;
+}
+
+.ticket-description {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.ticket-reply {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.ticket-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-select {
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.empty-text, .loading-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px;
+}
+
+/* Badge */
+.badge {
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal {
+  width: 100%;
+  max-width: 500px;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  padding: 4px;
+}
+
+.close-btn:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-body .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-body .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.modal-body textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
