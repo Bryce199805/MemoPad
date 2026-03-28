@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import AdminLayout from '../layouts/AdminLayout.vue'
 
 const routes = [
   {
@@ -36,13 +37,35 @@ const routes = [
     path: '/feedback',
     name: 'Feedback',
     component: () => import('../views/Feedback.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresUser: true }
   },
+  // Admin routes - separate layout from user routes
   {
     path: '/admin',
-    name: 'Admin',
-    component: () => import('../views/AdminPanel.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    component: AdminLayout,
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/AdminDashboard.vue')
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('../views/admin/AdminUsers.vue')
+      },
+      {
+        path: 'tickets',
+        name: 'AdminTickets',
+        component: () => import('../views/admin/AdminTickets.vue')
+      },
+      {
+        path: 'config',
+        name: 'AdminConfig',
+        component: () => import('../views/admin/AdminConfig.vue')
+      }
+    ]
   }
 ]
 
@@ -69,6 +92,12 @@ router.beforeEach(async (to, from, next) => {
   // Check if route requires admin
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next({ name: 'Dashboard' })
+    return
+  }
+
+  // Check if route requires user (non-admin)
+  if (to.meta.requiresUser && authStore.isAdmin) {
+    next({ name: 'AdminDashboard' })
     return
   }
 
