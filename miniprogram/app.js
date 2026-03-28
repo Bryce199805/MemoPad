@@ -1,9 +1,17 @@
 App({
   globalData: {
-    baseUrl: ''  // 服务器地址
+    baseUrl: ''  // 从 config.js 读取
   },
 
   onLaunch() {
+    // Load config
+    try {
+      const config = require('./config.js')
+      this.globalData.baseUrl = config.baseUrl || ''
+    } catch (e) {
+      console.warn('config.js not found, using empty baseUrl')
+    }
+
     // Sync baseUrl to storage for api.js to use
     let url = this.globalData.baseUrl
     if (url && url.endsWith('/')) {

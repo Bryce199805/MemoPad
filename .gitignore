@@ -19,6 +19,9 @@ api_key.txt
 .env.*
 !.env.example
 
+# Miniprogram config (contains domain)
+miniprogram/config.js
+
 # IDE
 .idea/
 .vscode/
