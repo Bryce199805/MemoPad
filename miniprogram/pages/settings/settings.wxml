@@ -50,16 +50,38 @@
       <!-- Category List -->
       <view class="cat-list" wx:if="{{categories.length > 0}}">
         <view class="cat-item" wx:for="{{categories}}" wx:key="id">
-          <view class="cat-item-left">
-            <view class="cat-color-dot cat-color-dot--sm" style="background: {{item.color || '#6366f1'}}"></view>
-            <text class="cat-item-name">{{item.name}}</text>
-          </view>
-          <view class="cat-item-right">
-            <text class="cat-item-count">{{catUsageCounts[item.id] || 0}}</text>
-            <view class="cat-delete-btn" bind:tap="onDeleteCategory" data-id="{{item.id}}" data-name="{{item.name}}">
-              <text class="cat-delete-icon">✕</text>
+          <!-- Edit Mode -->
+          <block wx:if="{{editingCatId === item.id}}">
+            <input class="cat-name-input cat-edit-input" placeholder="Category name" placeholder-style="color: var(--text-muted)"
+              value="{{editingCatName}}" bindinput="onEditingCatNameInput" maxlength="30" />
+            <picker mode="selector" range="{{colorLabels}}" value="{{editingCatColorIdx}}" bindchange="onEditingCatColorChange">
+              <view class="cat-color-picker">
+                <view class="cat-color-dot" style="background: {{editingCatColor}}"></view>
+                <text class="chip-arrow">▾</text>
+              </view>
+            </picker>
+            <view class="cat-edit-btns">
+              <view class="cat-save-btn" bind:tap="onSaveEditCategory">
+                <text class="cat-save-text">Save</text>
+              </view>
+              <view class="cat-cancel-btn" bind:tap="onCancelEditCategory">
+                <text class="cat-cancel-text">Cancel</text>
+              </view>
             </view>
-          </view>
+          </block>
+          <!-- View Mode -->
+          <block wx:else>
+            <view class="cat-item-left" bind:tap="onEditCategory" data-id="{{item.id}}">
+              <view class="cat-color-dot cat-color-dot--sm" style="background: {{item.color || '#6366f1'}}"></view>
+              <text class="cat-item-name">{{item.name}}</text>
+            </view>
+            <view class="cat-item-right">
+              <text class="cat-item-count">{{catUsageCounts[item.id] || 0}}</text>
+              <view class="cat-delete-btn" bind:tap="onDeleteCategory" data-id="{{item.id}}" data-name="{{item.name}}">
+                <text class="cat-delete-icon">✕</text>
+              </view>
+            </view>
+          </block>
         </view>
       </view>
 

@@ -175,6 +175,37 @@ Page({
     })
   },
 
+  async onBatchComplete() {
+    const { selectedIds, todos } = this.data
+    if (selectedIds.length === 0) return
+    const toComplete = selectedIds.filter(id => {
+      const todo = todos.find(t => t.id === id)
+      return todo && !todo.done
+    })
+    if (toComplete.length === 0) {
+      wx.showToast({ title: 'All selected tasks are already completed', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: 'Complete Tasks',
+      content: 'Mark ' + toComplete.length + ' selected task(s) as completed?',
+      success: async (res) => {
+        if (!res.confirm) return
+        wx.showLoading({ title: 'Completing...' })
+        try {
+          await Promise.all(toComplete.map(id => api.patch('/api/todos/' + id + '/toggle')))
+          this.setData({ selectMode: false, selectedIds: [] })
+          this.fetchData(true)
+          wx.hideLoading()
+          wx.showToast({ title: 'Completed', icon: 'success' })
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
+        }
+      }
+    })
+  },
+
   onSearchClear() {
     this.setData({ searchText: '' })
     this.applyFilter()
@@ -273,10 +304,8 @@ Page({
 
   async onTodoPin(e) {
     const id = e.detail.id
-    const todo = this.data.todos.find(t => t.id === id)
-    if (!todo) return
     try {
-      await api.patch('/api/todos/' + id, { pinned: !todo.pinned })
+      await api.patch('/api/todos/' + id + '/pin')
       this.fetchData(true)
     } catch (err) {
       wx.showToast({ title: 'Failed', icon: 'none' })

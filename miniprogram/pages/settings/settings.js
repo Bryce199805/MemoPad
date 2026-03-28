@@ -13,7 +13,11 @@ Page({
     newCatColorIdx: 0,
     newCatColor: '#6366f1',
     colorLabels: ['Indigo', 'Purple', 'Pink', 'Red', 'Amber', 'Green', 'Cyan', 'Blue', 'Gray'],
-    baseUrl: ''
+    baseUrl: '',
+    editingCatId: null,
+    editingCatName: '',
+    editingCatColorIdx: 0,
+    editingCatColor: '#6366f1'
   },
 
   onShow() {
@@ -125,6 +129,62 @@ Page({
         }
       }
     })
+  },
+
+  // ---- Category Edit ----
+
+  onEditCategory(e) {
+    const id = e.currentTarget.dataset.id
+    const cat = this.data.categories.find(c => c.id === id)
+    if (!cat) return
+    const colorIdx = this.data.colorOptions.indexOf(cat.color)
+    this.setData({
+      editingCatId: id,
+      editingCatName: cat.name,
+      editingCatColorIdx: colorIdx !== -1 ? colorIdx : 0,
+      editingCatColor: cat.color
+    })
+  },
+
+  onEditingCatNameInput(e) {
+    this.setData({ editingCatName: e.detail.value })
+  },
+
+  onEditingCatColorChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({
+      editingCatColorIdx: idx,
+      editingCatColor: this.data.colorOptions[idx]
+    })
+  },
+
+  async onSaveEditCategory() {
+    const { editingCatId, editingCatName, editingCatColor, categories } = this.data
+    const name = editingCatName.trim()
+    if (!name) {
+      wx.showToast({ title: 'Please enter a name', icon: 'none' })
+      return
+    }
+    // Check for duplicate name (excluding current category)
+    if (categories.some(c => c.id !== editingCatId && c.name.toLowerCase() === name.toLowerCase())) {
+      wx.showToast({ title: 'Category already exists', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: 'Saving...' })
+    try {
+      await api.put('/api/categories/' + editingCatId, { name, color: editingCatColor })
+      this.setData({ editingCatId: null, editingCatName: '' })
+      this.fetchData()
+      wx.hideLoading()
+      wx.showToast({ title: 'Saved', icon: 'success' })
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: 'Failed', icon: 'none' })
+    }
+  },
+
+  onCancelEditCategory() {
+    this.setData({ editingCatId: null, editingCatName: '' })
   },
 
   // ---- Logout ----

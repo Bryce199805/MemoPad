@@ -220,6 +220,10 @@
   color: var(--danger);
 }
 
+.select-action-btn--success {
+  color: var(--success);
+}
+
 /* Sections */
 .section {
   margin-bottom: 24rpx;

@@ -12,6 +12,8 @@ Page({
     upcomingCount: 0,
     dueSoonCount: 0,
     overdueCount: 0,
+    selectMode: false,
+    selectedIds: [],
     showFormModal: false,
     formTitle: 'Add Countdown',
     editingId: null,
@@ -86,6 +88,59 @@ Page({
   onSearchClear() {
     this.setData({ searchText: '' })
     this.applyFilter()
+  },
+
+  // ---- Select Mode ----
+
+  onToggleSelectMode() {
+    this.setData({
+      selectMode: !this.data.selectMode,
+      selectedIds: []
+    })
+  },
+
+  onToggleSelect(e) {
+    const id = e.currentTarget.dataset.id
+    const { selectedIds } = this.data
+    const idx = selectedIds.indexOf(id)
+    if (idx === -1) {
+      this.setData({ selectedIds: [...selectedIds, id] })
+    } else {
+      this.setData({ selectedIds: selectedIds.filter((_, i) => i !== idx) })
+    }
+  },
+
+  onSelectAll() {
+    const { countdowns } = this.data
+    const allIds = countdowns.map(c => c.id)
+    this.setData({ selectedIds: allIds })
+  },
+
+  onDeselectAll() {
+    this.setData({ selectedIds: [] })
+  },
+
+  async onBatchDelete() {
+    const { selectedIds } = this.data
+    if (selectedIds.length === 0) return
+    wx.showModal({
+      title: 'Delete Countdowns',
+      content: 'Delete ' + selectedIds.length + ' selected countdown(s)?',
+      success: async (res) => {
+        if (!res.confirm) return
+        wx.showLoading({ title: 'Deleting...' })
+        try {
+          await Promise.all(selectedIds.map(id => api.del('/api/countdowns/' + id)))
+          this.setData({ selectMode: false, selectedIds: [] })
+          this.fetchData(true)
+          wx.hideLoading()
+          wx.showToast({ title: 'Deleted', icon: 'success' })
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
+        }
+      }
+    })
   },
 
   // ---- CRUD ----

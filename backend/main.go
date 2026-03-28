@@ -1105,6 +1105,17 @@ func adminDisableUser(c *gin.Context) {
 		return
 	}
 
+	// Check if target is admin
+	var targetUser User
+	if err := db.First(&targetUser, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		return
+	}
+	if targetUser.Role == "admin" {
+		c.JSON(http.StatusBadRequest, errorResponse("Cannot disable admin user", "INVALID_OPERATION"))
+		return
+	}
+
 	result := db.Model(&User{}).Where("id = ?", id).Update("disabled", true)
 	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
@@ -1136,10 +1147,22 @@ func adminDeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Check if target is admin
+	var targetUser User
+	if err := db.First(&targetUser, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		return
+	}
+	if targetUser.Role == "admin" {
+		c.JSON(http.StatusBadRequest, errorResponse("Cannot delete admin user", "INVALID_OPERATION"))
+		return
+	}
+
 	// Delete user's data first
 	db.Where("user_id = ?", id).Delete(&Todo{})
 	db.Where("user_id = ?", id).Delete(&Countdown{})
 	db.Where("user_id = ?", id).Delete(&Category{})
+	db.Where("user_id = ?", id).Delete(&Ticket{})
 
 	// Delete user
 	result := db.Delete(&User{}, id)

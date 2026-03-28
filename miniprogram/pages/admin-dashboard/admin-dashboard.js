@@ -8,11 +8,16 @@ Page({
     activeTab: 'dashboard',
     users: [],
     tickets: [],
+    ticketFilter: '',
+    filteredTickets: [],
     stats: {
       totalUsers: 0,
       activeUsers: 0,
       openTickets: 0,
       totalTickets: 0
+    },
+    config: {
+      registration_enabled: true
     },
     // Detail modal
     showTicketDetail: false,

@@ -11,9 +11,14 @@
     <!-- Header -->
     <view class="countdowns-header">
       <text class="countdowns-title">Countdowns</text>
-      <view class="add-btn" bind:tap="onAddCountdown">
-        <text class="add-icon">+</text>
-        <text class="add-text">Add Countdown</text>
+      <view class="header-btns">
+        <view class="select-btn {{selectMode ? 'select-btn--active' : ''}}" bind:tap="onToggleSelectMode">
+          <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
+        </view>
+        <view class="add-btn" bind:tap="onAddCountdown">
+          <text class="add-icon">+</text>
+          <text class="add-text">Add</text>
+        </view>
       </view>
     </view>
 
@@ -40,6 +45,16 @@
       <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
     </view>
 
+    <!-- Select Mode Actions -->
+    <view class="select-actions" wx:if="{{selectMode}}">
+      <text class="select-count">{{selectedIds.length}} selected</text>
+      <view class="select-btns">
+        <text class="select-action-btn" bind:tap="onSelectAll">All</text>
+        <text class="select-action-btn" bind:tap="onDeselectAll">None</text>
+        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">Delete</text>
+      </view>
+    </view>
+
     <!-- Pinned Section -->
     <view class="section" wx:if="{{pinned.length > 0}}">
       <view class="section-header">
@@ -48,9 +63,16 @@
         <badge text="{{pinned.length}}" variant="info"></badge>
       </view>
       <view class="countdown-list">
-        <countdown-card wx:for="{{pinned}}" wx:key="id" countdown="{{item}}"
-          bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
-        </countdown-card>
+        <view wx:for="{{pinned}}" wx:key="id" class="countdown-row">
+          <view wx:if="{{selectMode}}" class="countdown-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
+            <view class="countdown-checkbox {{selectedIds.indexOf(item.id) !== -1 ? 'countdown-checkbox--checked' : ''}}">
+              <text wx:if="{{selectedIds.indexOf(item.id) !== -1}}" class="countdown-check-icon">✓</text>
+            </view>
+          </view>
+          <countdown-card countdown="{{item}}"
+            bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+          </countdown-card>
+        </view>
       </view>
     </view>
 
@@ -61,9 +83,16 @@
         <badge text="{{unpinned.length}}" variant="info"></badge>
       </view>
       <view class="countdown-list">
-        <countdown-card wx:for="{{unpinned}}" wx:key="id" countdown="{{item}}"
-          bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
-        </countdown-card>
+        <view wx:for="{{unpinned}}" wx:key="id" class="countdown-row">
+          <view wx:if="{{selectMode}}" class="countdown-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
+            <view class="countdown-checkbox {{selectedIds.indexOf(item.id) !== -1 ? 'countdown-checkbox--checked' : ''}}">
+              <text wx:if="{{selectedIds.indexOf(item.id) !== -1}}" class="countdown-check-icon">✓</text>
+            </view>
+          </view>
+          <countdown-card countdown="{{item}}"
+            bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+          </countdown-card>
+        </view>
       </view>
     </view>
 

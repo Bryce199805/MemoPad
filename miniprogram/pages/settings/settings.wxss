@@ -249,6 +249,59 @@
   color: var(--danger);
 }
 
+/* Category Edit */
+.cat-edit-input {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  padding: 24rpx 20rpx;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 26rpx;
+  box-sizing: border-box;
+}
+
+.cat-edit-btns {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.cat-save-btn {
+  padding: 16rpx 24rpx;
+  background: var(--success);
+  border-radius: var(--radius-md);
+}
+
+.cat-save-btn:active {
+  opacity: 0.85;
+}
+
+.cat-save-text {
+  font-size: 24rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.cat-cancel-btn {
+  padding: 16rpx 24rpx;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.cat-cancel-btn:active {
+  opacity: 0.7;
+}
+
+.cat-cancel-text {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 .cat-empty {
   padding: 16rpx 0;
 }

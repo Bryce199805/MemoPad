@@ -68,6 +68,26 @@
   letter-spacing: -1rpx;
 }
 
+.header-btns {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.select-btn {
+  padding: 16rpx 24rpx;
+  background: var(--bg-tertiary);
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.select-btn--active {
+  background: var(--danger);
+  color: #fff;
+}
+
 .add-btn {
   display: flex;
   align-items: center;
@@ -278,4 +298,70 @@
 .date-time-row {
   display: flex;
   gap: 16rpx;
+}
+
+/* Select Mode */
+.select-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  margin-bottom: 24rpx;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.select-count {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.select-btns {
+  display: flex;
+  gap: 24rpx;
+}
+
+.select-action-btn {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.select-action-btn:active {
+  opacity: 0.6;
+}
+
+.select-action-btn--danger {
+  color: var(--danger);
+}
+
+/* Countdown Row with Checkbox */
+.countdown-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.countdown-checkbox-wrap {
+  flex-shrink: 0;
+}
+
+.countdown-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid var(--border-color);
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-checkbox--checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.countdown-check-icon {
+  color: #fff;
+  font-size: 24rpx;
 }

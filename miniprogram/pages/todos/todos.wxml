@@ -95,6 +95,7 @@ module.exports = {
       <view class="select-btns">
         <text class="select-action-btn" bind:tap="onSelectAll">All</text>
         <text class="select-action-btn" bind:tap="onDeselectAll">None</text>
+        <text class="select-action-btn select-action-btn--success" bind:tap="onBatchComplete">Complete</text>
         <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">Delete</text>
       </view>
     </view>
