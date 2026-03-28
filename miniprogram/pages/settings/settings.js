@@ -49,7 +49,7 @@ Page({
       this.setData({ categories, todos, catUsageCounts })
       // Set default color to one not already used
       const usedColors = categories.map(c => c.color)
-      const nextColorIdx = this.data.colorOptions.findIndex(c => !usedColors.includes(c))
+      const nextColorIdx = this.data.colorOptions.findIndex(c => usedColors.indexOf(c) === -1)
       if (nextColorIdx !== -1) {
         this.setData({ newCatColorIdx: nextColorIdx, newCatColor: this.data.colorOptions[nextColorIdx] })
       }
