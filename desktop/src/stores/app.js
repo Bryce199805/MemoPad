@@ -51,7 +51,8 @@ export const useAppStore = defineStore('app', () => {
     try {
       const url = serverUrl.value.replace(/\/+$/, '')
       const res = await fetch(`${url}/api/auth/verify`, {
-        headers: getHeaders()
+        headers: getHeaders(),
+        signal: AbortSignal.timeout(10000)
       })
 
       if (res.ok) {
@@ -89,7 +90,8 @@ export const useAppStore = defineStore('app', () => {
       const res = await fetch(`${url}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
+        signal: AbortSignal.timeout(10000)
       })
       if (res.ok) {
         const data = await res.json()
@@ -132,8 +134,8 @@ export const useAppStore = defineStore('app', () => {
     try {
       const url = serverUrl.value.replace(/\/+$/, '')
       const [todosRes, cdsRes] = await Promise.all([
-        fetch(`${url}/api/todos`, { headers: getHeaders() }),
-        fetch(`${url}/api/countdowns`, { headers: getHeaders() })
+        fetch(`${url}/api/todos`, { headers: getHeaders(), signal: AbortSignal.timeout(10000) }),
+        fetch(`${url}/api/countdowns`, { headers: getHeaders(), signal: AbortSignal.timeout(10000) })
       ])
 
       if (todosRes.ok && cdsRes.ok) {

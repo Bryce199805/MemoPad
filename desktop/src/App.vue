@@ -249,7 +249,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useAppStore } from './stores/app'
 import TodoCard from './components/TodoCard.vue'
@@ -282,13 +282,18 @@ const appStyle = computed(() => {
   return {}
 })
 
-async function handleLogin() {
-  await store.loginWithPassword(loginUsername.value, loginPassword.value)
-  // Check if user is admin after login
+function checkAdminAndBlock() {
   if (store.user && store.user.role === 'admin') {
     store.disconnect()
     store.error = 'Admin accounts are not allowed on desktop'
+    return true
   }
+  return false
+}
+
+async function handleLogin() {
+  await store.loginWithPassword(loginUsername.value, loginPassword.value)
+  checkAdminAndBlock()
 }
 
 function handleLogout() {
@@ -372,7 +377,11 @@ function daysLeft(dateStr) {
 }
 
 function daysClass(dateStr) {
-  const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24))
+  const target = new Date(dateStr)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  target.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24))
   if (diff < 0) return 'overdue'
   if (diff <= 3) return 'soon'
   return ''
@@ -393,11 +402,7 @@ onMounted(async () => {
 
   if (store.apiKey) {
     await store.connect()
-    // Check if user is admin
-    if (store.user && store.user.role === 'admin') {
-      store.disconnect()
-      store.error = 'Admin accounts are not allowed on desktop'
-    }
+    checkAdminAndBlock()
   }
 })
 </script>

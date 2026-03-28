@@ -32,7 +32,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
