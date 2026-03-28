@@ -1,6 +1,5 @@
 const api = require('../../utils/api')
 const util = require('../../utils/util')
-const app = getApp()
 
 Page({
   data: {
@@ -42,7 +41,11 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onShow() {
-    if (!app.loginRequired()) return
+    const auth = require('../../utils/auth')
+    if (!auth.isLoggedIn()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     this.fetchData()
   },
 
@@ -347,7 +350,7 @@ Page({
     const data = {
       content: form.content.trim(),
       priority: form.priority,
-      category: form.category || null,
+      category_id: form.category || null,
       due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' : null
     }
 

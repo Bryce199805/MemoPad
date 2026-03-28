@@ -1,7 +1,5 @@
-<wxs module="noop">module.exports = { prevent: function() {} }; </wxs>
-
 <view class="modal-mask {{show ? 'modal-mask--show' : ''}}" wx:if="{{show}}" catchtouchmove="preventTouchMove" bind:tap="onMaskClick">
-  <view class="modal-sheet {{show ? 'modal-sheet--show' : ''}}" catchtap="noop.prevent">
+  <view class="modal-sheet {{show ? 'modal-sheet--show' : ''}}" catchtap="preventTouchMove">
     <view class="modal-header">
       <text class="modal-title">{{title}}</text>
     </view>

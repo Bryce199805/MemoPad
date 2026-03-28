@@ -1,5 +1,4 @@
 const auth = require('../../utils/auth')
-const app = getApp()
 
 Page({
   data: {
@@ -12,13 +11,15 @@ Page({
   },
 
   onLoad() {
-    if (app.globalData.isAuthenticated) {
+    const auth = require('../../utils/auth')
+    if (auth.isLoggedIn()) {
       wx.switchTab({ url: '/pages/dashboard/dashboard' })
     }
   },
 
   onShow() {
-    if (app.globalData.isAuthenticated) {
+    const auth = require('../../utils/auth')
+    if (auth.isLoggedIn()) {
       wx.switchTab({ url: '/pages/dashboard/dashboard' })
     }
   },

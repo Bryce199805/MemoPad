@@ -1,6 +1,5 @@
 const api = require('../../utils/api')
 const util = require('../../utils/util')
-const app = getApp()
 
 Page({
   data: {
@@ -22,7 +21,11 @@ Page({
   },
 
   onShow() {
-    if (!app.loginRequired()) return
+    const auth = require('../../utils/auth')
+    if (!auth.isLoggedIn()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     this.setData({
       todayStr: util.formatDateFull(new Date().toISOString())
     })

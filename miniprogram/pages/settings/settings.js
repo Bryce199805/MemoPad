@@ -1,6 +1,5 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
-const app = getApp()
 
 Page({
   data: {
@@ -18,10 +17,13 @@ Page({
   },
 
   onShow() {
-    if (!app.loginRequired()) return
+    if (!auth.isLoggedIn()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     this.setData({
-      user: app.globalData.user,
-      baseUrl: app.globalData.baseUrl
+      user: auth.getUser(),
+      baseUrl: wx.getStorageSync('memo_base_url') || ''
     })
     this.fetchData()
   },

@@ -1,6 +1,5 @@
 const api = require('../../utils/api')
 const util = require('../../utils/util')
-const app = getApp()
 
 Page({
   data: {
@@ -28,7 +27,11 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onShow() {
-    if (!app.loginRequired()) return
+    const auth = require('../../utils/auth')
+    if (!auth.isLoggedIn()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     this.fetchData()
   },
 
