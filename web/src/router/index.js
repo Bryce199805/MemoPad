@@ -15,32 +15,36 @@ const routes = [
   {
     path: '/',
     component: DefaultLayout,
-    meta: { requiresAuth: true, requiresUser: true },
     children: [
       {
         path: '',
         name: 'Dashboard',
-        component: () => import('../views/Dashboard.vue')
+        component: () => import('../views/Dashboard.vue'),
+        meta: { requiresAuth: true, requiresUser: true }
       },
       {
         path: 'todos',
         name: 'Todos',
-        component: () => import('../views/TodoManage.vue')
+        component: () => import('../views/TodoManage.vue'),
+        meta: { requiresAuth: true, requiresUser: true }
       },
       {
         path: 'countdowns',
         name: 'Countdowns',
-        component: () => import('../views/CountdownManage.vue')
+        component: () => import('../views/CountdownManage.vue'),
+        meta: { requiresAuth: true, requiresUser: true }
       },
       {
         path: 'settings',
         name: 'Settings',
-        component: () => import('../views/Settings.vue')
+        component: () => import('../views/Settings.vue'),
+        meta: { requiresAuth: true, requiresUser: true }
       },
       {
         path: 'feedback',
         name: 'Feedback',
-        component: () => import('../views/Feedback.vue')
+        component: () => import('../views/Feedback.vue'),
+        meta: { requiresAuth: true, requiresUser: true }
       }
     ]
   },
@@ -48,27 +52,30 @@ const routes = [
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       {
         path: '',
         name: 'AdminDashboard',
-        component: () => import('../views/admin/AdminDashboard.vue')
+        component: () => import('../views/admin/AdminDashboard.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: 'users',
         name: 'AdminUsers',
-        component: () => import('../views/admin/AdminUsers.vue')
+        component: () => import('../views/admin/AdminUsers.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: 'tickets',
         name: 'AdminTickets',
-        component: () => import('../views/admin/AdminTickets.vue')
+        component: () => import('../views/admin/AdminTickets.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: 'config',
         name: 'AdminConfig',
-        component: () => import('../views/admin/AdminConfig.vue')
+        component: () => import('../views/admin/AdminConfig.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   }
