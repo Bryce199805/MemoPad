@@ -1,37 +1,37 @@
-# API 参考文档
+# API Reference
 
-本文档详细描述 MemoPad 后端 API 的所有接口。
+This document provides detailed description of all MemoPad backend API endpoints.
 
 ---
 
-## 基础信息
+## Basic Information
 
 - **Base URL**: `http://YOUR_SERVER_IP/api`
-- **认证方式**: API Key 通过 `X-API-Key` 请求头传递
-- **内容格式**: JSON
-- **字符编码**: UTF-8
+- **Authentication**: API Key via `X-API-Key` request header
+- **Content Format**: JSON
+- **Character Encoding**: UTF-8
 
 ---
 
-## 认证说明
+## Authentication
 
-### API Key 格式
+### API Key Format
 
 ```
 mp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-- 前缀：`mp_`
-- 长度：67 字符（前缀 3 字符 + 64 字符十六进制）
+- Prefix: `mp_`
+- Length: 67 characters (3-char prefix + 64-char hex)
 
-### 请求示例
+### Request Example
 
 ```bash
 curl -X GET http://localhost/api/todos \
   -H "X-API-Key: mp_your_api_key_here"
 ```
 
-### 认证错误
+### Authentication Errors
 
 ```json
 {
@@ -47,15 +47,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 认证接口 `/api/auth`
+## Authentication Endpoints `/api/auth`
 
-### 用户注册
+### Register User
 
 **POST** `/api/auth/register`
 
-创建新用户账户。
+Create a new user account.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "username": "string (3-50 chars)",
@@ -64,7 +64,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `201`:
+**Response** `201`:
 ```json
 {
   "message": "User created successfully",
@@ -79,19 +79,19 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**错误响应**:
-- `400`: 用户名已存在 / 参数无效
-- `403`: 注册已关闭
+**Error Responses**:
+- `400`: Username already exists / Invalid parameters
+- `403`: Registration is closed
 
 ---
 
-### 用户登录
+### Login
 
 **POST** `/api/auth/login`
 
-使用用户名和密码登录。
+Login with username and password.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "username": "string",
@@ -99,7 +99,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Login successful",
@@ -115,19 +115,19 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**错误响应**:
-- `401`: 用户名或密码错误
-- `403`: 账户已被禁用
+**Error Responses**:
+- `401`: Invalid username or password
+- `403`: Account is disabled
 
 ---
 
-### 验证 API Key
+### Verify API Key
 
 **GET** `/api/auth/verify`
 
-验证当前 API Key 是否有效。
+Verify if the current API key is valid.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "valid": true,
@@ -139,18 +139,18 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**错误响应**:
-- `401`: API Key 无效
+**Error Responses**:
+- `401`: Invalid API key
 
 ---
 
-### 检查管理员存在
+### Check Admin Exists
 
 **GET** `/api/auth/check-admin`
 
-检查系统是否已存在管理员账户。
+Check if an admin account exists in the system.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "exists": true
@@ -159,13 +159,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 获取 API Key
+### Get API Key
 
 **GET** `/api/auth/api-key`
 
-获取当前用户的 API Key。
+Get the current user's API key.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "api_key": "mp_xxxx..."
@@ -174,13 +174,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 重新生成 API Key
+### Regenerate API Key
 
 **POST** `/api/auth/api-key/regenerate`
 
-重新生成 API Key，旧 Key 立即失效。
+Generate a new API key. The old key becomes invalid immediately.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "API key regenerated",
@@ -190,15 +190,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 任务接口 `/api/todos`
+## Todo Endpoints `/api/todos`
 
-### 获取任务列表
+### List Todos
 
 **GET** `/api/todos`
 
-获取当前用户的所有任务。
+Get all todos for the current user.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -224,13 +224,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 创建任务
+### Create Todo
 
 **POST** `/api/todos`
 
-创建新任务。
+Create a new todo.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "content": "string (required)",
@@ -241,7 +241,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `201`:
+**Response** `201`:
 ```json
 {
   "message": "Todo created",
@@ -258,13 +258,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 更新任务
+### Update Todo
 
 **PUT** `/api/todos/:id`
 
-更新指定任务。
+Update a specific todo.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "content": "string (optional)",
@@ -275,7 +275,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Todo updated",
@@ -285,13 +285,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 删除任务
+### Delete Todo
 
 **DELETE** `/api/todos/:id`
 
-删除指定任务。
+Delete a specific todo.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Todo deleted"
@@ -300,13 +300,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 切换完成状态
+### Toggle Done Status
 
 **PATCH** `/api/todos/:id/toggle`
 
-切换任务的完成状态。
+Toggle the done status of a todo.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Todo toggled",
@@ -320,13 +320,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 切换置顶状态
+### Toggle Pinned Status
 
 **PATCH** `/api/todos/:id/pin`
 
-切换任务的置顶状态。
+Toggle the pinned status of a todo.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Pin status updated",
@@ -340,15 +340,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 倒计时接口 `/api/countdowns`
+## Countdown Endpoints `/api/countdowns`
 
-### 获取倒计时列表
+### List Countdowns
 
 **GET** `/api/countdowns`
 
-获取当前用户的所有倒计时。
+Get all countdowns for the current user.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -366,13 +366,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 创建倒计时
+### Create Countdown
 
 **POST** `/api/countdowns`
 
-创建新倒计时。
+Create a new countdown.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "title": "string (required)",
@@ -382,7 +382,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `201`:
+**Response** `201`:
 ```json
 {
   "message": "Countdown created",
@@ -392,13 +392,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 更新倒计时
+### Update Countdown
 
 **PUT** `/api/countdowns/:id`
 
-更新指定倒计时。
+Update a specific countdown.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "title": "string (optional)",
@@ -408,7 +408,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Countdown updated",
@@ -418,13 +418,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 删除倒计时
+### Delete Countdown
 
 **DELETE** `/api/countdowns/:id`
 
-删除指定倒计时。
+Delete a specific countdown.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Countdown deleted"
@@ -433,15 +433,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 分类接口 `/api/categories`
+## Category Endpoints `/api/categories`
 
-### 获取分类列表
+### List Categories
 
 **GET** `/api/categories`
 
-获取当前用户的所有分类。
+Get all categories for the current user.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -457,13 +457,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 创建分类
+### Create Category
 
 **POST** `/api/categories`
 
-创建新分类。
+Create a new category.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "name": "string (required)",
@@ -471,7 +471,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `201`:
+**Response** `201`:
 ```json
 {
   "message": "Category created",
@@ -481,13 +481,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 更新分类
+### Update Category
 
 **PUT** `/api/categories/:id`
 
-更新指定分类。
+Update a specific category.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "name": "string (optional)",
@@ -495,7 +495,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Category updated",
@@ -505,13 +505,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 删除分类
+### Delete Category
 
 **DELETE** `/api/categories/:id`
 
-删除指定分类。删除后会解除与任务的关联。
+Delete a specific category. Associated todos will be unlinked.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Category deleted"
@@ -520,15 +520,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 统计接口 `/api/stats`
+## Stats Endpoint `/api/stats`
 
-### 获取统计数据
+### Get Statistics
 
 **GET** `/api/stats`
 
-获取当前用户的统计数据。
+Get statistics for the current user.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": {
@@ -554,15 +554,15 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 工单接口 `/api/tickets`
+## Ticket Endpoints `/api/tickets`
 
-### 获取工单列表
+### List Tickets
 
 **GET** `/api/tickets`
 
-获取当前用户的工单列表。
+Get tickets for the current user.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -581,13 +581,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 创建工单
+### Create Ticket
 
 **POST** `/api/tickets`
 
-创建新工单。
+Create a new ticket.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "subject": "string (required)",
@@ -595,7 +595,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `201`:
+**Response** `201`:
 ```json
 {
   "message": "Ticket created",
@@ -605,13 +605,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 获取工单详情
+### Get Ticket Details
 
 **GET** `/api/tickets/:id`
 
-获取指定工单的详情。
+Get details of a specific ticket.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": {
@@ -628,17 +628,17 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 管理员接口 `/api/admin`
+## Admin Endpoints `/api/admin`
 
-所有管理员接口需要用户角色为 `admin`。
+All admin endpoints require user role to be `admin`.
 
-### 获取用户列表
+### List Users
 
 **GET** `/api/admin/users`
 
-获取所有用户列表及统计信息。
+Get all users with statistics.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -660,13 +660,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 禁用用户
+### Disable User
 
 **PATCH** `/api/admin/users/:id/disable`
 
-禁用指定用户账户。
+Disable a user account.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "User disabled"
@@ -675,13 +675,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 启用用户
+### Enable User
 
 **PATCH** `/api/admin/users/:id/enable`
 
-启用指定用户账户。
+Enable a user account.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "User enabled"
@@ -690,13 +690,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 删除用户
+### Delete User
 
 **DELETE** `/api/admin/users/:id`
 
-删除指定用户及其所有数据。
+Delete a user and all their data.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "User deleted"
@@ -705,13 +705,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 获取系统配置
+### Get System Config
 
 **GET** `/api/admin/config`
 
-获取系统配置。
+Get system configuration.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": {
@@ -722,20 +722,20 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 更新系统配置
+### Update System Config
 
 **PUT** `/api/admin/config`
 
-更新系统配置。
+Update system configuration.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "registration_enabled": false
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Config updated",
@@ -745,13 +745,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 获取系统统计
+### Get System Statistics
 
 **GET** `/api/admin/stats`
 
-获取系统全局统计。
+Get global system statistics.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": {
@@ -777,13 +777,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 获取所有工单
+### List All Tickets
 
 **GET** `/api/admin/tickets`
 
-获取所有用户的工单。
+Get all tickets from all users.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "data": [
@@ -803,13 +803,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 更新工单
+### Update Ticket
 
 **PUT** `/api/admin/tickets/:id`
 
-更新工单状态和回复。
+Update ticket status and reply.
 
-**请求体**:
+**Request Body**:
 ```json
 {
   "status": "open|in_progress|resolved|closed",
@@ -817,7 +817,7 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Ticket updated",
@@ -827,13 +827,13 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-### 删除工单
+### Delete Ticket
 
 **DELETE** `/api/admin/tickets/:id`
 
-删除指定工单。
+Delete a ticket.
 
-**响应** `200`:
+**Response** `200`:
 ```json
 {
   "message": "Ticket deleted"
@@ -842,9 +842,9 @@ curl -X GET http://localhost/api/todos \
 
 ---
 
-## 错误响应格式
+## Error Response Format
 
-所有错误响应遵循统一格式：
+All errors follow a consistent format:
 
 ```json
 {
@@ -852,89 +852,89 @@ curl -X GET http://localhost/api/todos \
 }
 ```
 
-### HTTP 状态码
+### HTTP Status Codes
 
-| 状态码 | 说明 |
-|--------|------|
-| 200 | 成功 |
-| 201 | 创建成功 |
-| 400 | 请求参数错误 |
-| 401 | 未认证 / 认证失败 |
-| 403 | 权限不足 |
-| 404 | 资源不存在 |
-| 429 | 请求过于频繁 |
-| 500 | 服务器内部错误 |
-
----
-
-## 限流说明
-
-| 接口类型 | 限制 |
-|----------|------|
-| 通用 API | 10 请求/秒，突发 30 |
-| 登录/注册 | 5 请求/分钟 |
-| 管理员接口 | 10 请求/秒，突发 20 |
-| 并发连接 | 20 连接/IP |
-
-超出限制返回 `429 Too Many Requests`。
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad request / Invalid parameters |
+| 401 | Unauthorized / Authentication failed |
+| 403 | Forbidden / Insufficient permissions |
+| 404 | Resource not found |
+| 429 | Too many requests |
+| 500 | Internal server error |
 
 ---
 
-## 数据模型
+## Rate Limiting
+
+| Endpoint Type | Limit |
+|---------------|-------|
+| General API | 10 req/s, burst 30 |
+| Login/Register | 5 req/min |
+| Admin Endpoints | 10 req/s, burst 20 |
+| Concurrent Connections | 20 per IP |
+
+Exceeding limits returns `429 Too Many Requests`.
+
+---
+
+## Data Models
 
 ### User
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | number | 用户 ID |
-| username | string | 用户名 (3-50字符) |
-| email | string | 邮箱 |
-| role | string | 角色 (admin/user) |
-| disabled | boolean | 是否禁用 |
-| created_at | datetime | 创建时间 |
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | User ID |
+| username | string | Username (3-50 chars) |
+| email | string | Email address |
+| role | string | Role (admin/user) |
+| disabled | boolean | Whether disabled |
+| created_at | datetime | Created timestamp |
 
 ### Todo
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | number | 任务 ID |
-| content | string | 任务内容 |
-| priority | string | 优先级 (high/medium/low) |
-| done | boolean | 是否完成 |
-| pinned | boolean | 是否置顶 |
-| due_date | datetime | 截止日期 |
-| category_id | number | 分类 ID |
-| created_at | datetime | 创建时间 |
-| updated_at | datetime | 更新时间 |
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | Todo ID |
+| content | string | Todo content |
+| priority | string | Priority (high/medium/low) |
+| done | boolean | Whether completed |
+| pinned | boolean | Whether pinned |
+| due_date | datetime | Due date |
+| category_id | number | Category ID |
+| created_at | datetime | Created timestamp |
+| updated_at | datetime | Updated timestamp |
 
 ### Countdown
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | number | 倒计时 ID |
-| title | string | 标题 |
-| target_date | datetime | 目标日期 |
-| priority | string | 优先级 |
-| pinned | boolean | 是否置顶 |
-| created_at | datetime | 创建时间 |
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | Countdown ID |
+| title | string | Title |
+| target_date | datetime | Target date |
+| priority | string | Priority |
+| pinned | boolean | Whether pinned |
+| created_at | datetime | Created timestamp |
 
 ### Category
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | number | 分类 ID |
-| name | string | 分类名称 |
-| color | string | 颜色 (十六进制) |
-| created_at | datetime | 创建时间 |
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | Category ID |
+| name | string | Category name |
+| color | string | Color (hex) |
+| created_at | datetime | Created timestamp |
 
 ### Ticket
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | number | 工单 ID |
-| subject | string | 主题 |
-| message | string | 内容 |
-| status | string | 状态 (open/in_progress/resolved/closed) |
-| reply | string | 管理员回复 |
-| created_at | datetime | 创建时间 |
-| updated_at | datetime | 更新时间 |
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | Ticket ID |
+| subject | string | Subject |
+| message | string | Message content |
+| status | string | Status (open/in_progress/resolved/closed) |
+| reply | string | Admin reply |
+| created_at | datetime | Created timestamp |
+| updated_at | datetime | Updated timestamp |

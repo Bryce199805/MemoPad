@@ -5,315 +5,311 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.0+-24C8D8.svg)](https://tauri.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**MemoPad** 是一个多端同步的任务管理应用，包含桌面悬浮组件、Web 管理面板和微信小程序。通过统一的 API 实现多设备数据同步。
+**MemoPad** is a multi-platform task management application with a unified backend API serving multiple frontend clients: a web dashboard, desktop widget, and WeChat mini program.
 
 ---
 
-## 项目概览
+## Overview
 
-| 平台 | 技术栈 | 说明 |
-|------|--------|------|
-| 后端 API | Go 1.23 / Gin / GORM / SQLite | RESTful API 服务 |
-| Web 控制台 | Vue 3 / Vue Router / Pinia / TailwindCSS | 响应式管理面板 |
-| 桌面组件 | Tauri 2.0 / Vue 3 / Rust | Windows 悬浮窗小部件 |
-| 微信小程序 | WeChat Mini Program | 移动端快捷访问 |
-
----
-
-## 功能特性
-
-### 核心功能
-
-#### 任务管理 (Todo)
-- **优先级分级**：高/中/低三级优先级，颜色标识
-- **置顶固定**：重要任务固定在顶部显示
-- **分类管理**：自定义分类和颜色，按分类筛选
-- **截止日期**：支持设置任务截止时间
-- **完成追踪**：可视化进度统计
-
-#### 倒计时 (Countdown)
-- **可视化进度**：进度条直观显示剩余时间
-- **紧急程度指示**：逾期/即将到期/正常 三种状态
-- **重要日期置顶**：关键倒计时固定显示
-
-#### 多端同步
-- **统一 API**：单一后端服务所有客户端
-- **实时同步**：跨设备数据即时更新
-- **安全认证**：API Key 认证机制
-
-### 平台特性
-
-#### 桌面组件 (Tauri)
-- **悬浮窗口**：透明、始终置顶的桌面小部件
-- **毛玻璃效果**：精美的渐变背景和模糊效果
-- **快速添加**：无需打开主应用即可创建任务
-- **位置与透明度**：自定义窗口位置和透明度
-- **系统托盘**：最小化到系统托盘，托盘菜单操作
-- **边缘吸附**：窗口自动吸附屏幕边缘
-
-#### Web 控制台
-- **现代界面**：卡片式设计，流畅动画
-- **深色模式**：完整的深色主题支持
-- **数据统计**：任务完成率、优先级分布等可视化
-- **响应式设计**：桌面、平板、手机全适配
-- **管理员后台**：用户管理、工单处理、系统配置
-
-#### 微信小程序
-- **快捷访问**：微信内直接使用，无需下载 App
-- **完整功能**：任务管理、倒计时、设置等核心功能
-- **管理员入口**：管理员可在小程序内管理用户
+| Platform | Tech Stack | Description |
+|----------|------------|-------------|
+| Backend API | Go 1.23 / Gin / GORM / SQLite | RESTful API server |
+| Web Dashboard | Vue 3 / Vue Router / Pinia / TailwindCSS | Responsive admin panel |
+| Desktop Widget | Tauri 2.0 / Vue 3 / Rust | Windows floating widget |
+| WeChat Mini Program | WeChat Mini Program Framework | Mobile access in WeChat |
 
 ---
 
-## 快速开始
+## Features
 
-### Docker 部署（推荐）
+### Core Features
+
+#### Todo Management
+- **Priority Levels**: High/Medium/Low with color coding
+- **Pin to Top**: Keep important tasks visible
+- **Categories**: Custom categories with colors
+- **Due Dates**: Set task deadlines
+- **Completion Tracking**: Visual progress statistics
+
+#### Countdown Timers
+- **Visual Progress**: Progress bars show time remaining
+- **Urgency Indicators**: Overdue/Due soon/Normal status
+- **Pin Important Dates**: Keep critical countdowns at the top
+
+#### Multi-Device Sync
+- **Unified API**: Single backend serves all clients
+- **Real-time Sync**: Changes sync across devices instantly
+- **Secure Authentication**: API Key based authentication
+
+### Platform Features
+
+#### Desktop Widget (Tauri)
+- **Floating Window**: Transparent, always-on-top widget
+- **Glassmorphism UI**: Beautiful gradient background with blur effect
+- **Quick Add**: Create todos instantly without opening main app
+- **Position & Opacity**: Customize widget position and transparency
+- **System Tray**: Minimize to tray with context menu
+- **Edge Snapping**: Window snaps to screen edges
+
+#### Web Dashboard
+- **Modern Interface**: Card-based design with smooth animations
+- **Dark Mode**: Full dark theme support
+- **Statistics**: Visual progress tracking and completion rates
+- **Responsive Design**: Desktop, tablet, and mobile support
+- **Admin Panel**: User management, ticket handling, system config
+
+#### WeChat Mini Program
+- **Quick Access**: Use directly within WeChat
+- **Full Features**: Todo and countdown management
+- **Admin Entry**: Admin functions available
+
+---
+
+## Quick Start
+
+### Docker Deployment (Recommended)
 
 ```bash
-# 1. 克隆项目
+# 1. Clone the repository
 git clone https://github.com/Bryce199805/MemoPad.git
 cd MemoPad
 
-# 2. 启动服务
+# 2. Start services
 docker compose up -d
 
-# 3. 查看初始 API Key（首次启动自动生成）
+# 3. Get API Key (auto-generated on first run)
 docker logs memopad-backend
 
-# 4. 访问 Web 界面
-# 浏览器打开 http://YOUR_SERVER_IP
+# 4. Access web interface
+# Open http://YOUR_SERVER_IP in browser
 ```
 
-**端口说明**：只需开放 80 端口（HTTPS 为 443）。后端 API 通过 Nginx 内部代理，无需额外开放端口。
+**Ports**: Only port 80 needs to be open. The backend API is proxied internally through Nginx.
 
-### 开发环境
+### Development
 
 ```bash
-# 后端
+# Backend
 cd backend && go run main.go
 
-# Web 前端（新终端）
+# Web frontend (new terminal)
 cd web && npm install && npm run dev
 
-# 桌面应用（新终端）
+# Desktop app (new terminal)
 cd desktop && npm install && npm run tauri dev
 ```
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```
 MemoPad/
-├── backend/                 # Go 后端服务
-│   ├── main.go              # 主程序（单文件架构）
-│   ├── go.mod               # Go 模块定义
-│   ├── Dockerfile           # Docker 构建文件
-│   └── .dockerignore
+├── backend/                 # Go backend service
+│   ├── main.go              # Main program (single file architecture)
+│   ├── go.mod               # Go module definition
+│   └── Dockerfile           # Docker build file
 │
-├── web/                     # Vue 3 Web 控制台
+├── web/                     # Vue 3 web dashboard
 │   ├── src/
-│   │   ├── main.js          # 入口文件
-│   │   ├── App.vue          # 根组件
-│   │   ├── router/          # 路由配置
-│   │   ├── stores/          # Pinia 状态管理
-│   │   ├── views/           # 页面组件
+│   │   ├── main.js          # Entry point
+│   │   ├── App.vue          # Root component
+│   │   ├── router/          # Vue Router configuration
+│   │   ├── stores/          # Pinia state management
+│   │   ├── views/           # Page components
 │   │   │   ├── Dashboard.vue
 │   │   │   ├── LoginView.vue
 │   │   │   ├── TodoManage.vue
 │   │   │   ├── CountdownManage.vue
 │   │   │   ├── Settings.vue
 │   │   │   ├── Feedback.vue
-│   │   │   └── admin/       # 管理员页面
-│   │   ├── components/      # 可复用组件
-│   │   ├── layouts/         # 布局组件
-│   │   ├── api/             # API 客户端
-│   │   └── locales/         # 国际化翻译
+│   │   │   └── admin/       # Admin pages
+│   │   ├── components/      # Reusable components
+│   │   ├── layouts/         # Layout components
+│   │   └── api/             # API client
 │   ├── package.json
-│   ├── Dockerfile           # Docker 构建文件
-│   └── nginx.conf           # Nginx 配置（含限流）
+│   ├── Dockerfile           # Docker build file
+│   └── nginx.conf           # Nginx config with rate limiting
 │
-├── desktop/                 # Tauri 桌面应用
+├── desktop/                 # Tauri desktop app
 │   ├── src/
 │   │   ├── main.js
-│   │   ├── App.vue          # 主界面组件
-│   │   ├── stores/          # Pinia 状态管理
-│   │   ├── components/      # UI 组件
-│   │   └── locales/         # 国际化翻译
-│   ├── src-tauri/           # Rust 后端
-│   │   ├── src/main.rs      # Tauri 主程序
-│   │   ├── Cargo.toml       # Rust 依赖
-│   │   ├── tauri.conf.json  # Tauri 配置
-│   │   └── icons/           # 应用图标
+│   │   ├── App.vue          # Main widget UI
+│   │   ├── stores/          # Pinia state management
+│   │   └── locales/         # i18n translations
+│   ├── src-tauri/           # Rust backend
+│   │   ├── src/main.rs      # Tauri main program
+│   │   ├── Cargo.toml       # Rust dependencies
+│   │   └── tauri.conf.json  # Tauri configuration
 │   └── package.json
 │
-├── miniprogram/             # 微信小程序
-│   ├── pages/               # 页面
-│   │   ├── login/           # 登录页
-│   │   ├── dashboard/       # 仪表盘
-│   │   ├── todos/           # 任务管理
-│   │   ├── countdowns/      # 倒计时
-│   │   ├── settings/        # 设置
-│   │   ├── tickets/         # 工单反馈
-│   │   └── admin-dashboard/ # 管理员面板
-│   ├── components/          # 可复用组件
-│   ├── utils/               # 工具函数
-│   ├── app.js               # 小程序入口
-│   └── app.json             # 小程序配置
+├── miniprogram/             # WeChat mini program
+│   ├── pages/               # Pages
+│   │   ├── login/           # Login page
+│   │   ├── dashboard/       # Dashboard
+│   │   ├── todos/           # Todo management
+│   │   ├── countdowns/      # Countdowns
+│   │   ├── settings/        # Settings
+│   │   ├── tickets/         # Feedback tickets
+│   │   └── admin-dashboard/ # Admin panel
+│   ├── components/          # Reusable components
+│   ├── utils/               # Utility functions
+│   └── app.json             # Mini program config
 │
 ├── .github/workflows/       # GitHub Actions
-│   └── build.yml            # Tauri 构建工作流
+│   └── build.yml            # Tauri build workflow
 │
-├── docker-compose.yml       # 生产环境部署配置
-├── compose.yml              # 开发环境部署配置
-├── README.md                # 项目说明
-├── INSTALL.md               # 安装指南
-├── DEPLOY.md                # 部署指南
-└── LICENSE                  # MIT 许可证
+├── docker-compose.yml       # Production deployment
+├── compose.yml              # Development deployment
+├── README.md
+├── INSTALL.md
+├── DEPLOY.md
+├── API.md
+└── LICENSE
 ```
 
 ---
 
-## API 接口
+## API Endpoints
 
-### 认证接口 `/api/auth`
+### Authentication `/api/auth`
 
-| 方法 | 路径 | 说明 | 认证 |
-|------|------|------|------|
-| POST | `/register` | 用户注册 | 否 |
-| POST | `/login` | 用户登录 | 否 |
-| GET | `/verify` | 验证 API Key | 是 |
-| GET | `/check-admin` | 检查管理员是否存在 | 否 |
-| GET | `/api-key` | 获取当前 API Key | 是 |
-| POST | `/api-key/regenerate` | 重新生成 API Key | 是 |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/register` | Register new user | No |
+| POST | `/login` | Login with credentials | No |
+| GET | `/verify` | Verify API key | Yes |
+| GET | `/check-admin` | Check if admin exists | No |
+| GET | `/api-key` | Get current API key | Yes |
+| POST | `/api-key/regenerate` | Regenerate API key | Yes |
 
-### 任务接口 `/api/todos`
+### Todos `/api/todos`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 获取任务列表 |
-| POST | `/` | 创建任务 |
-| PUT | `/:id` | 更新任务 |
-| DELETE | `/:id` | 删除任务 |
-| PATCH | `/:id/toggle` | 切换完成状态 |
-| PATCH | `/:id/pin` | 切换置顶状态 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | List all todos |
+| POST | `/` | Create todo |
+| PUT | `/:id` | Update todo |
+| DELETE | `/:id` | Delete todo |
+| PATCH | `/:id/toggle` | Toggle done status |
+| PATCH | `/:id/pin` | Toggle pinned status |
 
-### 倒计时接口 `/api/countdowns`
+### Countdowns `/api/countdowns`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 获取倒计时列表 |
-| POST | `/` | 创建倒计时 |
-| PUT | `/:id` | 更新倒计时 |
-| DELETE | `/:id` | 删除倒计时 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | List all countdowns |
+| POST | `/` | Create countdown |
+| PUT | `/:id` | Update countdown |
+| DELETE | `/:id` | Delete countdown |
 
-### 分类接口 `/api/categories`
+### Categories `/api/categories`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 获取分类列表 |
-| POST | `/` | 创建分类 |
-| PUT | `/:id` | 更新分类 |
-| DELETE | `/:id` | 删除分类 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | List categories |
+| POST | `/` | Create category |
+| PUT | `/:id` | Update category |
+| DELETE | `/:id` | Delete category |
 
-### 统计接口 `/api/stats`
+### Statistics `/api/stats`
 
-- 返回任务完成率、优先级分布、倒计时统计
+- Returns todo completion rate, priority breakdown, countdown statistics
 
-### 工单接口 `/api/tickets`
+### Tickets `/api/tickets`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 获取用户工单列表 |
-| POST | `/` | 创建工单 |
-| GET | `/:id` | 获取工单详情 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | List user's tickets |
+| POST | `/` | Create ticket |
+| GET | `/:id` | Get ticket details |
 
-### 管理员接口 `/api/admin`
+### Admin `/api/admin`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/users` | 获取用户列表 |
-| PATCH | `/users/:id/disable` | 禁用用户 |
-| PATCH | `/users/:id/enable` | 启用用户 |
-| DELETE | `/users/:id` | 删除用户 |
-| GET | `/config` | 获取系统配置 |
-| PUT | `/config` | 更新系统配置 |
-| GET | `/stats` | 系统统计 |
-| GET | `/tickets` | 获取所有工单 |
-| PUT | `/tickets/:id` | 更新工单状态 |
-| DELETE | `/tickets/:id` | 删除工单 |
-
----
-
-## 用户角色
-
-### 普通用户
-- 管理个人任务和倒计时
-- 创建和管理分类
-- 提交反馈工单
-- 查看个人统计数据
-- 管理个人 API Key
-
-### 管理员
-- 用户管理（查看、禁用、删除）
-- 工单处理（回复、更新状态）
-- 系统配置（开放/关闭注册）
-- 全局数据统计
-- 无个人任务管理功能（专注于系统管理）
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/users` | List all users |
+| PATCH | `/users/:id/disable` | Disable user |
+| PATCH | `/users/:id/enable` | Enable user |
+| DELETE | `/users/:id` | Delete user |
+| GET | `/config` | Get system config |
+| PUT | `/config` | Update system config |
+| GET | `/stats` | System statistics |
+| GET | `/tickets` | List all tickets |
+| PUT | `/tickets/:id` | Update ticket |
+| DELETE | `/tickets/:id` | Delete ticket |
 
 ---
 
-## 安全特性
+## User Roles
 
-1. **认证机制**
-   - bcrypt 密码哈希
-   - API Key 格式：`mp_` 前缀 + 64 位十六进制字符
-   - 支持 API Key 重新生成
+### Regular User
+- Manage personal todos and countdowns
+- Create and manage categories
+- Submit feedback tickets
+- View personal statistics
+- Manage personal API key
 
-2. **访问控制**
-   - 基于角色的权限（admin / user）
-   - 用户数据隔离
-   - 管理员专属接口保护
+### Administrator
+- User management (view, disable, delete)
+- Ticket handling (reply, update status)
+- System configuration (enable/disable registration)
+- Global statistics
+- No personal task management features
 
-3. **限流保护**
-   - 后端：IP 限流，自动封禁
-   - Nginx：请求频率和并发连接限制
+---
+
+## Security Features
+
+1. **Authentication**
+   - bcrypt password hashing
+   - API Key format: `mp_` prefix + 64 hex characters
+   - API key regeneration support
+
+2. **Access Control**
+   - Role-based permissions (admin/user)
+   - User data isolation
+   - Admin-only endpoints protection
+
+3. **Rate Limiting**
+   - Backend: IP-based rate limiting with auto-blocking
+   - Nginx: Request frequency and connection limits
 
 4. **HTTPS/TLS**
-   - TLS 1.2 / 1.3
-   - 安全加密套件
+   - TLS 1.2 / 1.3 support
+   - Secure cipher suites
 
 ---
 
-## 数据存储
+## Data Storage
 
-- **数据库**：SQLite (`memo.db`)
-- **存储位置**：Docker 容器内 `/app/data/`
-- **持久化**：Docker Volume `backend-data`
-- **备份**：直接复制数据目录即可
-
----
-
-## 下载
-
-- **桌面应用**：[GitHub Releases](https://github.com/Bryce199805/MemoPad/releases)
-- **微信小程序**：搜索「MemoPad」（如有发布）
+- **Database**: SQLite (`memo.db`)
+- **Location**: `/app/data/` in Docker container
+- **Persistence**: Docker Volume `backend-data`
+- **Backup**: Simple directory copy
 
 ---
 
-## 文档
+## Downloads
 
-- [安装指南](INSTALL.md) - 详细的安装步骤
-- [部署指南](DEPLOY.md) - 生产环境 Docker 部署
+- **Desktop App**: [GitHub Releases](https://github.com/Bryce199805/MemoPad/releases)
 
 ---
 
-## 许可证
+## Documentation
+
+- [Installation Guide](INSTALL.md) - Detailed installation steps
+- [Deployment Guide](DEPLOY.md) - Production deployment with Docker
+- [API Reference](API.md) - Complete API documentation
+
+---
+
+## License
 
 [MIT License](LICENSE)
 
 ---
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!

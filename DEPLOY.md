@@ -1,30 +1,30 @@
-# 部署指南
+# Deployment Guide
 
-本文档详细介绍 MemoPad 在生产环境的部署配置。
+This document provides detailed instructions for deploying MemoPad in a production environment.
 
 ---
 
-## 快速部署
+## Quick Deploy
 
 ```bash
-# 1. 安装 Docker
+# 1. Install Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 
-# 2. 重新登录后部署
+# 2. Deploy MemoPad (after re-login)
 git clone https://github.com/Bryce199805/MemoPad.git
 cd MemoPad
 docker compose up -d
 
-# 3. 获取 API Key
+# 3. Get API Key
 docker logs memopad-backend
 ```
 
-访问地址：`http://YOUR_SERVER_IP`
+Access: `http://YOUR_SERVER_IP`
 
 ---
 
-## 架构说明
+## Architecture
 
 ```
                     ┌─────────────────────────┐
@@ -48,13 +48,13 @@ docker logs memopad-backend
                                       └─────────────────────┘
 ```
 
-**安全设计**：后端 API 端口（3000）不对外开放，所有请求通过 Nginx 代理转发。
+**Security Design**: The backend API port (3000) is not exposed externally. All requests are proxied through Nginx.
 
 ---
 
-## Docker Compose 配置
+## Docker Compose Configuration
 
-### 完整配置文件
+### Full Configuration
 
 ```yaml
 version: '3.8'
@@ -69,7 +69,7 @@ services:
     environment:
       - GIN_MODE=release
       - DATA_DIR=/app/data
-      # 可选：预设管理员账户
+      # Optional: Pre-configure admin account
       # - ADMIN_USERNAME=admin
       # - ADMIN_PASSWORD=secure_password
     healthcheck:
@@ -95,44 +95,44 @@ volumes:
   backend-data:
 ```
 
-### 配置说明
+### Configuration Options
 
-| 配置项 | 说明 |
-|--------|------|
-| `backend-data` | 数据持久化卷，存储数据库和配置 |
-| `GIN_MODE=release` | 生产模式，减少日志输出 |
-| `DATA_DIR=/app/data` | 数据存储路径 |
-| `ADMIN_USERNAME` | 可选，预设管理员用户名 |
-| `ADMIN_PASSWORD` | 可选，预设管理员密码 |
+| Option | Description |
+|--------|-------------|
+| `backend-data` | Persistent volume for database and config |
+| `GIN_MODE=release` | Production mode, reduced logging |
+| `DATA_DIR=/app/data` | Data storage path |
+| `ADMIN_USERNAME` | Optional, pre-set admin username |
+| `ADMIN_PASSWORD` | Optional, pre-set admin password |
 
 ---
 
-## 防火墙配置
+## Firewall Configuration
 
 ### Ubuntu/Debian (ufw)
 
 ```bash
-# 开放 HTTP
+# Allow HTTP
 sudo ufw allow 80/tcp
 
-# 开放 HTTPS
+# Allow HTTPS
 sudo ufw allow 443/tcp
 
-# 查看状态
+# Check status
 sudo ufw status
 ```
 
 ### CentOS/RHEL (firewalld)
 
 ```bash
-# 开放端口
+# Allow ports
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
 
-# 重载配置
+# Reload
 sudo firewall-cmd --reload
 
-# 查看状态
+# Check status
 sudo firewall-cmd --list-ports
 ```
 
@@ -148,34 +148,34 @@ iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
 ---
 
-## HTTPS 配置
+## HTTPS Configuration
 
-### 方案一：Nginx + Let's Encrypt（推荐）
+### Option 1: Nginx + Let's Encrypt (Recommended)
 
-1. 安装 Certbot：
+1. Install Certbot:
 ```bash
 sudo apt install certbot python3-certbot-nginx
 ```
 
-2. 准备证书目录：
+2. Create SSL directory:
 ```bash
 sudo mkdir -p /opt/memopad/ssl
 ```
 
-3. 申请证书：
+3. Request certificate:
 ```bash
 sudo certbot certonly --standalone -d yourdomain.com
 ```
 
-4. 复制证书：
+4. Copy certificates:
 ```bash
 sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /opt/memopad/ssl/cert.pem
 sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /opt/memopad/ssl/key.pem
 ```
 
-5. 设置自动续期：
+5. Set up auto-renewal:
 ```bash
-# 创建续期脚本
+# Create renewal script
 cat << 'EOF' | sudo tee /opt/memopad/renew-cert.sh
 #!/bin/bash
 certbot renew --quiet
@@ -186,26 +186,26 @@ EOF
 
 sudo chmod +x /opt/memopad/renew-cert.sh
 
-# 添加定时任务
+# Add cron job
 (sudo crontab -l 2>/dev/null; echo "0 3 * * * /opt/memopad/renew-cert.sh") | sudo crontab -
 ```
 
-### 方案二：自签名证书
+### Option 2: Self-signed Certificate
 
 ```bash
-# 创建目录
+# Create directory
 sudo mkdir -p /opt/memopad/ssl
 
-# 生成自签名证书（有效期 365 天）
+# Generate self-signed certificate (365 days validity)
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout /opt/memopad/ssl/key.pem \
   -out /opt/memopad/ssl/cert.pem \
   -subj "/CN=localhost"
 ```
 
-### 方案三：Caddy 反向代理
+### Option 3: Caddy Reverse Proxy
 
-创建 `Caddyfile`：
+Create `Caddyfile`:
 
 ```
 yourdomain.com {
@@ -213,7 +213,7 @@ yourdomain.com {
 }
 ```
 
-运行 Caddy：
+Run Caddy:
 ```bash
 docker run -d --name caddy \
   --network memopad_default \
@@ -224,20 +224,20 @@ docker run -d --name caddy \
 
 ---
 
-## Nginx 安全配置
+## Nginx Security Configuration
 
-项目已内置安全配置（`web/nginx.conf`）：
+Security features are built-in (`web/nginx.conf`):
 
-### 限流配置
+### Rate Limiting
 
-| 区域 | 限制 | 说明 |
-|------|------|------|
-| general | 10 req/s, burst 30 | 通用 API |
-| auth | 5 req/min | 登录/注册 |
-| admin | 10 req/s, burst 20 | 管理员接口 |
-| conn_limit | 20 connections/IP | 并发连接 |
+| Zone | Limit | Description |
+|------|-------|-------------|
+| general | 10 req/s, burst 30 | General API |
+| auth | 5 req/min | Login/Register |
+| admin | 10 req/s, burst 20 | Admin endpoints |
+| conn_limit | 20 connections/IP | Concurrent connections |
 
-### 安全头
+### Security Headers
 
 ```
 X-Frame-Options: DENY
@@ -246,9 +246,9 @@ X-XSS-Protection: 1; mode=block
 Referrer-Policy: strict-origin-when-cross-origin
 ```
 
-### 自定义配置
+### Customization
 
-如需修改，编辑 `web/nginx.conf` 后重新构建：
+Edit `web/nginx.conf` and rebuild:
 
 ```bash
 docker compose up -d --build web
@@ -256,60 +256,60 @@ docker compose up -d --build web
 
 ---
 
-## 数据管理
+## Data Management
 
-### 数据位置
+### Data Locations
 
-| 文件 | 说明 | 路径 |
-|------|------|------|
-| memo.db | SQLite 数据库 | `/app/data/memo.db` |
-| 数据卷 | Docker Volume | `memopad_backend-data` |
+| File | Description | Path |
+|------|-------------|------|
+| memo.db | SQLite database | `/app/data/memo.db` |
+| Volume | Docker Volume | `memopad_backend-data` |
 
-### 备份
+### Backup
 
 ```bash
-# 方法一：导出数据卷
+# Method 1: Export volume
 docker run --rm \
   -v memopad_backend-data:/data \
   -v $(pwd)/backup:/backup \
   alpine tar czf /backup/memopad-$(date +%Y%m%d).tar.gz /data
 
-# 方法二：直接复制
+# Method 2: Direct copy
 docker cp memopad-backend:/app/data ./backup/
 ```
 
-### 恢复
+### Restore
 
 ```bash
-# 停止服务
+# Stop services
 docker compose down
 
-# 恢复数据
+# Restore data
 docker run --rm \
   -v memopad_backend-data:/data \
   -v $(pwd)/backup:/backup \
   alpine sh -c "cd / && tar xzf /backup/memopad-*.tar.gz"
 
-# 启动服务
+# Start services
 docker compose up -d
 ```
 
-### 数据迁移
+### Migration
 
-从旧服务器迁移到新服务器：
+Migrating from old server to new server:
 
 ```bash
-# 旧服务器
+# Old server
 docker run --rm \
   -v memopad_backend-data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/memopad-data.tar.gz /data
 
-# 传输文件
+# Transfer file
 scp memopad-data.tar.gz user@new-server:~
 
-# 新服务器
-docker compose up -d  # 先启动创建卷
+# New server
+docker compose up -d  # Start to create volume
 docker compose down
 docker run --rm \
   -v memopad_backend-data:/data \
@@ -320,112 +320,111 @@ docker compose up -d
 
 ---
 
-## 监控与日志
+## Monitoring and Logs
 
-### 查看日志
+### View Logs
 
 ```bash
-# 后端日志
+# Backend logs
 docker logs memopad-backend
 
-# Web 服务日志
+# Web service logs
 docker logs memopad-web
 
-# 实时跟踪
+# Real-time tracking
 docker logs -f memopad-backend
 
-# 最近 100 行
+# Last 100 lines
 docker logs --tail 100 memopad-backend
 ```
 
-### 健康检查
+### Health Check
 
 ```bash
-# 检查容器状态
+# Check container status
 docker ps
 
-# 检查容器健康
+# Check container health
 docker inspect --format='{{.State.Health.Status}}' memopad-backend
 
-# 测试 API
+# Test API
 curl http://localhost/health
 ```
 
-### 资源使用
+### Resource Usage
 
 ```bash
-# 查看资源占用
+# View resource consumption
 docker stats memopad-backend memopad-web
 ```
 
 ---
 
-## 更新与升级
+## Updates and Upgrades
 
-### 常规更新
+### Regular Update
 
 ```bash
-# 拉取最新代码
+# Pull latest code
 git pull origin main
 
-# 重新构建并启动
+# Rebuild and restart
 docker compose up -d --build
 ```
 
-### 无缓存重建
+### No-cache Rebuild
 
 ```bash
 docker compose build --no-cache
 docker compose up -d
 ```
 
-### 指定版本
+### Specific Version
 
 ```bash
-# 检出特定版本
+# Checkout specific version
 git checkout v1.0.0
 
-# 部署
+# Deploy
 docker compose up -d --build
 ```
 
 ---
 
-## 桌面应用部署
+## Desktop App Deployment
 
-### Windows 自动启动
+### Windows Auto-start
 
-1. 创建 `MemoDesk.exe` 快捷方式
-2. 按 `Win + R`，输入 `shell:startup`
-3. 将快捷方式粘贴到启动文件夹
+1. Create shortcut to `MemoDesk.exe`
+2. Press `Win + R`, type `shell:startup`
+3. Paste shortcut into startup folder
 
-### 企业批量部署
+### Enterprise Deployment
 
-1. 下载安装包
-2. 使用组策略或 SCCM 分发
-3. 配置统一的服务器地址和 API Key
+1. Download installer
+2. Distribute via Group Policy or SCCM
+3. Configure unified server URL and API Key
 
 ---
 
-## 性能优化
+## Performance Optimization
 
-### 后端优化
+### Backend Optimization
 
-- 使用内存缓存热点数据
-- 定期清理过期数据
-- 监控数据库大小
+- Use memory cache for hot data
+- Periodically clean expired data
+- Monitor database size
 
-### Nginx 优化
+### Nginx Optimization
 
-已内置配置：
-- Gzip 压缩
-- 静态资源缓存
-- 连接复用
+Built-in features:
+- Gzip compression
+- Static asset caching
+- Connection reuse
 
-### 资源监控
+### Resource Limits
 
-```bash
-# 设置内存限制
+```yaml
 services:
   backend:
     deploy:
@@ -436,42 +435,42 @@ services:
 
 ---
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common Issues
 
-| 问题 | 诊断 | 解决方案 |
-|------|------|----------|
-| 无法访问 Web | `curl localhost` | 检查防火墙、容器状态 |
-| API 401 错误 | 查看后端日志 | 验证 API Key 正确 |
-| 容器启动失败 | `docker logs` | 检查配置、端口冲突 |
-| 数据库锁定 | 重启容器 | 检查磁盘空间 |
-| 内存不足 | `docker stats` | 增加资源限制 |
+| Issue | Diagnosis | Solution |
+|-------|-----------|----------|
+| Cannot access Web | `curl localhost` | Check firewall, container status |
+| API 401 error | Check backend logs | Verify API Key is correct |
+| Container fails to start | `docker logs` | Check config, port conflicts |
+| Database locked | Restart container | Check disk space |
+| Out of memory | `docker stats` | Increase resource limits |
 
-### 完全重置
+### Complete Reset
 
 ```bash
-# 停止并删除所有容器和数据
+# Stop and remove all containers and data
 docker compose down -v
 
-# 重新部署
+# Redeploy
 docker compose up -d
 ```
 
 ---
 
-## 安全建议
+## Security Recommendations
 
-1. **使用 HTTPS**：生产环境必须启用 HTTPS
-2. **定期备份**：设置自动备份任务
-3. **更新系统**：定期更新 Docker 和系统补丁
-4. **监控日志**：关注异常登录和请求
-5. **限制注册**：在系统配置中关闭开放注册
-6. **强密码**：管理员使用强密码
+1. **Use HTTPS**: HTTPS is required for production
+2. **Regular Backups**: Set up automated backup tasks
+3. **System Updates**: Regularly update Docker and system patches
+4. **Monitor Logs**: Watch for abnormal logins and requests
+5. **Limit Registration**: Disable open registration in system config
+6. **Strong Passwords**: Use strong passwords for admin accounts
 
 ---
 
-## 更多信息
+## More Information
 
-- [安装指南](INSTALL.md) - 详细安装步骤
-- [项目文档](README.md) - 项目概览和 API 参考
+- [Installation Guide](INSTALL.md) - Detailed installation steps
+- [API Reference](API.md) - Complete API documentation
