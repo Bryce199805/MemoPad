@@ -275,7 +275,7 @@ onMounted(fetchAll)
 .stats-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 0;
+  margin-bottom: 20px;
 }
 
 .stat-card {

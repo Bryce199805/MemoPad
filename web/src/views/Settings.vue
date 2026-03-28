@@ -120,10 +120,11 @@ function getCategoryUsage(catId) {
 
 function deleteCategory(id, name) {
   const usage = getCategoryUsage(id)
-  const msg = usage > 0
-    ? `Category "${name}" has ${usage} task(s). They will be unlinked. Delete anyway?`
-    : `Delete category "${name}"?`
-  if (confirm(msg)) {
+  if (usage > 0) {
+    alert(`Cannot delete category "${name}": ${usage} task(s) are using it. Please reassign or remove the category from those tasks first.`)
+    return
+  }
+  if (confirm(`Delete category "${name}"?`)) {
     categoryStore.deleteCategory(id)
   }
 }
