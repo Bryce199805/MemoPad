@@ -1,121 +1,171 @@
 <template>
   <div class="dashboard">
+    <!-- Header -->
     <div class="dashboard-header">
-      <h1>Dashboard</h1>
-      <p>Welcome back, {{ authStore.user?.username }}</p>
+      <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Welcome back, {{ authStore.user?.username }} &middot; {{ todayDate }}</p>
+      </div>
     </div>
 
-    <!-- Tab Selector -->
-    <div class="tab-selector">
-      <button 
-        v-for="tab in tabs" 
-        :key="tab.key"
-        class="tab-btn"
-        :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div
+        v-for="stat in statCards"
+        :key="stat.key"
+        class="stat-card glass-card"
+        :class="{ active: expanded === stat.key }"
+        @click="expanded = expanded === stat.key ? null : stat.key"
       >
-        <div class="tab-icon" :style="{ background: tab.color }">
-          <component :is="tab.icon" />
-        </div>
-        <div class="tab-info">
-          <span class="tab-label">{{ tab.label }}</span>
-          <span class="tab-value">{{ tab.value }}</span>
-        </div>
-      </button>
-    </div>
-
-    <!-- Active Tab Content -->
-    <div class="tab-content glass-card">
-      <!-- Total Tasks -->
-      <div v-if="activeTab === 'total'" class="content-section">
-        <div class="section-header">
-          <h3>All Tasks</h3>
-          <span class="task-count">{{ todos.length }} total</span>
-        </div>
-        <div class="task-list">
-          <div v-for="todo in allTasks.slice(0, 10)" :key="todo.id" class="task-item">
-            <button class="task-checkbox" :class="{ checked: todo.done }" @click="toggleTodo(todo.id)">
-              <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <polyline points="20,6 9,17 4,12" />
-              </svg>
-            </button>
-            <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
-            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
+        <div class="stat-card-inner">
+          <div class="stat-icon" :style="{ background: stat.color }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path v-if="stat.key === 'total'" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+              <path v-else-if="stat.key === 'done'" d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+              <circle v-else-if="stat.key === 'pending'" cx="12" cy="12" r="10" />
+              <polyline v-if="stat.key === 'pending'" points="12,6 12,12 16,14" />
+              <polygon v-if="stat.key === 'due'" points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" />
+            </svg>
           </div>
-          <p v-if="todos.length === 0" class="empty-text">No tasks yet</p>
-        </div>
-      </div>
-
-      <!-- Completed -->
-      <div v-if="activeTab === 'done'" class="content-section">
-        <div class="section-header">
-          <h3>Completed Tasks</h3>
-          <span class="task-count">{{ completedTasks.length }} done</span>
-        </div>
-        <div class="task-list">
-          <div v-for="todo in completedTasks.slice(0, 10)" :key="todo.id" class="task-item">
-            <button class="task-checkbox checked" @click="toggleTodo(todo.id)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <polyline points="20,6 9,17 4,12" />
-              </svg>
-            </button>
-            <span class="task-text done">{{ todo.content }}</span>
-            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
+          <div class="stat-text">
+            <span class="stat-label">{{ stat.label }}</span>
+            <span class="stat-value">{{ stat.value }}</span>
           </div>
-          <p v-if="completedTasks.length === 0" class="empty-text">No completed tasks</p>
-        </div>
-      </div>
-
-      <!-- Pending -->
-      <div v-if="activeTab === 'pending'" class="content-section">
-        <div class="section-header">
-          <h3>Pending Tasks</h3>
-          <span class="task-count">{{ pendingTasks.length }} pending</span>
-        </div>
-        <div class="task-list">
-          <div v-for="todo in pendingTasks.slice(0, 10)" :key="todo.id" class="task-item">
-            <button class="task-checkbox" @click="toggleTodo(todo.id)"></button>
-            <span class="task-text">{{ todo.content }}</span>
-            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
-          </div>
-          <p v-if="pendingTasks.length === 0" class="empty-text">All tasks completed!</p>
-        </div>
-      </div>
-
-      <!-- Due Soon -->
-      <div v-if="activeTab === 'due'" class="content-section">
-        <div class="section-header">
-          <h3>Upcoming Deadlines</h3>
-          <span class="task-count">{{ dueSoonCountdowns.length }} upcoming</span>
-        </div>
-        <div class="countdown-list">
-          <div v-for="cd in dueSoonCountdowns" :key="cd.id" class="countdown-item">
-            <div class="countdown-info">
-              <span class="countdown-title">{{ cd.title }}</span>
-              <span class="countdown-date">{{ formatDate(cd.target_date) }}</span>
-            </div>
-            <div class="countdown-days" :class="getDaysClass(cd.target_date)">
-              <span class="days-num">{{ daysLeft(cd.target_date) }}</span>
-              <span class="days-label">days</span>
-            </div>
-          </div>
-          <p v-if="dueSoonCountdowns.length === 0" class="empty-text">No upcoming deadlines</p>
         </div>
       </div>
     </div>
 
-    <!-- Progress Section -->
-    <div class="progress-section">
-      <Card class="progress-card">
+    <!-- Expandable Preview Panel -->
+    <Transition name="expand">
+      <div v-if="expanded" class="preview-panel glass-card">
+        <!-- Total Tasks -->
+        <template v-if="expanded === 'total'">
+          <div class="preview-header">
+            <h3>All Tasks</h3>
+            <router-link to="/todos" class="view-all">View all &rarr;</router-link>
+          </div>
+          <div class="preview-list">
+            <div v-for="todo in recentTasks" :key="todo.id" class="preview-item">
+              <button class="mini-check" :class="{ checked: todo.done }" @click.stop="toggleTodo(todo.id)">
+                <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20,6 9,17 4,12"/></svg>
+              </button>
+              <span class="preview-text" :class="{ done: todo.done }">{{ todo.content }}</span>
+              <span class="preview-priority" :class="todo.priority">{{ {high:'H',medium:'M',low:'L'}[todo.priority] }}</span>
+            </div>
+            <p v-if="todos.length === 0" class="empty-hint">No tasks yet</p>
+          </div>
+        </template>
+
+        <!-- Completed -->
+        <template v-if="expanded === 'done'">
+          <div class="preview-header">
+            <h3>Completed Tasks</h3>
+            <router-link to="/todos" class="view-all">View all &rarr;</router-link>
+          </div>
+          <div class="preview-list">
+            <div v-for="todo in completedTasks.slice(0, 8)" :key="todo.id" class="preview-item">
+              <button class="mini-check checked" @click.stop="toggleTodo(todo.id)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20,6 9,17 4,12"/></svg>
+              </button>
+              <span class="preview-text done">{{ todo.content }}</span>
+            </div>
+            <p v-if="completedTasks.length === 0" class="empty-hint">No completed tasks</p>
+          </div>
+        </template>
+
+        <!-- Pending -->
+        <template v-if="expanded === 'pending'">
+          <div class="preview-header">
+            <h3>Pending Tasks</h3>
+            <router-link to="/todos" class="view-all">View all &rarr;</router-link>
+          </div>
+          <div class="preview-list">
+            <div v-for="todo in pendingTasks.slice(0, 8)" :key="todo.id" class="preview-item">
+              <button class="mini-check" @click.stop="toggleTodo(todo.id)"></button>
+              <span class="preview-text">{{ todo.content }}</span>
+              <span class="preview-priority" :class="todo.priority">{{ {high:'H',medium:'M',low:'L'}[todo.priority] }}</span>
+            </div>
+            <p v-if="pendingTasks.length === 0" class="empty-hint">All tasks completed!</p>
+          </div>
+        </template>
+
+        <!-- Due Soon -->
+        <template v-if="expanded === 'due'">
+          <div class="preview-header">
+            <h3>Upcoming Deadlines</h3>
+            <router-link to="/countdowns" class="view-all">View all &rarr;</router-link>
+          </div>
+          <div class="preview-list">
+            <div v-for="cd in upcomingCountdowns" :key="cd.id" class="preview-item">
+              <span class="preview-text">{{ cd.title }}</span>
+              <span class="preview-days" :class="daysClass(cd.target_date)">
+                {{ daysLeft(cd.target_date) }}d
+              </span>
+            </div>
+            <p v-if="upcomingCountdowns.length === 0" class="empty-hint">No upcoming deadlines</p>
+          </div>
+        </template>
+      </div>
+    </Transition>
+
+    <!-- Content Grid: Progress + Countdowns -->
+    <div class="content-grid">
+      <!-- Task Progress -->
+      <Card>
         <template #header>Task Progress</template>
-        <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: `${Math.min(stats.todos?.completion_rate || 0, 100)}%` }"></div>
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: completionRate + '%' }"></div>
+          </div>
+          <div class="progress-meta">
+            <span>{{ stats.todos?.done || 0 }} of {{ stats.todos?.total || 0 }} completed</span>
+            <span class="progress-pct">{{ completionRate }}%</span>
+          </div>
         </div>
-        <div class="progress-info">
-          <span>{{ stats.todos?.done || 0 }} of {{ stats.todos?.total || 0 }} completed</span>
-          <span class="progress-percent">{{ (stats.todos?.completion_rate || 0).toFixed(1) }}%</span>
+        <div class="priority-bars">
+          <h4>By Priority</h4>
+          <div class="bar-row" v-for="p in priorityBars" :key="p.key">
+            <span class="bar-label">{{ p.label }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" :style="{ width: p.pct + '%', background: p.color }"></div>
+            </div>
+            <span class="bar-count">{{ p.count }}</span>
+          </div>
         </div>
       </Card>
+
+      <!-- Upcoming Countdowns -->
+      <Card>
+        <template #header>Upcoming Countdowns</template>
+        <div v-if="upcomingCountdowns.length === 0" class="empty-hint">No upcoming deadlines</div>
+        <div v-else class="countdown-list">
+          <div v-for="cd in upcomingCountdowns.slice(0, 5)" :key="cd.id" class="countdown-row">
+            <div class="cd-info">
+              <span class="cd-title">{{ cd.title }}</span>
+              <span class="cd-date">{{ formatDate(cd.target_date) }}</span>
+            </div>
+            <div class="cd-days" :class="daysClass(cd.target_date)">
+              <span class="cd-num">{{ Math.abs(daysLeft(cd.target_date)) }}</span>
+              <span class="cd-unit">{{ daysLeft(cd.target_date) >= 0 ? 'days' : 'ago' }}</span>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <router-link to="/countdowns" class="view-all">View all &rarr;</router-link>
+        </template>
+      </Card>
+    </div>
+
+    <!-- Pinned Tasks -->
+    <div v-if="pinnedTodos.length > 0" class="pinned-section">
+      <h3 class="section-title">Pinned</h3>
+      <div class="pinned-list">
+        <div v-for="todo in pinnedTodos" :key="todo.id" class="pinned-item glass-card" @click="$router.push('/todos')">
+          <span class="pin-icon">📌</span>
+          <span class="pinned-text">{{ todo.content }}</span>
+          <span class="preview-priority" :class="todo.priority">{{ {high:'H',medium:'M',low:'L'}[todo.priority] }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -127,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTodoStore } from '../stores/todo'
 import { useCountdownStore } from '../stores/countdown'
@@ -143,42 +193,36 @@ const { countdowns } = storeToRefs(countdownStore)
 
 const stats = ref({ todos: {}, countdowns: {} })
 const loading = ref(true)
-const activeTab = ref('total')
+const expanded = ref(null)
 
-// Icon components
-const TotalIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-  h('path', { d: 'M9 11l3 3L22 4' }),
-  h('path', { d: 'M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11' })
+const todayDate = computed(() => {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+})
+
+const statCards = computed(() => [
+  { key: 'total', label: 'Total Tasks', value: stats.value.todos?.total || 0, color: 'rgba(99, 102, 241, 0.15)' },
+  { key: 'done', label: 'Completed', value: stats.value.todos?.done || 0, color: 'rgba(34, 197, 94, 0.15)' },
+  { key: 'pending', label: 'Pending', value: stats.value.todos?.pending || 0, color: 'rgba(245, 158, 11, 0.15)' },
+  { key: 'due', label: 'Due Soon', value: stats.value.countdowns?.due_soon || 0, color: 'rgba(139, 92, 246, 0.15)' }
 ])
 
-const DoneIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-  h('path', { d: 'M22 11.08V12a10 10 0 11-5.93-9.14' }),
-  h('polyline', { points: '22,4 12,14.01 9,11.01' })
-])
-
-const PendingIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-  h('circle', { cx: '12', cy: '12', r: '10' }),
-  h('polyline', { points: '12,6 12,12 16,14' })
-])
-
-const DueIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-  h('polygon', { points: '13,2 3,14 12,14 11,22 21,10 12,10 13,2' })
-])
-
-const tabs = computed(() => [
-  { key: 'total', label: 'Total Tasks', value: stats.value.todos?.total || 0, color: 'rgba(99, 102, 241, 0.2)', icon: TotalIcon },
-  { key: 'done', label: 'Completed', value: stats.value.todos?.done || 0, color: 'rgba(34, 197, 94, 0.2)', icon: DoneIcon },
-  { key: 'pending', label: 'Pending', value: stats.value.todos?.pending || 0, color: 'rgba(245, 158, 11, 0.2)', icon: PendingIcon },
-  { key: 'due', label: 'Due Soon', value: stats.value.countdowns?.due_soon || 0, color: 'rgba(139, 92, 246, 0.2)', icon: DueIcon }
-])
-
-// Computed
-const allTasks = computed(() => [...todos.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
+const recentTasks = computed(() => [...todos.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
 const completedTasks = computed(() => todos.value.filter(t => t.done))
 const pendingTasks = computed(() => todos.value.filter(t => !t.done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
-const dueSoonCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
+const pinnedTodos = computed(() => todos.value.filter(t => t.pinned && !t.done))
+const upcomingCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
+const completionRate = computed(() => Math.round(stats.value.todos?.completion_rate || 0))
 
-// Methods
+const priorityBars = computed(() => {
+  const bp = stats.value.todos?.by_priority || {}
+  const pending = stats.value.todos?.pending || 1
+  return [
+    { key: 'high', label: 'High', count: bp.high || 0, pct: Math.round(((bp.high || 0) / pending) * 100), color: 'var(--danger)' },
+    { key: 'medium', label: 'Medium', count: bp.medium || 0, pct: Math.round(((bp.medium || 0) / pending) * 100), color: 'var(--warning)' },
+    { key: 'low', label: 'Low', count: bp.low || 0, pct: Math.round(((bp.low || 0) / pending) * 100), color: 'var(--success)' }
+  ]
+})
+
 function daysLeft(date) {
   const target = new Date(date)
   const now = new Date()
@@ -191,10 +235,10 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function getDaysClass(date) {
-  const days = daysLeft(date)
-  if (days < 0) return 'overdue'
-  if (days <= 3) return 'soon'
+function daysClass(date) {
+  const d = daysLeft(date)
+  if (d < 0) return 'overdue'
+  if (d <= 3) return 'soon'
   return 'normal'
 }
 
@@ -215,11 +259,7 @@ async function fetchStats() {
 async function fetchAll() {
   loading.value = true
   try {
-    await Promise.all([
-      fetchStats(),
-      todoStore.fetchTodos(),
-      countdownStore.fetchCountdowns()
-    ])
+    await Promise.all([fetchStats(), todoStore.fetchTodos(), countdownStore.fetchCountdowns()])
   } finally {
     loading.value = false
   }
@@ -234,6 +274,7 @@ onMounted(fetchAll)
   margin: 0 auto;
 }
 
+/* Header */
 .dashboard-header {
   margin-bottom: 24px;
 }
@@ -242,132 +283,130 @@ onMounted(fetchAll)
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
-.dashboard-header p {
+.subtitle {
   color: var(--text-secondary);
   font-size: 15px;
 }
 
-/* Tab Selector - 4 Equal Cards */
-.tab-selector {
+/* Stat Cards Grid */
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+.stat-card {
   cursor: pointer;
+  padding: 0;
   transition: all 0.2s ease;
-  text-align: left;
 }
 
-.tab-btn:hover {
-  border-color: var(--accent-primary);
+.stat-card:hover {
   transform: translateY(-2px);
 }
 
-.tab-btn.active {
-  background: var(--bg-tertiary);
+.stat-card.active {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary), 0 4px 16px rgba(99, 102, 241, 0.15);
 }
 
-.tab-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+.stat-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.tab-icon svg {
-  width: 20px;
-  height: 20px;
+.stat-icon svg {
+  width: 22px;
+  height: 22px;
   color: var(--text-primary);
 }
 
-.tab-info {
+.stat-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.tab-label {
+.stat-label {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.tab-value {
-  font-size: 24px;
+.stat-value {
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
 }
 
-/* Tab Content */
-.tab-content {
+/* Expandable Preview Panel */
+.preview-panel {
   padding: 20px;
   margin-bottom: 20px;
 }
 
-.content-section {
-  min-height: 200px;
-}
-
-.section-header {
+.preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.section-header h3 {
-  font-size: 16px;
+.preview-header h3 {
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.task-count {
+.view-all {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--accent-primary);
+  text-decoration: none;
 }
 
-/* Task List */
-.task-list, .countdown-list {
+.view-all:hover {
+  text-decoration: underline;
+}
+
+.preview-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.task-item {
+.preview-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: var(--bg-tertiary);
-  border-radius: 10px;
+  border-radius: 8px;
   transition: background 0.15s;
 }
 
-.task-item:hover {
+.preview-item:hover {
   background: var(--bg-hover);
 }
 
-.task-checkbox {
-  width: 20px;
-  height: 20px;
+.mini-check {
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--border-color);
   border-radius: 50%;
   display: flex;
@@ -375,108 +414,94 @@ onMounted(fetchAll)
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
-.task-checkbox:hover {
+.mini-check:hover {
   border-color: var(--accent-primary);
 }
 
-.task-checkbox.checked {
+.mini-check.checked {
   background: var(--success);
   border-color: var(--success);
 }
 
-.task-checkbox svg {
-  width: 14px;
-  height: 14px;
+.mini-check svg {
+  width: 12px;
+  height: 12px;
   color: white;
 }
 
-.task-text {
+.preview-text {
   flex: 1;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.task-text.done {
+.preview-text.done {
   text-decoration: line-through;
   color: var(--text-muted);
 }
 
-.task-priority {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
-  text-transform: capitalize;
-}
-
-.task-priority.high { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-.task-priority.medium { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-.task-priority.low { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-
-.empty-text {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 32px;
-  font-size: 14px;
-}
-
-/* Countdown List */
-.countdown-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  background: var(--bg-tertiary);
-  border-radius: 10px;
-}
-
-.countdown-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.countdown-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.countdown-date {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.countdown-days {
-  text-align: center;
-}
-
-.countdown-days .days-num {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-  display: block;
-}
-
-.countdown-days .days-label {
+.preview-priority {
   font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.preview-priority.high { background: rgba(239,68,68,0.15); color: var(--danger); }
+.preview-priority.medium { background: rgba(245,158,11,0.15); color: var(--warning); }
+.preview-priority.low { background: rgba(34,197,94,0.15); color: var(--success); }
+
+.preview-days {
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.preview-days.normal { color: var(--accent-primary); }
+.preview-days.soon { color: var(--warning); }
+.preview-days.overdue { color: var(--danger); }
+
+.empty-hint {
+  text-align: center;
   color: var(--text-muted);
+  padding: 20px;
+  font-size: 13px;
 }
 
-.countdown-days.normal .days-num { color: var(--accent-primary); }
-.countdown-days.soon .days-num { color: var(--warning); }
-.countdown-days.overdue .days-num { color: var(--danger); }
+/* Expand Animation */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.25s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
 
-/* Progress Section */
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* Progress */
 .progress-section {
-  margin-top: 20px;
-}
-
-.progress-card {
-  max-width: 400px;
+  margin-bottom: 20px;
 }
 
 .progress-bar {
@@ -494,16 +519,157 @@ onMounted(fetchAll)
   transition: width 0.5s ease;
 }
 
-.progress-info {
+.progress-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 
-.progress-percent {
-  font-weight: 600;
+.progress-pct {
+  font-weight: 700;
   color: var(--accent-primary);
+}
+
+/* Priority Bars */
+.priority-bars h4 {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bar-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.bar-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Countdowns */
+.countdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.countdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.cd-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cd-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cd-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cd-days {
+  text-align: center;
+}
+
+.cd-num {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+}
+
+.cd-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cd-days.normal .cd-num { color: var(--accent-primary); }
+.cd-days.soon .cd-num { color: var(--warning); }
+.cd-days.overdue .cd-num { color: var(--danger); }
+
+/* Pinned Section */
+.pinned-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.pinned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pinned-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pinned-item:hover {
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.pin-icon {
+  font-size: 14px;
+}
+
+.pinned-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 /* Loading */
@@ -530,31 +696,40 @@ onMounted(fetchAll)
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .tab-selector {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .tab-selector {
+  .stats-grid {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
-  .tab-btn {
-    padding: 12px;
-    flex-direction: column;
-    text-align: center;
-    gap: 8px;
+  .stat-card-inner {
+    padding: 14px 16px;
+    gap: 10px;
   }
 
-  .tab-icon {
+  .stat-icon {
     width: 36px;
     height: 36px;
   }
 
-  .tab-value {
-    font-size: 20px;
+  .stat-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-value {
+    font-size: 22px;
   }
 }
 </style>

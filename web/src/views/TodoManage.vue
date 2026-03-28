@@ -225,7 +225,7 @@ const { categories } = storeToRefs(categoryStore)
 
 const search = ref('')
 const filterPriority = ref('')
-const filterStatus = ref('pending')
+const filterStatus = ref('')
 const showModal = ref(false)
 const editingTodo = ref(null)
 const enableDueDate = ref(false)
