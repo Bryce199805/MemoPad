@@ -15,19 +15,24 @@ Component({
   },
 
   methods: {
-    preventTouchMove() {},
+    preventTouchMove() {
+      return false
+    },
+
+    stopPropagation() {
+      return false
+    },
 
     onClose() {
-      this.setData({ show: false });
-      this.triggerEvent('close');
+      this.triggerEvent('close')
     },
 
     onConfirm() {
-      this.triggerEvent('confirm');
+      this.triggerEvent('confirm')
     },
 
     onMaskClick() {
-      this.onClose();
+      this.triggerEvent('close')
     }
   }
-});
+})

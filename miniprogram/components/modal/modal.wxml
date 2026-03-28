@@ -1,7 +1,8 @@
 <view class="modal-mask {{show ? 'modal-mask--show' : ''}}" wx:if="{{show}}" catchtouchmove="preventTouchMove" bind:tap="onMaskClick">
-  <view class="modal-sheet {{show ? 'modal-sheet--show' : ''}}" catchtap="preventTouchMove">
+  <view class="modal-sheet" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">{{title}}</text>
+      <text class="modal-close" bind:tap="onClose">×</text>
     </view>
 
     <view class="modal-body">

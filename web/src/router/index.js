@@ -13,25 +13,25 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresUser: true }
   },
   {
     path: '/todos',
     name: 'Todos',
     component: () => import('../views/TodoManage.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresUser: true }
   },
   {
     path: '/countdowns',
     name: 'Countdowns',
     component: () => import('../views/CountdownManage.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresUser: true }
   },
   {
     path: '/settings',
     name: 'Settings',
     component: () => import('../views/Settings.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresUser: true }
   },
   {
     path: '/feedback',
@@ -103,7 +103,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Redirect authenticated users away from guest pages
   if (to.meta.guest && authStore.isAuthenticated) {
-    next({ name: 'Dashboard' })
+    next({ name: authStore.isAdmin ? 'AdminDashboard' : 'Dashboard' })
     return
   }
 
