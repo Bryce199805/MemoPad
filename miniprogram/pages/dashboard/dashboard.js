@@ -66,6 +66,17 @@ Page({
       return due < today
     })
     const upcomingCountdowns = countdowns
+      .map(c => {
+        const days = util.daysLeft(c.target_date)
+        let daysText = ''
+        let daysClass = ''
+        if (days < 0) { daysText = Math.abs(days) + 'd overdue'; daysClass = 'text-danger' }
+        else if (days === 0) { daysText = 'Today'; daysClass = 'text-warning' }
+        else if (days === 1) { daysText = 'Tomorrow'; daysClass = 'text-warning' }
+        else if (days <= 3) { daysText = days + 'd'; daysClass = 'text-warning' }
+        else { daysText = days + 'd'; daysClass = 'text-accent' }
+        return { ...c, daysText, daysClass }
+      })
       .filter(c => new Date(c.target_date) >= today)
       .sort((a, b) => new Date(a.target_date) - new Date(b.target_date))
       .slice(0, 5)

@@ -157,7 +157,7 @@ module.exports = {
                 <view class="countdown-mini-dot" style="background: {{filters.priorityColor(item.priority)}}"></view>
                 <text class="countdown-mini-title">{{item.title}}</text>
               </view>
-              <text class="countdown-mini-days {{item.target_date ? (new Date(item.target_date) < new Date(new Date().toDateString()) ? 'text-danger' : new Date(item.target_date).getTime() - new Date().getTime() < 259200000 ? 'text-warning' : 'text-accent') : ''}}">{{item.target_date ? (new Date(item.target_date) >= new Date(new Date().toDateString()) ? Math.ceil((new Date(item.target_date) - new Date()) / 86400000) + 'd' : 'Overdue') : ''}}</text>
+              <text class="countdown-mini-days {{item.daysClass}}">{{item.daysText}}</text>
             </view>
           </view>
 
