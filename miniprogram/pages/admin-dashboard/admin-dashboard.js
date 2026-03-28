@@ -47,25 +47,28 @@ Page({
   async fetchAll() {
     this.setData({ loading: true })
     try {
-      const [usersRes, ticketsRes, configRes, statsRes] = await Promise.all([
+      const [usersRes, ticketsRes] = await Promise.all([
         api.get('/api/admin/users'),
-        api.get('/api/admin/tickets'),
-        api.get('/api/admin/config'),
-        api.get('/api/admin/stats')
+        api.get('/api/admin/tickets')
       ])
-      const users = (usersRes.data || usersRes) || []
-      const tickets = (ticketsRes.data || ticketsRes) || []
-      const config = (configRes.data || configRes) || {}
-      const adminStats = (statsRes.data || statsRes) || {}
+      
+      // Safely extract arrays
+      let users = usersRes
+      if (usersRes && usersRes.data) users = usersRes.data
+      if (!Array.isArray(users)) users = []
+      
+      let tickets = ticketsRes
+      if (ticketsRes && ticketsRes.data) tickets = ticketsRes.data
+      if (!Array.isArray(tickets)) tickets = []
       
       const stats = {
-        totalUsers: adminStats.users?.total || users.length,
-        activeUsers: adminStats.users?.active || users.filter(u => !u.disabled).length,
+        totalUsers: users.length,
+        activeUsers: users.filter(u => !u.disabled).length,
         openTickets: tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
         totalTickets: tickets.length
       }
       
-      this.setData({ users, tickets, filteredTickets: tickets, stats, config })
+      this.setData({ users, tickets, filteredTickets: tickets, stats })
     } catch (err) {
       console.error('Fetch admin data error:', err)
     } finally {
