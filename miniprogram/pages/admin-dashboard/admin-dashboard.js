@@ -78,6 +78,11 @@ Page({
     wx.navigateTo({ url: '/pages/admin-tickets/admin-tickets' })
   },
 
+  onViewTicket(e) {
+    const id = e.currentTarget.dataset.id
+    wx.navigateTo({ url: '/pages/admin-tickets/admin-tickets?id=' + id })
+  },
+
   onLogout() {
     wx.showModal({
       title: 'Logout',

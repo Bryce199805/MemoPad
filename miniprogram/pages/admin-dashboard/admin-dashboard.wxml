@@ -1,4 +1,4 @@
-<view class="admin-dashboard">
+<view class="admin-page">
   <!-- Loading -->
   <view class="loading-skeleton" wx:if="{{loading}}">
     <view class="skeleton-header"></view>
@@ -14,7 +14,7 @@
     <!-- Header -->
     <view class="admin-header">
       <view class="admin-header-left">
-        <text class="admin-title">Admin</text>
+        <text class="admin-title">Admin Panel</text>
         <text class="admin-subtitle">{{user.username}}</text>
       </view>
       <text class="logout-btn" bind:tap="onLogout">Logout</text>
@@ -22,19 +22,19 @@
 
     <!-- Stats Grid -->
     <view class="stats-grid">
-      <view class="stat-card glass-card" bind:tap="onGoUsers">
+      <view class="stat-card" bind:tap="onGoUsers">
         <text class="stat-value">{{stats.totalUsers}}</text>
-        <text class="stat-label">Users</text>
+        <text class="stat-label">Total Users</text>
       </view>
-      <view class="stat-card glass-card" bind:tap="onGoUsers">
+      <view class="stat-card" bind:tap="onGoUsers">
         <text class="stat-value stat-value--success">{{stats.activeUsers}}</text>
-        <text class="stat-label">Active</text>
+        <text class="stat-label">Active Users</text>
       </view>
-      <view class="stat-card glass-card" bind:tap="onGoTickets">
+      <view class="stat-card" bind:tap="onGoTickets">
         <text class="stat-value stat-value--warning">{{stats.openTickets}}</text>
         <text class="stat-label">Open Tickets</text>
       </view>
-      <view class="stat-card glass-card" bind:tap="onGoTickets">
+      <view class="stat-card" bind:tap="onGoTickets">
         <text class="stat-value">{{stats.totalTickets}}</text>
         <text class="stat-label">Total Tickets</text>
       </view>
@@ -42,17 +42,17 @@
 
     <!-- Quick Actions -->
     <view class="section">
-      <text class="section-title">Quick Actions</text>
-      <view class="action-cards">
-        <view class="action-card glass-card" bind:tap="onGoUsers">
+      <text class="section-title">Management</text>
+      <view class="action-grid">
+        <view class="action-card" bind:tap="onGoUsers">
           <text class="action-icon">👥</text>
-          <text class="action-title">User Management</text>
-          <text class="action-desc">Manage user accounts</text>
+          <text class="action-title">Users</text>
+          <text class="action-count">{{stats.totalUsers}}</text>
         </view>
-        <view class="action-card glass-card" bind:tap="onGoTickets">
+        <view class="action-card" bind:tap="onGoTickets">
           <text class="action-icon">🎫</text>
-          <text class="action-title">Ticket Management</text>
-          <text class="action-desc">Handle user tickets</text>
+          <text class="action-title">Tickets</text>
+          <text class="action-count">{{stats.openTickets}} open</text>
         </view>
       </view>
     </view>
@@ -64,10 +64,10 @@
         <text class="view-all" bind:tap="onGoTickets">View all →</text>
       </view>
       <view class="ticket-list">
-        <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
+        <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
           <view class="ticket-header">
             <text class="ticket-title">{{item.title}}</text>
-            <badge text="{{item.status}}" variant="{{item.status === 'open' ? 'danger' : item.status === 'resolved' ? 'success' : 'warning'}}"></badge>
+            <text class="ticket-status ticket-status--{{item.status}}">{{item.status}}</text>
           </view>
           <view class="ticket-meta">
             <text class="ticket-user">{{item.username}}</text>

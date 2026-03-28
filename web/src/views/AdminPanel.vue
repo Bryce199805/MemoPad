@@ -92,7 +92,7 @@
                     variant="ghost"
                     size="sm"
                     @click="disableUser(user.id)"
-                    :disabled="user.role === 'admin'"
+                    :disabled="user.role === 'admin' || user.id === currentUserId"
                   >
                     Disable
                   </Button>
@@ -108,7 +108,7 @@
                     variant="danger"
                     size="sm"
                     @click="deleteUser(user)"
-                    :disabled="user.role === 'admin'"
+                    :disabled="user.role === 'admin' || user.id === currentUserId"
                   >
                     Delete
                   </Button>
@@ -231,7 +231,9 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Badge from '../components/ui/Badge.vue'
 import api from '../api/client'
+import { useAuthStore } from '../stores/auth'
 
+const authStore = useAuthStore()
 const activeTab = ref('users')
 const users = ref([])
 const stats = ref({})
@@ -244,6 +246,8 @@ const ticketFilter = ref('')
 const showReplyModal = ref(false)
 const replyTicket = ref(null)
 const replyText = ref('')
+
+const currentUserId = computed(() => authStore.user?.id)
 
 async function fetchUsers() {
   try {
