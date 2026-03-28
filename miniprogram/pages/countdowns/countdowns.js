@@ -193,9 +193,11 @@ Page({
       return
     }
 
+    const tz = new Date().getTimezoneOffset()
+    const tzStr = tz <= 0 ? '+' + String(Math.floor(-tz/60)).padStart(2,'0') + ':' + String((-tz)%60).padStart(2,'0') : '-' + String(Math.floor(tz/60)).padStart(2,'0') + ':' + String(tz%60).padStart(2,'0')
     const data = {
       title: form.title.trim(),
-      target_date: form.targetDate + 'T' + form.targetTime + ':00',
+      target_date: form.targetDate + 'T' + form.targetTime + ':00' + tzStr,
       priority: form.priority
     }
 

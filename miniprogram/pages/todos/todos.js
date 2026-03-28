@@ -352,10 +352,12 @@ Page({
       return
     }
 
+    const tz = new Date().getTimezoneOffset()
+    const tzStr = tz <= 0 ? '+' + String(Math.floor(-tz/60)).padStart(2,'0') + ':' + String((-tz)%60).padStart(2,'0') : '-' + String(Math.floor(tz/60)).padStart(2,'0') + ':' + String(tz%60).padStart(2,'0')
     const data = {
       content: form.content.trim(),
       priority: form.priority,
-      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' : null
+      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' + tzStr : null
     }
     if (form.category) {
       data.category_id = form.category

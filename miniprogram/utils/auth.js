@@ -4,6 +4,9 @@ function login(username, password) {
   return api.post('/api/auth/login', { username, password }).then(res => {
     if (res.success) {
       wx.setStorageSync('memo_api_key', res.data.api_key)
+      if (res.data.user) {
+        wx.setStorageSync('memo_user', JSON.stringify(res.data.user))
+      }
     }
     return res
   })
@@ -15,6 +18,9 @@ function register(username, password, email) {
   return api.post('/api/auth/register', data).then(res => {
     if (res.success) {
       wx.setStorageSync('memo_api_key', res.data.api_key)
+      if (res.data.user) {
+        wx.setStorageSync('memo_user', JSON.stringify(res.data.user))
+      }
     }
     return res
   })

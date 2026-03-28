@@ -121,7 +121,9 @@
 .cat-name-input {
   flex: 1;
   min-width: 0;
-  padding: 16rpx 20rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 20rpx;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
