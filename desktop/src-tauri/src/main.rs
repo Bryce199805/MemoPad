@@ -20,30 +20,28 @@ fn snap_to_edges(window: &tauri::WebviewWindow) {
 
             if let Ok(monitors) = window.available_monitors() {
                 for monitor in monitors {
-                    if let Ok(monitor_size) = monitor.size() {
-                        if let Ok(monitor_pos) = monitor.position() {
-                            let mx = monitor_pos.x;
-                            let my = monitor_pos.y;
-                            let mw = monitor_size.width as i32;
-                            let mh = monitor_size.height as i32;
+                    let monitor_size = monitor.size();
+                    let monitor_pos = monitor.position();
+                    let mx = monitor_pos.x;
+                    let my = monitor_pos.y;
+                    let mw = monitor_size.width as i32;
+                    let mh = monitor_size.height as i32;
 
-                            // Left edge
-                            if (wx - mx).abs() <= SNAP_THRESHOLD {
-                                new_x = mx;
-                            }
-                            // Right edge
-                            if (wx + ww - mx - mw).abs() <= SNAP_THRESHOLD {
-                                new_x = mx + mw - ww;
-                            }
-                            // Top edge
-                            if (wy - my).abs() <= SNAP_THRESHOLD {
-                                new_y = my;
-                            }
-                            // Bottom edge
-                            if (wy + wh - my - mh).abs() <= SNAP_THRESHOLD {
-                                new_y = my + mh - wh;
-                            }
-                        }
+                    // Left edge
+                    if (wx - mx).abs() <= SNAP_THRESHOLD {
+                        new_x = mx;
+                    }
+                    // Right edge
+                    if (wx + ww - mx - mw).abs() <= SNAP_THRESHOLD {
+                        new_x = mx + mw - ww;
+                    }
+                    // Top edge
+                    if (wy - my).abs() <= SNAP_THRESHOLD {
+                        new_y = my;
+                    }
+                    // Bottom edge
+                    if (wy + wh - my - mh).abs() <= SNAP_THRESHOLD {
+                        new_y = my + mh - wh;
                     }
                 }
             }
