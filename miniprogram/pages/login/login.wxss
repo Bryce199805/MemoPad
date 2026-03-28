@@ -68,7 +68,7 @@
   display: flex;
   position: relative;
   width: 100%;
-  max-width: 500rpx;
+  max-width: 620rpx;
   background: var(--bg-tertiary, #1a1a1a);
   border-radius: 16rpx;
   padding: 6rpx;
@@ -110,7 +110,7 @@
 /* Form */
 .form {
   width: 100%;
-  max-width: 500rpx;
+  max-width: 620rpx;
 }
 
 .form-group {
@@ -127,7 +127,9 @@
 
 .form-input {
   width: 100%;
-  padding: 24rpx 28rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 28rpx;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12rpx;

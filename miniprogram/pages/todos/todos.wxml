@@ -5,14 +5,16 @@ module.exports = {
     return map[val] !== undefined ? map[val] : 1;
   },
   categoryIndex: function(catId, categories) {
+    var id = (catId && typeof catId === 'object') ? catId.id : catId;
     for (var i = 0; i < categories.length; i++) {
-      if (categories[i].id === catId) return i;
+      if (categories[i].id === id) return i;
     }
     return 0;
   },
   categoryName: function(catId, categories) {
+    var id = (catId && typeof catId === 'object') ? catId.id : catId;
     for (var i = 0; i < categories.length; i++) {
-      if (categories[i].id === catId) return categories[i].name;
+      if (categories[i].id === id) return categories[i].name;
     }
     return '';
   },

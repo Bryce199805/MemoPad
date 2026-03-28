@@ -41,8 +41,9 @@ Page({
       // Count category usage
       const catUsageCounts = {}
       todos.forEach(t => {
-        if (t.category) {
-          catUsageCounts[t.category] = (catUsageCounts[t.category] || 0) + 1
+        const catId = t.category_id || (t.category && t.category.id)
+        if (catId) {
+          catUsageCounts[catId] = (catUsageCounts[catId] || 0) + 1
         }
       })
 
@@ -79,11 +80,11 @@ Page({
       await api.post('/api/categories', { name: newCatName.trim(), color: newCatColor })
       this.setData({ newCatName: '' })
       this.fetchData()
+      wx.hideLoading()
       wx.showToast({ title: 'Added', icon: 'success' })
     } catch (err) {
-      wx.showToast({ title: 'Failed', icon: 'none' })
-    } finally {
       wx.hideLoading()
+      wx.showToast({ title: 'Failed', icon: 'none' })
     }
   },
 
@@ -106,11 +107,11 @@ Page({
         try {
           await api.del('/api/categories/' + id)
           this.fetchData()
+          wx.hideLoading()
           wx.showToast({ title: 'Deleted', icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: 'Failed', icon: 'none' })
-        } finally {
           wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
         }
       }
     })
@@ -129,6 +130,12 @@ Page({
         }
       }
     })
+  },
+
+  onBaseUrlInput(e) {
+    const url = e.detail.value.replace(/\/+$/, '')
+    this.setData({ baseUrl: url })
+    wx.setStorageSync('memo_base_url', url)
   },
 
   onShareAppMessage() {

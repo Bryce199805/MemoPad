@@ -17,18 +17,11 @@ App({
     if (wx.getStorageSync('memo_api_key')) {
       const api = require('./utils/api')
       api.get('/api/auth/verify').then(res => {
-        if (res.success) {
+        if (res.success && res.data && res.data.user) {
           wx.setStorageSync('memo_user', JSON.stringify(res.data.user))
         }
       }).catch(() => {})
     }
   },
 
-  loginRequired() {
-    if (!wx.getStorageSync('memo_api_key')) {
-      wx.redirectTo({ url: '/pages/login/login' })
-      return false
-    }
-    return true
-  }
 })

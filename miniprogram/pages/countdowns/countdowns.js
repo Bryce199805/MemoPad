@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 
 Page({
@@ -27,7 +28,6 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onShow() {
-    const auth = require('../../utils/auth')
     if (!auth.isLoggedIn()) {
       wx.redirectTo({ url: '/pages/login/login' })
       return
@@ -195,7 +195,7 @@ Page({
 
     const data = {
       title: form.title.trim(),
-      target_date: form.targetDate + 'T' + form.targetTime + ':00+08:00',
+      target_date: form.targetDate + 'T' + form.targetTime + ':00',
       priority: form.priority
     }
 
@@ -208,11 +208,11 @@ Page({
       }
       this.setData({ showFormModal: false })
       this.fetchData()
+      wx.hideLoading()
       wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
     } catch (err) {
-      wx.showToast({ title: 'Failed', icon: 'none' })
-    } finally {
       wx.hideLoading()
+      wx.showToast({ title: 'Failed', icon: 'none' })
     }
   },
 

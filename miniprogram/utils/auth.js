@@ -40,8 +40,13 @@ function isLoggedIn() {
 }
 
 function getUser() {
-  const str = wx.getStorageSync('memo_user')
-  return str ? JSON.parse(str) : null
+  try {
+    const str = wx.getStorageSync('memo_user')
+    if (!str) return null
+    return JSON.parse(str)
+  } catch (e) {
+    return null
+  }
 }
 
 module.exports = { login, register, verify, logout, isLoggedIn, getUser }

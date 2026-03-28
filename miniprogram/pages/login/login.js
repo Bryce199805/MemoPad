@@ -11,14 +11,12 @@ Page({
   },
 
   onLoad() {
-    const auth = require('../../utils/auth')
     if (auth.isLoggedIn()) {
       wx.switchTab({ url: '/pages/dashboard/dashboard' })
     }
   },
 
   onShow() {
-    const auth = require('../../utils/auth')
     if (auth.isLoggedIn()) {
       wx.switchTab({ url: '/pages/dashboard/dashboard' })
     }

@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 
 Page({
@@ -21,7 +22,6 @@ Page({
   },
 
   onShow() {
-    const auth = require('../../utils/auth')
     if (!auth.isLoggedIn()) {
       wx.redirectTo({ url: '/pages/login/login' })
       return
@@ -172,7 +172,7 @@ Page({
   },
 
   getExpandedList() {
-    const { expandedCard, allTasks, completedTasks, pendingTodos, overdueTodos, upcomingCountdowns } = this.data
+    const { expandedCard, allTasks, completedTasks } = this.data
     switch (expandedCard) {
       case 'Total': return allTasks
       case 'Completed': return completedTasks

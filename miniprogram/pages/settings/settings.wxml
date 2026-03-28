@@ -74,10 +74,8 @@
     <!-- Server Section -->
     <view class="section-card glass-card">
       <text class="section-card-title">Server</text>
-      <view class="server-info">
-        <text class="server-label">Base URL</text>
-        <text class="server-value">{{baseUrl}}</text>
-      </view>
+      <input class="cat-name-input" placeholder="Server URL" placeholder-style="color: var(--text-muted)"
+        value="{{baseUrl}}" bindinput="onBaseUrlInput" />
     </view>
 
     <!-- Danger Zone -->

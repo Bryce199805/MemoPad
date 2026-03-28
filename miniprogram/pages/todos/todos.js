@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 
 Page({
@@ -41,7 +42,6 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onShow() {
-    const auth = require('../../utils/auth')
     if (!auth.isLoggedIn()) {
       wx.redirectTo({ url: '/pages/login/login' })
       return
@@ -84,7 +84,11 @@ Page({
       if (pVal !== 'all' && t.priority !== pVal) return false
       if (sVal === 'pending' && t.done) return false
       if (sVal === 'completed' && !t.done) return false
-      if (filterCategory !== 0 && t.category !== this.data.categories[filterCategory - 1].id) return false
+      var filterCat = this.data.categories[filterCategory - 1];
+      if (filterCategory !== 0 && filterCat) {
+        var tCatId = (t.category && typeof t.category === 'object') ? t.category.id : t.category;
+        if (tCatId !== filterCat.id) return false;
+      }
       return true
     })
   },
@@ -132,11 +136,10 @@ Page({
     const { selectedIds } = this.data
     const idx = selectedIds.indexOf(id)
     if (idx === -1) {
-      selectedIds.push(id)
+      this.setData({ selectedIds: [...selectedIds, id] })
     } else {
-      selectedIds.splice(idx, 1)
+      this.setData({ selectedIds: selectedIds.filter((_, i) => i !== idx) })
     }
-    this.setData({ selectedIds: [...selectedIds] })
   },
 
   onSelectAll() {
@@ -162,11 +165,11 @@ Page({
           await Promise.all(selectedIds.map(id => api.del('/api/todos/' + id)))
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData()
+          wx.hideLoading()
           wx.showToast({ title: 'Deleted', icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: 'Failed', icon: 'none' })
-        } finally {
           wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
         }
       }
     })
@@ -193,11 +196,11 @@ Page({
         try {
           await Promise.all(completed.map(t => api.del('/api/todos/' + t.id)))
           this.fetchData()
+          wx.hideLoading()
           wx.showToast({ title: 'Cleared', icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: 'Failed', icon: 'none' })
-        } finally {
           wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
         }
       }
     })
@@ -233,8 +236,9 @@ Page({
     const priorityIdx = this.priorityOptions.indexOf(todo.priority || 'medium')
     let catIdx = 0
     let catName = 'None'
-    if (todo.category) {
-      const ci = this.data.categories.findIndex(c => c.id === todo.category)
+    var editCatId = (todo.category && typeof todo.category === 'object') ? todo.category.id : todo.category;
+    if (editCatId) {
+      const ci = this.data.categories.findIndex(c => c.id === editCatId)
       if (ci !== -1) { catIdx = ci; catName = this.data.categories[ci].name }
     }
     const priorityLabel = ['High', 'Medium', 'Low'][priorityIdx]
@@ -351,7 +355,7 @@ Page({
     const data = {
       content: form.content.trim(),
       priority: form.priority,
-      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00+08:00' : null
+      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' : null
     }
     if (form.category) {
       data.category_id = form.category
@@ -366,11 +370,11 @@ Page({
       }
       this.setData({ showFormModal: false })
       this.fetchData()
+      wx.hideLoading()
       wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
     } catch (err) {
-      wx.showToast({ title: 'Failed', icon: 'none' })
-    } finally {
       wx.hideLoading()
+      wx.showToast({ title: 'Failed', icon: 'none' })
     }
   },
 

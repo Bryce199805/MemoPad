@@ -5,14 +5,16 @@ module.exports = {
     return map[priority] || 'info';
   },
   getCategoryName: function(categoryId, categories) {
+    var id = (categoryId && typeof categoryId === 'object') ? categoryId.id : categoryId;
     for (var i = 0; i < categories.length; i++) {
-      if (categories[i].id === categoryId) return categories[i].name;
+      if (categories[i].id === id) return categories[i].name;
     }
     return '';
   },
   getCategoryColor: function(categoryId, categories) {
+    var id = (categoryId && typeof categoryId === 'object') ? categoryId.id : categoryId;
     for (var i = 0; i < categories.length; i++) {
-      if (categories[i].id === categoryId) return categories[i].color;
+      if (categories[i].id === id) return categories[i].color;
     }
     return '';
   },
