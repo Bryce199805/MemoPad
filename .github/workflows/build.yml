@@ -49,7 +49,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'MemoPad v__VERSION__'
-          releaseBody: 'MemoPad Desktop App'
+          releaseBody: 'MemoPad Desktop App - Open Source (https://github.com/Bryce199805/MemoPad)'
           releaseDraft: true
           prerelease: false
 
@@ -100,6 +100,6 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'MemoPad v__VERSION__'
-          releaseBody: 'MemoPad Desktop App'
+          releaseBody: 'MemoPad Desktop App - Open Source (https://github.com/Bryce199805/MemoPad)'
           releaseDraft: true
           prerelease: false
