@@ -91,9 +91,9 @@
             <label>Always on Top</label>
             <button
               class="toggle-btn"
-              :class="{ active: store.alwaysOnTop }"
+              :class="{ active: isAlwaysOnTop }"
               @click="toggleAlwaysOnTop"
-            >{{ store.alwaysOnTop ? 'ON' : 'OFF' }}</button>
+            >{{ isAlwaysOnTop ? 'ON' : 'OFF' }}</button>
           </div>
           <div class="setting-row">
             <label>Theme</label>
@@ -106,64 +106,6 @@
           <button class="logout-btn" @click="handleLogout">Logout</button>
         </div>
       </Transition>
-
-      <!-- Quick Add -->
-      <div class="quick-add-wrapper">
-        <button v-if="!showAddMenu" class="quick-add-toggle" @click="showAddMenu = true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-        <div v-else class="quick-add-expanded">
-          <div class="add-type-tabs">
-            <button :class="{ active: addType === 'task' }" @click="addType = 'task'">Task</button>
-            <button :class="{ active: addType === 'countdown' }" @click="addType = 'countdown'">Countdown</button>
-            <button class="close-add" @click="showAddMenu = false">×</button>
-          </div>
-          <div v-if="addType === 'task'" class="add-form">
-            <textarea
-              v-model="newTodo"
-              @keydown.enter.exact.prevent="addTodo"
-              placeholder="Add a task..."
-              rows="1"
-              class="task-input"
-            ></textarea>
-            <div class="priority-btns">
-              <button
-                class="priority-btn high"
-                :class="{ active: newPriority === 'high' }"
-                @click="newPriority = 'high'"
-                title="High"
-              >H</button>
-              <button
-                class="priority-btn medium"
-                :class="{ active: newPriority === 'medium' }"
-                @click="newPriority = 'medium'"
-                title="Medium"
-              >M</button>
-              <button
-                class="priority-btn low"
-                :class="{ active: newPriority === 'low' }"
-                @click="newPriority = 'low'"
-                title="Low"
-              >L</button>
-            </div>
-            <button class="add-btn" @click="addTodo">+</button>
-          </div>
-          <div v-else class="add-form countdown-form">
-            <textarea
-              v-model="newCountdownTitle"
-              placeholder="Countdown title..."
-              class="cd-title-input"
-              rows="1"
-              @keydown.enter.exact.prevent="addCountdown"
-            ></textarea>
-            <input v-model="newCountdownDate" type="date" class="cd-date-input" />
-            <button class="add-btn" @click="addCountdown">+</button>
-          </div>
-        </div>
-      </div>
 
       <!-- Content -->
       <div class="app-content custom-scrollbar">
@@ -190,21 +132,26 @@
           </div>
         </div>
 
-        <!-- Tasks -->
+        <!-- Pending -->
         <div class="section">
-          <div v-if="store.pinnedTodos.length > 0 || store.countdowns.length > 0" class="section-title">Tasks</div>
-          <TodoCard
-            v-for="todo in store.regularTodos"
-            :key="todo.id"
-            :todo="todo"
-            @toggle="store.toggleTodo"
-            @pin="store.pinTodo"
-          />
+          <div class="section-title collapsible" @click="showPending = !showPending">
+            <span>{{ showPending ? '▼' : '▶' }}</span>
+            <span>Pending ({{ store.pendingCount }})</span>
+          </div>
+          <div v-if="showPending">
+            <TodoCard
+              v-for="todo in store.regularTodos"
+              :key="todo.id"
+              :todo="todo"
+              @toggle="store.toggleTodo"
+              @pin="store.pinTodo"
+            />
+          </div>
         </div>
 
         <!-- Done -->
         <div v-if="store.doneTodos.length > 0" class="section">
-          <div class="section-title done-title" @click="showDone = !showDone">
+          <div class="section-title collapsible" @click="showDone = !showDone">
             <span>{{ showDone ? '▼' : '▶' }}</span>
             <span>Done ({{ store.doneCount }})</span>
           </div>
@@ -236,12 +183,73 @@
         <span>{{ store.pendingCount }} pending</span>
         <span>{{ store.doneCount }} done</span>
       </footer>
+
+      <!-- Quick Add (Bottom) -->
+      <div class="quick-add-wrapper">
+        <button v-if="!showAddMenu" class="quick-add-toggle" @click="showAddMenu = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <div v-else class="quick-add-expanded">
+          <div class="add-type-tabs">
+            <button :class="{ active: addType === 'task' }" @click="addType = 'task'">Task</button>
+            <button :class="{ active: addType === 'countdown' }" @click="addType = 'countdown'">Countdown</button>
+            <button class="close-add" @click="showAddMenu = false">×</button>
+          </div>
+          <div v-if="addType === 'task'" class="add-form">
+            <input
+              v-model="newTodo"
+              @keyup.enter="addTodo"
+              placeholder="Add a task..."
+              class="task-input"
+            />
+            <div class="priority-btns">
+              <button
+                class="priority-btn high"
+                :class="{ active: newPriority === 'high' }"
+                @click="newPriority = 'high'"
+              >H</button>
+              <button
+                class="priority-btn medium"
+                :class="{ active: newPriority === 'medium' }"
+                @click="newPriority = 'medium'"
+              >M</button>
+              <button
+                class="priority-btn low"
+                :class="{ active: newPriority === 'low' }"
+                @click="newPriority = 'low'"
+              >L</button>
+            </div>
+            <button class="add-btn" @click="addTodo">+</button>
+          </div>
+          <div v-else class="add-form countdown-form">
+            <input
+              v-model="newCountdownTitle"
+              @keyup.enter="addCountdown"
+              placeholder="Countdown title..."
+              class="cd-title-input"
+            />
+            <div class="date-picker-wrapper">
+              <input
+                v-model="newCountdownDate"
+                type="date"
+                class="cd-date-input"
+                :placeholder="newCountdownDate ? '' : 'Date'"
+              />
+              <span v-if="!newCountdownDate" class="date-placeholder">Date</span>
+            </div>
+            <button class="add-btn" @click="addCountdown">+</button>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useAppStore } from './stores/app'
 import TodoCard from './components/TodoCard.vue'
@@ -254,6 +262,7 @@ const showAddMenu = ref(false)
 const addType = ref('task')
 const newCountdownTitle = ref('')
 const newCountdownDate = ref('')
+const showPending = ref(true)
 const showDone = ref(false)
 const loginUsername = ref('')
 const loginPassword = ref('')
@@ -261,6 +270,7 @@ const showPassword = ref(false)
 const showAdvanced = ref(!store.serverUrl || !store.apiKey)
 const testing = ref(false)
 const testResult = ref(null)
+const isAlwaysOnTop = ref(store.alwaysOnTop)
 
 const appStyle = computed(() => {
   if (store.theme === 'transparent' || store.transparentBackground) {
@@ -274,6 +284,11 @@ const appStyle = computed(() => {
 
 async function handleLogin() {
   await store.loginWithPassword(loginUsername.value, loginPassword.value)
+  // Check if user is admin after login
+  if (store.user && store.user.role === 'admin') {
+    store.disconnect()
+    store.error = 'Admin accounts are not allowed on desktop'
+  }
 }
 
 function handleLogout() {
@@ -330,12 +345,15 @@ async function minimizeWindow() {
 }
 
 async function toggleAlwaysOnTop() {
-  const newVal = !store.alwaysOnTop
+  const newVal = !isAlwaysOnTop.value
+  isAlwaysOnTop.value = newVal
   store.setAlwaysOnTop(newVal)
   try {
-    await getCurrentWindow().setAlwaysOnTop(newVal)
+    const window = getCurrentWindow()
+    await window.setAlwaysOnTop(newVal)
   } catch (e) {
     console.warn('Failed to set always on top:', e)
+    isAlwaysOnTop.value = !newVal
   }
 }
 
@@ -359,16 +377,25 @@ function daysClass(dateStr) {
 }
 
 onMounted(async () => {
+  const window = getCurrentWindow()
+  
+  // Restore always on top state
   if (store.alwaysOnTop) {
     try {
-      await getCurrentWindow().setAlwaysOnTop(true)
+      await window.setAlwaysOnTop(true)
+      isAlwaysOnTop.value = true
     } catch (e) {
-      console.warn('Failed to set always on top:', e)
+      console.warn('Failed to restore always on top:', e)
     }
   }
 
   if (store.apiKey) {
     await store.connect()
+    // Check if user is admin
+    if (store.user && store.user.role === 'admin') {
+      store.disconnect()
+      store.error = 'Admin accounts are not allowed on desktop'
+    }
   }
 })
 </script>
@@ -409,14 +436,18 @@ onMounted(async () => {
 .theme-dark .toggle-btn { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
 .theme-dark .theme-select { background: rgba(255,255,255,0.1); color: white; }
 .theme-dark .logout-btn { background: rgba(239, 68, 68, 0.15); }
-.theme-dark .quick-add-wrapper { border-color: rgba(255,255,255,0.06); }
+.theme-dark .quick-add-wrapper { border-color: rgba(255,255,255,0.06); background: rgba(0,0,0,0.3); }
 .theme-dark .quick-add-toggle { color: rgba(255,255,255,0.3); }
 .theme-dark .quick-add-toggle:hover { color: rgba(255,255,255,0.6); }
 .theme-dark .add-type-tabs button { color: rgba(255,255,255,0.4); }
 .theme-dark .add-type-tabs button.active { color: white; background: rgba(255,255,255,0.1); }
 .theme-dark .add-type-tabs .close-add { color: rgba(255,255,255,0.3); }
-.theme-dark .add-form input, .theme-dark .add-form select { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
-.theme-dark .add-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-dark .task-input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
+.theme-dark .task-input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-dark .cd-title-input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
+.theme-dark .cd-title-input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-dark .cd-date-input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
+.theme-dark .date-placeholder { color: rgba(255,255,255,0.3); }
 .theme-dark :deep(.todo-card) { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }
 .theme-dark :deep(.todo-card:hover) { border-color: rgba(255,255,255,0.1); }
 .theme-dark :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.3); background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, transparent 100%); }
@@ -461,14 +492,18 @@ onMounted(async () => {
 .theme-light .toggle-btn.active { background: #6366f1; color: white; }
 .theme-light .theme-select { background: #e0e0e0; color: #333; }
 .theme-light .logout-btn { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
-.theme-light .quick-add-wrapper { border-color: #e0e0e0; }
+.theme-light .quick-add-wrapper { border-color: #e0e0e0; background: #f0f0f0; }
 .theme-light .quick-add-toggle { color: #999; }
 .theme-light .quick-add-toggle:hover { color: #666; }
 .theme-light .add-type-tabs button { color: #999; }
 .theme-light .add-type-tabs button.active { color: #333; background: #e0e0e0; }
 .theme-light .add-type-tabs .close-add { color: #999; }
-.theme-light .add-form input, .theme-light .add-form select { background: #f0f0f0; border-color: #e0e0e0; color: #333; }
-.theme-light .add-form input::placeholder { color: #aaa; }
+.theme-light .task-input { background: #fff; border-color: #e0e0e0; color: #333; }
+.theme-light .task-input::placeholder { color: #aaa; }
+.theme-light .cd-title-input { background: #fff; border-color: #e0e0e0; color: #333; }
+.theme-light .cd-title-input::placeholder { color: #aaa; }
+.theme-light .cd-date-input { background: #fff; border-color: #e0e0e0; color: #333; }
+.theme-light .date-placeholder { color: #aaa; }
 .theme-light :deep(.todo-card) { background: rgba(0,0,0,0.03); border-color: #e0e0e0; }
 .theme-light :deep(.todo-card:hover) { border-color: #ccc; }
 .theme-light :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.4); background: linear-gradient(135deg, rgba(251, 146, 60, 0.06) 0%, transparent 100%); }
@@ -514,14 +549,18 @@ onMounted(async () => {
 .theme-transparent .toggle-btn { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
 .theme-transparent .theme-select { background: rgba(255,255,255,0.1); color: white; }
 .theme-transparent .logout-btn { background: rgba(239, 68, 68, 0.15); }
-.theme-transparent .quick-add-wrapper { border-color: rgba(255,255,255,0.08); }
+.theme-transparent .quick-add-wrapper { border-color: rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); }
 .theme-transparent .quick-add-toggle { color: rgba(255,255,255,0.3); }
 .theme-transparent .quick-add-toggle:hover { color: rgba(255,255,255,0.6); }
 .theme-transparent .add-type-tabs button { color: rgba(255,255,255,0.4); }
 .theme-transparent .add-type-tabs button.active { color: white; background: rgba(255,255,255,0.1); }
 .theme-transparent .add-type-tabs .close-add { color: rgba(255,255,255,0.3); }
-.theme-transparent .add-form input, .theme-transparent .add-form select { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
-.theme-transparent .add-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-transparent .task-input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
+.theme-transparent .task-input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-transparent .cd-title-input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
+.theme-transparent .cd-title-input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-transparent .cd-date-input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
+.theme-transparent .date-placeholder { color: rgba(255,255,255,0.3); }
 .theme-transparent :deep(.todo-card) { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
 .theme-transparent :deep(.todo-card:hover) { border-color: rgba(255,255,255,0.15); }
 .theme-transparent :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.3); background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, transparent 100%); }
@@ -571,7 +610,6 @@ onMounted(async () => {
 }
 
 .login-subtitle {
-  color: rgba(255,255,255,0.5);
   font-size: 14px;
   margin-bottom: 32px;
 }
@@ -588,10 +626,6 @@ onMounted(async () => {
   padding: 14px 16px;
   border-radius: 12px;
   font-size: 14px;
-}
-
-.login-form input::placeholder {
-  color: rgba(255,255,255,0.3);
 }
 
 .password-field {
@@ -791,9 +825,9 @@ onMounted(async () => {
   margin-top: 4px;
 }
 
-/* Quick Add */
+/* Quick Add (Bottom) */
 .quick-add-wrapper {
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
 .quick-add-toggle {
@@ -811,7 +845,7 @@ onMounted(async () => {
 }
 
 .quick-add-expanded {
-  padding: 8px 16px 12px;
+  padding: 8px 12px 12px;
 }
 
 .add-type-tabs {
@@ -836,35 +870,25 @@ onMounted(async () => {
 
 .add-form {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  gap: 6px;
+  align-items: center;
 }
 
-.add-form textarea {
+.task-input {
   flex: 1;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   font-size: 13px;
-  resize: none;
-  min-height: 40px;
-  max-height: 80px;
-  overflow-y: auto;
-  line-height: 1.4;
-}
-
-.add-form textarea::placeholder {
-  color: rgba(255,255,255,0.3);
 }
 
 .priority-btns {
   display: flex;
-  flex-direction: column;
   gap: 2px;
 }
 
 .priority-btn {
-  width: 28px;
-  height: 24px;
+  width: 26px;
+  height: 32px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
@@ -880,34 +904,49 @@ onMounted(async () => {
 .priority-btn.medium { background: rgba(245, 158, 11, 0.3); color: #fbbf24; }
 .priority-btn.low { background: rgba(34, 197, 94, 0.3); color: #4ade80; }
 
-.add-form select {
-  width: 40px;
-  border-radius: 10px;
+.cd-title-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.date-picker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cd-date-input {
+  width: 80px;
+  padding: 10px 8px;
+  border-radius: 8px;
   font-size: 12px;
   text-align: center;
 }
 
-.countdown-form .cd-date-input {
-  flex: 0 0 120px;
+.cd-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
 }
-.countdown-form .cd-title-input {
-  flex: 1;
+
+.date-placeholder {
+  position: absolute;
+  left: 8px;
+  font-size: 12px;
+  pointer-events: none;
 }
 
 .add-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 10px;
+  border-radius: 8px;
   color: white;
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
   cursor: pointer;
-}
-
-.add-btn:active {
-  opacity: 0.8;
 }
 
 /* Countdown Card */
@@ -959,7 +998,7 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 
-.done-title {
+.section-title.collapsible {
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -967,11 +1006,11 @@ onMounted(async () => {
   user-select: none;
 }
 
-.done-title:hover {
+.section-title.collapsible:hover {
   opacity: 0.8;
 }
 
-.done-title span:first-child {
+.section-title.collapsible span:first-child {
   font-size: 8px;
 }
 
@@ -999,7 +1038,7 @@ onMounted(async () => {
 .app-footer {
   display: flex;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 16px;
   font-size: 12px;
 }
 
