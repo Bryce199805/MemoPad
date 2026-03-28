@@ -71,8 +71,8 @@
     <view class="empty-full" wx:if="{{countdowns.length === 0}}">
       <empty-state
         icon="⏰"
-        title="No countdowns yet"
-        description="Tap + to add your first countdown">
+        title="No countdowns"
+        description="Tap + to add">
       </empty-state>
     </view>
 
@@ -80,7 +80,7 @@
       <empty-state
         icon="🔍"
         title="No matches"
-        description="Try adjusting your search">
+        description="Try different keywords">
       </empty-state>
     </view>
 
