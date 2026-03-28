@@ -598,6 +598,12 @@ func createCategory(c *gin.Context) {
 		category.Color = "#6366f1"
 	}
 
+	var existing Category
+	if db.Where("user_id = ? AND name = ?", userID, category.Name).First(&existing).Error == nil {
+		c.JSON(http.StatusConflict, errorResponse("Category with this name already exists", "DUPLICATE"))
+		return
+	}
+
 	category.UserID = userID
 	db.Create(&category)
 	c.JSON(http.StatusCreated, successResponse(category))
@@ -623,6 +629,11 @@ func updateCategory(c *gin.Context) {
 		name = sanitizeString(name)
 		if name == "" {
 			c.JSON(http.StatusBadRequest, errorResponse("Name cannot be empty", "VALIDATION_ERROR"))
+			return
+		}
+		var dup Category
+		if db.Where("user_id = ? AND name = ? AND id != ?", userID, name, id).First(&dup).Error == nil {
+			c.JSON(http.StatusConflict, errorResponse("Category with this name already exists", "DUPLICATE"))
 			return
 		}
 		updates["name"] = name

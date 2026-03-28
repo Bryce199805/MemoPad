@@ -39,8 +39,8 @@ Page({
     this.fetchData().then(() => wx.stopPullDownRefresh())
   },
 
-  async fetchData() {
-    this.setData({ loading: true })
+  async fetchData(silent) {
+    if (!silent) this.setData({ loading: true })
     try {
       const res = await api.get('/api/countdowns')
       const countdowns = (res.data || res) || []
@@ -50,7 +50,7 @@ Page({
     } catch (err) {
       console.error('Fetch countdowns error:', err)
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 
@@ -141,7 +141,7 @@ Page({
         if (!res.confirm) return
         try {
           await api.del('/api/countdowns/' + id)
-          this.fetchData()
+          this.fetchData(true)
         } catch (err) {
           wx.showToast({ title: 'Failed to delete', icon: 'none' })
         }
@@ -155,7 +155,7 @@ Page({
     if (!c) return
     try {
       await api.put('/api/countdowns/' + id, { pinned: !c.pinned })
-      this.fetchData()
+      this.fetchData(true)
     } catch (err) {
       wx.showToast({ title: 'Failed', icon: 'none' })
     }
@@ -209,7 +209,7 @@ Page({
         await api.post('/api/countdowns', data)
       }
       this.setData({ showFormModal: false })
-      this.fetchData()
+      this.fetchData(true)
       wx.hideLoading()
       wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
     } catch (err) {

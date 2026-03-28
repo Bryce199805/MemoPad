@@ -191,7 +191,7 @@
 
 /* Empty */
 .empty-full {
-  padding: 80rpx 0;
+  padding: 24rpx 0;
 }
 
 /* Form */

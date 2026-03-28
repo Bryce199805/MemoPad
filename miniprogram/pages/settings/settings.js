@@ -29,7 +29,6 @@ Page({
   },
 
   async fetchData() {
-    this.setData({ loading: true })
     try {
       const [catsRes, todosRes] = await Promise.all([
         api.get('/api/categories'),
@@ -48,6 +47,12 @@ Page({
       })
 
       this.setData({ categories, todos, catUsageCounts })
+      // Set default color to one not already used
+      const usedColors = categories.map(c => c.color)
+      const nextColorIdx = this.data.colorOptions.findIndex(c => !usedColors.includes(c))
+      if (nextColorIdx !== -1) {
+        this.setData({ newCatColorIdx: nextColorIdx, newCatColor: this.data.colorOptions[nextColorIdx] })
+      }
     } catch (err) {
       console.error('Fetch settings error:', err)
     } finally {
@@ -70,9 +75,14 @@ Page({
   },
 
   async onAddCategory() {
-    const { newCatName, newCatColor } = this.data
-    if (!newCatName.trim()) {
+    const { newCatName, newCatColor, categories } = this.data
+    const name = newCatName.trim()
+    if (!name) {
       wx.showToast({ title: 'Please enter a name', icon: 'none' })
+      return
+    }
+    if (categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      wx.showToast({ title: 'Category already exists', icon: 'none' })
       return
     }
     wx.showLoading({ title: 'Adding...' })

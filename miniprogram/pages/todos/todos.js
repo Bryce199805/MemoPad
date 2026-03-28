@@ -53,8 +53,8 @@ Page({
     this.fetchData().then(() => wx.stopPullDownRefresh())
   },
 
-  async fetchData() {
-    this.setData({ loading: true })
+  async fetchData(silent) {
+    if (!silent) this.setData({ loading: true })
     try {
       const [todosRes, catsRes] = await Promise.all([
         api.get('/api/todos'),
@@ -68,7 +68,7 @@ Page({
     } catch (err) {
       console.error('Fetch todos error:', err)
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 
@@ -164,7 +164,7 @@ Page({
         try {
           await Promise.all(selectedIds.map(id => api.del('/api/todos/' + id)))
           this.setData({ selectMode: false, selectedIds: [] })
-          this.fetchData()
+          this.fetchData(true)
           wx.hideLoading()
           wx.showToast({ title: 'Deleted', icon: 'success' })
         } catch (err) {
@@ -195,7 +195,7 @@ Page({
         wx.showLoading({ title: 'Clearing...' })
         try {
           await Promise.all(completed.map(t => api.del('/api/todos/' + t.id)))
-          this.fetchData()
+          this.fetchData(true)
           wx.hideLoading()
           wx.showToast({ title: 'Cleared', icon: 'success' })
         } catch (err) {
@@ -265,7 +265,7 @@ Page({
     const id = e.detail.id
     try {
       await api.patch('/api/todos/' + id + '/toggle')
-      this.fetchData()
+      this.fetchData(true)
     } catch (err) {
       wx.showToast({ title: 'Failed to update', icon: 'none' })
     }
@@ -277,7 +277,7 @@ Page({
     if (!todo) return
     try {
       await api.patch('/api/todos/' + id, { pinned: !todo.pinned })
-      this.fetchData()
+      this.fetchData(true)
     } catch (err) {
       wx.showToast({ title: 'Failed', icon: 'none' })
     }
@@ -292,7 +292,7 @@ Page({
         if (!res.confirm) return
         try {
           await api.del('/api/todos/' + id)
-          this.fetchData()
+          this.fetchData(true)
         } catch (err) {
           wx.showToast({ title: 'Failed to delete', icon: 'none' })
         }
@@ -371,7 +371,7 @@ Page({
         await api.post('/api/todos', data)
       }
       this.setData({ showFormModal: false })
-      this.fetchData()
+      this.fetchData(true)
       wx.hideLoading()
       wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
     } catch (err) {
