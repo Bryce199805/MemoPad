@@ -5,9 +5,8 @@
   border-radius: 24rpx;
   padding: 32rpx;
   overflow: hidden;
-  flex: 1;
-  min-width: 0;
-  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .countdown-strip {

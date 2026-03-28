@@ -389,7 +389,12 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 16rpx;
-  width: 100%;
+}
+
+.countdown-card-wrap {
+  flex: 1;
+  min-width: 0;
+  display: block;
 }
 
 .countdown-checkbox-wrap {
