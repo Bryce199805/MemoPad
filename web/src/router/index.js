@@ -88,26 +88,32 @@ router.beforeEach(async (to, from, next) => {
     await authStore.verifyAuth()
   }
 
+  // Check meta from all matched routes (parent + child)
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiresUser = to.matched.some(record => record.meta.requiresUser)
+  const isGuest = to.matched.some(record => record.meta.guest)
+
   // Check if route requires auth
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
   }
 
   // Check if route requires admin
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+  if (requiresAdmin && !authStore.isAdmin) {
     next({ name: 'Dashboard' })
     return
   }
 
   // Check if route requires user (non-admin)
-  if (to.meta.requiresUser && authStore.isAdmin) {
+  if (requiresUser && authStore.isAdmin) {
     next({ name: 'AdminDashboard' })
     return
   }
 
   // Redirect authenticated users away from guest pages
-  if (to.meta.guest && authStore.isAuthenticated) {
+  if (isGuest && authStore.isAuthenticated) {
     next({ name: authStore.isAdmin ? 'AdminDashboard' : 'Dashboard' })
     return
   }
