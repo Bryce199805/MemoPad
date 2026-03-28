@@ -6,9 +6,7 @@
     "pages/countdowns/countdowns",
     "pages/settings/settings",
     "pages/tickets/tickets",
-    "pages/admin-dashboard/admin-dashboard",
-    "pages/admin/admin",
-    "pages/admin-tickets/admin-tickets"
+    "pages/admin-dashboard/admin-dashboard"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0a0a0a",

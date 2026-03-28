@@ -5,15 +5,19 @@ Page({
   data: {
     loading: true,
     user: null,
+    activeTab: 'dashboard',
     users: [],
     tickets: [],
-    ticketFilter: 'all',
     stats: {
       totalUsers: 0,
       activeUsers: 0,
       openTickets: 0,
       totalTickets: 0
-    }
+    },
+    // Detail modal
+    showTicketDetail: false,
+    currentTicket: null,
+    replyText: ''
   },
 
   onShow() {
@@ -60,29 +64,133 @@ Page({
     }
   },
 
-  onFilterTickets(e) {
-    this.setData({ ticketFilter: e.currentTarget.dataset.filter })
+  // Tab switching
+  onSwitchTab(e) {
+    const tab = e.currentTarget.dataset.tab
+    this.setData({ activeTab: tab })
   },
 
-  getFilteredTickets() {
-    const { tickets, ticketFilter } = this.data
-    if (ticketFilter === 'all') return tickets
-    return tickets.filter(t => t.status === ticketFilter)
+  // Users
+  onDisableUser(e) {
+    const id = e.currentTarget.dataset.id
+    const user = this.data.users.find(u => u.id === id)
+    if (!user) return
+
+    wx.showModal({
+      title: 'Disable User',
+      content: 'Disable "' + user.username + '"?',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await api.patch('/api/admin/users/' + id + '/disable')
+          this.fetchAll()
+          wx.showToast({ title: 'Disabled', icon: 'success' })
+        } catch (err) {
+          wx.showToast({ title: 'Failed', icon: 'none' })
+        }
+      }
+    })
   },
 
-  onGoUsers() {
-    wx.navigateTo({ url: '/pages/admin/admin' })
+  onEnableUser(e) {
+    const id = e.currentTarget.dataset.id
+    api.patch('/api/admin/users/' + id + '/enable').then(() => {
+      this.fetchAll()
+      wx.showToast({ title: 'Enabled', icon: 'success' })
+    }).catch(() => wx.showToast({ title: 'Failed', icon: 'none' }))
   },
 
-  onGoTickets() {
-    wx.navigateTo({ url: '/pages/admin-tickets/admin-tickets' })
+  onDeleteUser(e) {
+    const id = e.currentTarget.dataset.id
+    const user = this.data.users.find(u => u.id === id)
+    if (!user) return
+
+    if (user.id === this.data.user.id) {
+      wx.showToast({ title: 'Cannot delete yourself', icon: 'none' })
+      return
+    }
+
+    wx.showModal({
+      title: 'Delete User',
+      content: 'Delete "' + user.username + '"? This cannot be undone.',
+      confirmColor: '#ef4444',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await api.del('/api/admin/users/' + id)
+          this.fetchAll()
+          wx.showToast({ title: 'Deleted', icon: 'success' })
+        } catch (err) {
+          wx.showToast({ title: 'Failed', icon: 'none' })
+        }
+      }
+    })
   },
 
+  // Tickets
   onViewTicket(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: '/pages/admin-tickets/admin-tickets?id=' + id })
+    const ticket = this.data.tickets.find(t => t.id === id)
+    if (ticket) {
+      this.setData({ 
+        showTicketDetail: true, 
+        currentTicket: ticket,
+        replyText: ticket.reply || ''
+      })
+    }
   },
 
+  onCloseTicketDetail() {
+    this.setData({ showTicketDetail: false, currentTicket: null, replyText: '' })
+  },
+
+  onReplyInput(e) {
+    this.setData({ replyText: e.detail.value })
+  },
+
+  onUpdateStatus(e) {
+    const status = e.currentTarget.dataset.status
+    const ticket = this.data.currentTicket
+    if (!ticket) return
+
+    wx.showLoading({ title: 'Updating...' })
+    api.put('/api/admin/tickets/' + ticket.id, { status, reply: this.data.replyText }).then(() => {
+      wx.hideLoading()
+      wx.showToast({ title: 'Updated', icon: 'success' })
+      this.onCloseTicketDetail()
+      this.fetchAll()
+    }).catch(() => {
+      wx.hideLoading()
+      wx.showToast({ title: 'Failed', icon: 'none' })
+    })
+  },
+
+  onDeleteTicket() {
+    const ticket = this.data.currentTicket
+    if (!ticket) return
+
+    wx.showModal({
+      title: 'Delete Ticket',
+      content: 'Delete this ticket?',
+      confirmColor: '#ef4444',
+      success: async (res) => {
+        if (!res.confirm) return
+        wx.showLoading({ title: 'Deleting...' })
+        try {
+          await api.del('/api/admin/tickets/' + ticket.id)
+          wx.hideLoading()
+          wx.showToast({ title: 'Deleted', icon: 'success' })
+          this.onCloseTicketDetail()
+          this.fetchAll()
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: 'Failed', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // Logout
   onLogout() {
     wx.showModal({
       title: 'Logout',

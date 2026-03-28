@@ -1,9 +1,0 @@
-{
-  "usingComponents": {
-    "badge": "../../components/badge/badge",
-    "empty-state": "../../components/empty-state/empty-state",
-    "modal": "../../components/modal/modal"
-  },
-  "navigationBarTitleText": "Tickets",
-  "enablePullDownRefresh": true
-}

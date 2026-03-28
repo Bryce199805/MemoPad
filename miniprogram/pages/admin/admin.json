@@ -1,8 +1,0 @@
-{
-  "usingComponents": {
-    "badge": "../../components/badge/badge",
-    "empty-state": "../../components/empty-state/empty-state"
-  },
-  "navigationBarTitleText": "Admin",
-  "enablePullDownRefresh": true
-}

@@ -92,7 +92,7 @@
     <view class="section-card glass-card" wx:if="{{user.role === 'admin'}}">
       <text class="section-card-title">Admin</text>
       <view class="admin-link" bind:tap="onGoAdmin">
-        <text class="admin-link-text">User Management</text>
+        <text class="admin-link-text">Admin Panel</text>
         <text class="arrow">→</text>
       </view>
     </view>
