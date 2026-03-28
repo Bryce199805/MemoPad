@@ -2,7 +2,10 @@
   <div 
     class="app-window"
     :style="{
-      background: `linear-gradient(135deg, rgba(10, 10, 10, ${opacity/100}) 0%, rgba(20, 20, 20, ${opacity/100}) 50%, rgba(10, 10, 10, ${opacity/100}) 100%)`
+      background: store.transparentBackground 
+        ? `rgba(10, 10, 10, ${opacity/100})`
+        : `linear-gradient(135deg, rgba(10, 10, 10, ${opacity/100}) 0%, rgba(20, 20, 20, ${opacity/100}) 50%, rgba(10, 10, 10, ${opacity/100}) 100%)`,
+      backdropFilter: store.transparentBackground ? 'blur(20px)' : 'none'
     }"
   >
     <!-- Login Screen -->
@@ -67,6 +70,14 @@
           <div class="setting-row">
             <label>Opacity</label>
             <input type="range" min="60" max="100" :value="store.opacity" @input="store.setOpacity($event.target.value)">
+          </div>
+          <div class="setting-row">
+            <label>Transparent BG</label>
+            <button 
+              class="toggle-btn"
+              :class="{ active: store.transparentBackground }"
+              @click="store.setTransparentBackground(!store.transparentBackground)"
+            >{{ store.transparentBackground ? 'ON' : 'OFF' }}</button>
           </div>
           <div class="setting-row">
             <label>Always on Top</label>
@@ -201,6 +212,7 @@ onMounted(async () => {
   flex-direction: column;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: transparent;
 }
 
 /* Login */

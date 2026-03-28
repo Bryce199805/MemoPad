@@ -5,207 +5,116 @@
       <p>Welcome back, {{ authStore.user?.username }}</p>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div 
-        class="stat-card glass-card" 
-        :class="{ expanded: expandedSection === 'total' }"
-        @click="toggleSection('total')"
+    <!-- Tab Selector -->
+    <div class="tab-selector">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab.key"
+        class="tab-btn"
+        :class="{ active: activeTab === tab.key }"
+        @click="activeTab = tab.key"
       >
-        <div class="stat-main">
-          <div class="stat-icon" :style="{ background: iconColors.blue }">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-            </svg>
-          </div>
-          <div class="stat-content">
-            <p class="stat-label">Total Tasks</p>
-            <p class="stat-value">{{ stats.todos?.total || 0 }}</p>
-          </div>
-          <span class="expand-icon">{{ expandedSection === 'total' ? '▲' : '▼' }}</span>
+        <div class="tab-icon" :style="{ background: tab.color }">
+          <component :is="tab.icon" />
         </div>
-        <Transition name="expand">
-          <div v-if="expandedSection === 'total'" class="stat-preview" @click.stop>
-            <div class="preview-tasks">
-              <div v-for="todo in allTasks.slice(0, 5)" :key="todo.id" class="preview-task">
-                <button class="mini-checkbox" :class="{ checked: todo.done }" @click.stop="toggleTodo(todo.id)">
-                  <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20,6 9,17 4,12" />
-                  </svg>
-                </button>
-                <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
-              </div>
-              <p v-if="todos.length === 0" class="no-tasks">No tasks yet</p>
-            </div>
-          </div>
-        </Transition>
-      </div>
-
-      <div 
-        class="stat-card glass-card"
-        :class="{ expanded: expandedSection === 'done' }"
-        @click="toggleSection('done')"
-      >
-        <div class="stat-main">
-          <div class="stat-icon" :style="{ background: iconColors.green }">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-              <polyline points="22,4 12,14.01 9,11.01" />
-            </svg>
-          </div>
-          <div class="stat-content">
-            <p class="stat-label">Completed</p>
-            <p class="stat-value">{{ stats.todos?.done || 0 }}</p>
-          </div>
-          <span class="expand-icon">{{ expandedSection === 'done' ? '▲' : '▼' }}</span>
+        <div class="tab-info">
+          <span class="tab-label">{{ tab.label }}</span>
+          <span class="tab-value">{{ tab.value }}</span>
         </div>
-        <Transition name="expand">
-          <div v-if="expandedSection === 'done'" class="stat-preview" @click.stop>
-            <div class="preview-tasks">
-              <div v-for="todo in completedTasks.slice(0, 5)" :key="todo.id" class="preview-task">
-                <button class="mini-checkbox checked" @click.stop="toggleTodo(todo.id)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20,6 9,17 4,12" />
-                  </svg>
-                </button>
-                <span class="task-text done">{{ todo.content }}</span>
-              </div>
-              <p v-if="completedTasks.length === 0" class="no-tasks">No completed tasks</p>
-            </div>
-          </div>
-        </Transition>
-      </div>
-
-      <div 
-        class="stat-card glass-card"
-        :class="{ expanded: expandedSection === 'pending' }"
-        @click="toggleSection('pending')"
-      >
-        <div class="stat-main">
-          <div class="stat-icon" :style="{ background: iconColors.yellow }">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12,6 12,12 16,14" />
-            </svg>
-          </div>
-          <div class="stat-content">
-            <p class="stat-label">Pending</p>
-            <p class="stat-value">{{ stats.todos?.pending || 0 }}</p>
-          </div>
-          <span class="expand-icon">{{ expandedSection === 'pending' ? '▲' : '▼' }}</span>
-        </div>
-        <Transition name="expand">
-          <div v-if="expandedSection === 'pending'" class="stat-preview" @click.stop>
-            <div class="preview-tasks">
-              <div v-for="todo in pendingTasks.slice(0, 5)" :key="todo.id" class="preview-task">
-                <button class="mini-checkbox" @click.stop="toggleTodo(todo.id)"></button>
-                <span class="task-text">{{ todo.content }}</span>
-              </div>
-              <p v-if="pendingTasks.length === 0" class="no-tasks">No pending tasks</p>
-            </div>
-          </div>
-        </Transition>
-      </div>
-
-      <div 
-        class="stat-card glass-card"
-        :class="{ expanded: expandedSection === 'due' }"
-        @click="toggleSection('due')"
-      >
-        <div class="stat-main">
-          <div class="stat-icon" :style="{ background: iconColors.purple }">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" />
-            </svg>
-          </div>
-          <div class="stat-content">
-            <p class="stat-label">Due Soon</p>
-            <p class="stat-value">{{ stats.countdowns?.due_soon || 0 }}</p>
-          </div>
-          <span class="expand-icon">{{ expandedSection === 'due' ? '▲' : '▼' }}</span>
-        </div>
-        <Transition name="expand">
-          <div v-if="expandedSection === 'due'" class="stat-preview" @click.stop>
-            <div class="preview-countdowns">
-              <div v-for="cd in dueSoonCountdowns" :key="cd.id" class="preview-countdown">
-                <span class="countdown-title">{{ cd.title }}</span>
-                <span class="countdown-days" :class="getDaysClass(cd.target_date)">{{ daysLeft(cd.target_date) }}d</span>
-              </div>
-              <p v-if="dueSoonCountdowns.length === 0" class="no-tasks">No upcoming countdowns</p>
-            </div>
-          </div>
-        </Transition>
-      </div>
+      </button>
     </div>
 
-    <!-- Progress Section -->
-    <div class="content-grid">
-      <Card class="progress-card">
-        <template #header>Task Progress</template>
-        <div class="progress-content">
-          <div class="progress-bar">
-            <div 
-              class="progress-fill"
-              :style="{ width: `${Math.min(stats.todos?.completion_rate || 0, 100)}%` }"
-            ></div>
-          </div>
-          <div class="progress-info">
-            <span>{{ stats.todos?.done || 0 }} of {{ stats.todos?.total || 0 }} completed</span>
-            <span class="progress-percent">{{ (stats.todos?.completion_rate || 0).toFixed(1) }}%</span>
-          </div>
+    <!-- Active Tab Content -->
+    <div class="tab-content glass-card">
+      <!-- Total Tasks -->
+      <div v-if="activeTab === 'total'" class="content-section">
+        <div class="section-header">
+          <h3>All Tasks</h3>
+          <span class="task-count">{{ todos.length }} total</span>
         </div>
-        
-        <!-- Recent Tasks -->
-        <div class="recent-section">
-          <div class="recent-header">
-            <h4>Recent Pending Tasks</h4>
-            <router-link to="/todos" class="view-all">View all →</router-link>
+        <div class="task-list">
+          <div v-for="todo in allTasks.slice(0, 10)" :key="todo.id" class="task-item">
+            <button class="task-checkbox" :class="{ checked: todo.done }" @click="toggleTodo(todo.id)">
+              <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20,6 9,17 4,12" />
+              </svg>
+            </button>
+            <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
+            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
           </div>
-          <div v-if="pendingTasks.length === 0" class="empty-state">
-            <p>No pending tasks</p>
-          </div>
-          <div v-else class="recent-tasks">
-            <div 
-              v-for="todo in pendingTasks.slice(0, 5)" 
-              :key="todo.id" 
-              class="task-item"
-            >
-              <button 
-                class="task-checkbox"
-                :class="{ checked: todo.done }"
-                @click="toggleTodo(todo.id)"
-              >
-                <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20,6 9,17 4,12" />
-                </svg>
-              </button>
-              <span class="task-content" :class="{ done: todo.done }">{{ todo.content }}</span>
-              <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
-            </div>
-          </div>
+          <p v-if="todos.length === 0" class="empty-text">No tasks yet</p>
         </div>
-      </Card>
+      </div>
 
-      <!-- Upcoming Countdowns -->
-      <Card class="countdowns-card">
-        <template #header>Upcoming Countdowns</template>
-        <div v-if="upcomingCountdowns.length === 0" class="empty-state">
-          <p>No upcoming countdowns</p>
+      <!-- Completed -->
+      <div v-if="activeTab === 'done'" class="content-section">
+        <div class="section-header">
+          <h3>Completed Tasks</h3>
+          <span class="task-count">{{ completedTasks.length }} done</span>
         </div>
-        <div v-else class="upcoming-countdowns">
-          <div v-for="cd in upcomingCountdowns.slice(0, 5)" :key="cd.id" class="countdown-item">
+        <div class="task-list">
+          <div v-for="todo in completedTasks.slice(0, 10)" :key="todo.id" class="task-item">
+            <button class="task-checkbox checked" @click="toggleTodo(todo.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20,6 9,17 4,12" />
+              </svg>
+            </button>
+            <span class="task-text done">{{ todo.content }}</span>
+            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
+          </div>
+          <p v-if="completedTasks.length === 0" class="empty-text">No completed tasks</p>
+        </div>
+      </div>
+
+      <!-- Pending -->
+      <div v-if="activeTab === 'pending'" class="content-section">
+        <div class="section-header">
+          <h3>Pending Tasks</h3>
+          <span class="task-count">{{ pendingTasks.length }} pending</span>
+        </div>
+        <div class="task-list">
+          <div v-for="todo in pendingTasks.slice(0, 10)" :key="todo.id" class="task-item">
+            <button class="task-checkbox" @click="toggleTodo(todo.id)"></button>
+            <span class="task-text">{{ todo.content }}</span>
+            <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
+          </div>
+          <p v-if="pendingTasks.length === 0" class="empty-text">All tasks completed!</p>
+        </div>
+      </div>
+
+      <!-- Due Soon -->
+      <div v-if="activeTab === 'due'" class="content-section">
+        <div class="section-header">
+          <h3>Upcoming Deadlines</h3>
+          <span class="task-count">{{ dueSoonCountdowns.length }} upcoming</span>
+        </div>
+        <div class="countdown-list">
+          <div v-for="cd in dueSoonCountdowns" :key="cd.id" class="countdown-item">
             <div class="countdown-info">
               <span class="countdown-title">{{ cd.title }}</span>
               <span class="countdown-date">{{ formatDate(cd.target_date) }}</span>
             </div>
             <div class="countdown-days" :class="getDaysClass(cd.target_date)">
-              <span class="days-num">{{ Math.abs(daysLeft(cd.target_date)) }}</span>
-              <span class="days-label">{{ daysLeft(cd.target_date) >= 0 ? 'days' : 'ago' }}</span>
+              <span class="days-num">{{ daysLeft(cd.target_date) }}</span>
+              <span class="days-label">days</span>
             </div>
           </div>
+          <p v-if="dueSoonCountdowns.length === 0" class="empty-text">No upcoming deadlines</p>
         </div>
-        <router-link to="/countdowns" class="view-all">View all →</router-link>
+      </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="progress-section">
+      <Card class="progress-card">
+        <template #header>Task Progress</template>
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: `${Math.min(stats.todos?.completion_rate || 0, 100)}%` }"></div>
+        </div>
+        <div class="progress-info">
+          <span>{{ stats.todos?.done || 0 }} of {{ stats.todos?.total || 0 }} completed</span>
+          <span class="progress-percent">{{ (stats.todos?.completion_rate || 0).toFixed(1) }}%</span>
+        </div>
       </Card>
     </div>
 
@@ -218,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTodoStore } from '../stores/todo'
 import { useCountdownStore } from '../stores/countdown'
@@ -234,27 +143,42 @@ const { countdowns } = storeToRefs(countdownStore)
 
 const stats = ref({ todos: {}, countdowns: {} })
 const loading = ref(true)
-const expandedSection = ref(null)
+const activeTab = ref('total')
 
-const iconColors = {
-  blue: 'rgba(99, 102, 241, 0.2)',
-  green: 'rgba(34, 197, 94, 0.2)',
-  yellow: 'rgba(245, 158, 11, 0.2)',
-  purple: 'rgba(139, 92, 246, 0.2)'
-}
+// Icon components
+const TotalIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+  h('path', { d: 'M9 11l3 3L22 4' }),
+  h('path', { d: 'M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11' })
+])
+
+const DoneIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+  h('path', { d: 'M22 11.08V12a10 10 0 11-5.93-9.14' }),
+  h('polyline', { points: '22,4 12,14.01 9,11.01' })
+])
+
+const PendingIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+  h('circle', { cx: '12', cy: '12', r: '10' }),
+  h('polyline', { points: '12,6 12,12 16,14' })
+])
+
+const DueIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+  h('polygon', { points: '13,2 3,14 12,14 11,22 21,10 12,10 13,2' })
+])
+
+const tabs = computed(() => [
+  { key: 'total', label: 'Total Tasks', value: stats.value.todos?.total || 0, color: 'rgba(99, 102, 241, 0.2)', icon: TotalIcon },
+  { key: 'done', label: 'Completed', value: stats.value.todos?.done || 0, color: 'rgba(34, 197, 94, 0.2)', icon: DoneIcon },
+  { key: 'pending', label: 'Pending', value: stats.value.todos?.pending || 0, color: 'rgba(245, 158, 11, 0.2)', icon: PendingIcon },
+  { key: 'due', label: 'Due Soon', value: stats.value.countdowns?.due_soon || 0, color: 'rgba(139, 92, 246, 0.2)', icon: DueIcon }
+])
 
 // Computed
 const allTasks = computed(() => [...todos.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
 const completedTasks = computed(() => todos.value.filter(t => t.done))
 const pendingTasks = computed(() => todos.value.filter(t => !t.done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
-const upcomingCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
-const dueSoonCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0 && daysLeft(c.target_date) <= 7))
+const dueSoonCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
 
 // Methods
-function toggleSection(section) {
-  expandedSection.value = expandedSection.value === section ? null : section
-}
-
 function daysLeft(date) {
   const target = new Date(date)
   const now = new Date()
@@ -276,7 +200,6 @@ function getDaysClass(date) {
 
 async function toggleTodo(id) {
   await todoStore.toggleTodo(id)
-  // Refresh stats after toggle
   await fetchStats()
 }
 
@@ -312,7 +235,7 @@ onMounted(fetchAll)
 }
 
 .dashboard-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .dashboard-header h1 {
@@ -327,125 +250,153 @@ onMounted(fetchAll)
   font-size: 15px;
 }
 
-/* Stats Grid */
-.stats-grid {
+/* Tab Selector - 4 Equal Cards */
+.tab-selector {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.stat-card {
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  overflow: hidden;
+  transition: all 0.2s ease;
+  text-align: left;
 }
 
-.stat-card:hover {
+.tab-btn:hover {
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
 }
 
-.stat-card.expanded {
-  grid-column: span 1;
+.tab-btn.active {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
-.stat-main {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px;
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.tab-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.stat-icon svg {
-  width: 24px;
-  height: 24px;
+.tab-icon svg {
+  width: 20px;
+  height: 20px;
   color: var(--text-primary);
 }
 
-.stat-content {
-  flex: 1;
+.tab-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.stat-label {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.1;
-}
-
-.expand-icon {
+.tab-label {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-/* Preview Section */
-.stat-preview {
-  padding: 0 16px 16px;
-  border-top: 1px solid var(--border-subtle);
-  margin-top: 0;
+.tab-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
 }
 
-.preview-tasks, .preview-countdowns {
+/* Tab Content */
+.tab-content {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.content-section {
+  min-height: 200px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.task-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Task List */
+.task-list, .countdown-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
 }
 
-.preview-task, .preview-countdown {
+.task-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--bg-tertiary);
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: background 0.15s;
 }
 
-.mini-checkbox {
-  width: 18px;
-  height: 18px;
+.task-item:hover {
+  background: var(--bg-hover);
+}
+
+.task-checkbox {
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--border-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.mini-checkbox.checked {
+.task-checkbox:hover {
+  border-color: var(--accent-primary);
+}
+
+.task-checkbox.checked {
   background: var(--success);
   border-color: var(--success);
 }
 
-.mini-checkbox svg {
-  width: 12px;
-  height: 12px;
+.task-checkbox svg {
+  width: 14px;
+  height: 14px;
   color: white;
 }
 
 .task-text {
   flex: 1;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .task-text.done {
@@ -453,50 +404,79 @@ onMounted(fetchAll)
   color: var(--text-muted);
 }
 
-.no-tasks {
+.task-priority {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.task-priority.high { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+.task-priority.medium { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.task-priority.low { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+
+.empty-text {
   text-align: center;
   color: var(--text-muted);
-  padding: 16px;
-  font-size: 13px;
+  padding: 32px;
+  font-size: 14px;
+}
+
+/* Countdown List */
+.countdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.countdown-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .countdown-title {
-  flex: 1;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--text-primary);
+}
+
+.countdown-date {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .countdown-days {
   text-align: center;
 }
 
-.countdown-days.normal { color: var(--accent-primary); }
-.countdown-days.soon { color: var(--warning); }
-.countdown-days.overdue { color: var(--danger); }
-
-/* Expand Animation */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.25s ease;
-  max-height: 300px;
+.countdown-days .days-num {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
 }
 
-.expand-enter-from,
-.expand-leave-to {
-  max-height: 0;
-  opacity: 0;
+.countdown-days .days-label {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-/* Content Grid */
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+.countdown-days.normal .days-num { color: var(--accent-primary); }
+.countdown-days.soon .days-num { color: var(--warning); }
+.countdown-days.overdue .days-num { color: var(--danger); }
+
+/* Progress Section */
+.progress-section {
+  margin-top: 20px;
 }
 
-/* Progress */
-.progress-content {
-  margin-bottom: 20px;
+.progress-card {
+  max-width: 400px;
 }
 
 .progress-bar {
@@ -526,148 +506,6 @@ onMounted(fetchAll)
   color: var(--accent-primary);
 }
 
-/* Recent Section */
-.recent-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.recent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.recent-header h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.view-all {
-  font-size: 13px;
-  color: var(--accent-primary);
-  text-decoration: none;
-}
-
-.view-all:hover {
-  text-decoration: underline;
-}
-
-.recent-tasks {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.task-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-tertiary);
-  border-radius: 10px;
-}
-
-.task-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.task-checkbox.checked {
-  background: var(--success);
-  border-color: var(--success);
-}
-
-.task-checkbox svg {
-  width: 14px;
-  height: 14px;
-  color: white;
-}
-
-.task-content {
-  flex: 1;
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.task-content.done {
-  text-decoration: line-through;
-  color: var(--text-muted);
-}
-
-.task-priority {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.task-priority.high { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-.task-priority.medium { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-.task-priority.low { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-
-.empty-state {
-  text-align: center;
-  padding: 24px;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-/* Countdowns */
-.upcoming-countdowns {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.countdown-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  background: var(--bg-tertiary);
-  border-radius: 10px;
-}
-
-.countdown-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.countdown-info .countdown-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.countdown-date {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.countdown-days .days-num {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-  display: block;
-}
-
-.countdown-days .days-label {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 /* Loading */
 .loading-state {
   display: flex;
@@ -692,22 +530,31 @@ onMounted(fetchAll)
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .stats-grid {
+  .tab-selector {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .content-grid {
-    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .tab-selector {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
-  
-  .stat-card.expanded {
-    grid-column: span 1;
+
+  .tab-btn {
+    padding: 12px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .tab-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tab-value {
+    font-size: 20px;
   }
 }
 </style>

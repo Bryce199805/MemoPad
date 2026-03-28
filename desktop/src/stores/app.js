@@ -11,6 +11,7 @@ export const useAppStore = defineStore('app', () => {
   // Settings
   const opacity = ref(Number(localStorage.getItem('memo_opacity')) || 95)
   const alwaysOnTop = ref(localStorage.getItem('memo_always_on_top') === 'true')
+  const transparentBackground = ref(localStorage.getItem('memo_transparent_bg') !== 'false') // Default true
 
   // Data
   const todos = ref([])
@@ -168,16 +169,21 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('memo_always_on_top', val)
   }
 
+  function setTransparentBackground(val) {
+    transparentBackground.value = val
+    localStorage.setItem('memo_transparent_bg', val)
+  }
+
   return {
     // State
     serverUrl, apiKey, isConnected, user,
-    opacity, alwaysOnTop,
+    opacity, alwaysOnTop, transparentBackground,
     todos, countdowns, loading, error,
     // Computed
     pinnedTodos, regularTodos, pendingCount, doneCount,
     // Actions
     connect, disconnect, fetchData,
     addTodo, toggleTodo, pinTodo,
-    setOpacity, setAlwaysOnTop
+    setOpacity, setAlwaysOnTop, setTransparentBackground
   }
 })

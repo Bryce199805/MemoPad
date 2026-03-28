@@ -5,13 +5,24 @@
         <h1>Tasks</h1>
         <p class="subtitle">{{ pendingCount }} pending · {{ doneCount }} completed</p>
       </div>
-      <Button @click="openModal()" variant="primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        Add Task
-      </Button>
+      <div class="header-actions">
+        <Button v-if="selectedIds.size > 0" variant="danger" @click="batchDelete">
+          Delete ({{ selectedIds.size }})
+        </Button>
+        <Button v-if="selectedIds.size > 0" variant="secondary" @click="batchComplete">
+          Complete ({{ selectedIds.size }})
+        </Button>
+        <Button v-if="selectedIds.size > 0" variant="secondary" @click="clearSelection">
+          Cancel
+        </Button>
+        <Button @click="openModal()" variant="primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add Task
+        </Button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -29,15 +40,22 @@
         <option value="medium">Medium</option>
         <option value="low">Low</option>
       </select>
-      <select v-model="filterDone" class="filter-select">
-        <option value="">All Status</option>
-        <option value="false">Pending</option>
-        <option value="true">Completed</option>
+      <select v-model="filterStatus" class="filter-select">
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="">All</option>
       </select>
+      <Button 
+        :variant="selectMode ? 'primary' : 'secondary'" 
+        size="sm" 
+        @click="toggleSelectMode"
+      >
+        {{ selectMode ? 'Done' : 'Select' }}
+      </Button>
     </div>
 
     <!-- Pinned Section -->
-    <div v-if="pinnedTodos.length > 0" class="section">
+    <div v-if="pinnedTodos.length > 0 && filterStatus !== 'completed'" class="section">
       <h2 class="section-title">📌 Pinned</h2>
       <div class="todo-list">
         <TodoItem
@@ -45,16 +63,19 @@
           :key="todo.id"
           :todo="todo"
           :categories="categories"
+          :selectable="selectMode"
+          :selected="selectedIds.has(todo.id)"
           @toggle="toggleTodo"
           @pin="pinTodo"
           @edit="openModal"
           @delete="deleteTodo"
+          @select="toggleSelect(todo.id)"
         />
       </div>
     </div>
 
     <!-- Regular Section -->
-    <div v-if="regularTodos.length > 0" class="section">
+    <div v-if="regularTodos.length > 0 && filterStatus !== 'completed'" class="section">
       <h2 v-if="pinnedTodos.length > 0" class="section-title">All Tasks</h2>
       <div class="todo-list">
         <TodoItem
@@ -62,10 +83,38 @@
           :key="todo.id"
           :todo="todo"
           :categories="categories"
+          :selectable="selectMode"
+          :selected="selectedIds.has(todo.id)"
           @toggle="toggleTodo"
           @pin="pinTodo"
           @edit="openModal"
           @delete="deleteTodo"
+          @select="toggleSelect(todo.id)"
+        />
+      </div>
+    </div>
+
+    <!-- Completed Section -->
+    <div v-if="completedTodos.length > 0 && filterStatus !== 'pending'" class="section completed-section">
+      <div class="section-header">
+        <h2 class="section-title">✓ Completed</h2>
+        <button v-if="completedTodos.length > 0" class="clear-completed" @click="clearCompleted">
+          Clear all completed
+        </button>
+      </div>
+      <div class="todo-list">
+        <TodoItem
+          v-for="todo in completedTodos"
+          :key="todo.id"
+          :todo="todo"
+          :categories="categories"
+          :selectable="selectMode"
+          :selected="selectedIds.has(todo.id)"
+          @toggle="toggleTodo"
+          @pin="pinTodo"
+          @edit="openModal"
+          @delete="deleteTodo"
+          @select="toggleSelect(todo.id)"
         />
       </div>
     </div>
@@ -73,8 +122,8 @@
     <!-- Empty State -->
     <div v-if="filteredTodos.length === 0 && !todoStore.loading" class="empty-state">
       <div class="empty-icon">📝</div>
-      <h3>No tasks yet</h3>
-      <p>Create your first task to get started</p>
+      <h3>{{ filterStatus === 'completed' ? 'No completed tasks' : 'No tasks yet' }}</h3>
+      <p>{{ filterStatus === 'completed' ? 'Complete some tasks to see them here' : 'Create your first task to get started' }}</p>
     </div>
 
     <!-- Modal -->
@@ -176,13 +225,15 @@ const { categories } = storeToRefs(categoryStore)
 
 const search = ref('')
 const filterPriority = ref('')
-const filterDone = ref('')
+const filterStatus = ref('pending')
 const showModal = ref(false)
 const editingTodo = ref(null)
 const enableDueDate = ref(false)
 const showAddCategory = ref(false)
 const newCategoryName = ref('')
 const newCategoryColor = ref('#6366f1')
+const selectMode = ref(false)
+const selectedIds = ref(new Set())
 
 // Color palette for categories
 const categoryColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
@@ -194,9 +245,9 @@ function generateRandomColor() {
   if (available.length > 0) {
     return available[Math.floor(Math.random() * available.length)]
   }
-  // All colors used, pick random from full palette
   return categoryColors[Math.floor(Math.random() * categoryColors.length)]
 }
+
 const form = ref({
   content: '',
   priority: 'medium',
@@ -215,15 +266,66 @@ const filteredTodos = computed(() => {
   return todos.value.filter(todo => {
     const matchSearch = todo.content.toLowerCase().includes(search.value.toLowerCase())
     const matchPriority = !filterPriority.value || todo.priority === filterPriority.value
-    const matchDone = filterDone.value === '' || todo.done.toString() === filterDone.value
-    return matchSearch && matchPriority && matchDone
+    const matchStatus = filterStatus.value === '' || 
+      (filterStatus.value === 'completed' && todo.done) ||
+      (filterStatus.value === 'pending' && !todo.done)
+    return matchSearch && matchPriority && matchStatus
   })
 })
 
 const pinnedTodos = computed(() => filteredTodos.value.filter(t => t.pinned && !t.done))
-const regularTodos = computed(() => filteredTodos.value.filter(t => !t.pinned || t.done))
+const regularTodos = computed(() => filteredTodos.value.filter(t => !t.pinned && !t.done))
+const completedTodos = computed(() => filteredTodos.value.filter(t => t.done))
 const pendingCount = computed(() => todos.value.filter(t => !t.done).length)
 const doneCount = computed(() => todos.value.filter(t => t.done).length)
+
+function toggleSelectMode() {
+  selectMode.value = !selectMode.value
+  if (!selectMode.value) {
+    selectedIds.value.clear()
+  }
+}
+
+function toggleSelect(id) {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+}
+
+function clearSelection() {
+  selectedIds.value.clear()
+  selectMode.value = false
+}
+
+async function batchDelete() {
+  if (!confirm(`Delete ${selectedIds.value.size} tasks?`)) return
+  
+  for (const id of selectedIds.value) {
+    await todoStore.deleteTodo(id)
+  }
+  clearSelection()
+}
+
+async function batchComplete() {
+  for (const id of selectedIds.value) {
+    const todo = todos.value.find(t => t.id === id)
+    if (todo && !todo.done) {
+      await todoStore.toggleTodo(id)
+    }
+  }
+  clearSelection()
+}
+
+async function clearCompleted() {
+  const completed = todos.value.filter(t => t.done)
+  if (!confirm(`Delete ${completed.length} completed tasks?`)) return
+  
+  for (const todo of completed) {
+    await todoStore.deleteTodo(todo.id)
+  }
+}
 
 function openModal(todo = null) {
   editingTodo.value = todo
@@ -317,6 +419,7 @@ onMounted(() => {
   align-items: flex-start;
   margin-bottom: 24px;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .header-content h1 {
@@ -331,16 +434,24 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* Filters */
 .filters {
   display: flex;
   gap: 12px;
   padding: 16px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 .search-input {
   flex: 1;
+  min-width: 200px;
   position: relative;
   display: flex;
   align-items: center;
@@ -377,6 +488,13 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .section-title {
   font-size: 13px;
   font-weight: 600;
@@ -384,6 +502,26 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 12px;
+}
+
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+.clear-completed {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.clear-completed:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.completed-section {
+  opacity: 0.8;
 }
 
 .todo-list {

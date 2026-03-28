@@ -5,13 +5,21 @@
         <h1>Countdowns</h1>
         <p class="subtitle">Track your important dates</p>
       </div>
-      <Button @click="openModal()" variant="primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        Add Countdown
-      </Button>
+      <div class="header-actions">
+        <Button v-if="selectedIds.size > 0" variant="danger" @click="batchDelete">
+          Delete ({{ selectedIds.size }})
+        </Button>
+        <Button v-if="selectedIds.size > 0" variant="secondary" @click="clearSelection">
+          Cancel
+        </Button>
+        <Button @click="openModal()" variant="primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add Countdown
+        </Button>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -30,20 +38,52 @@
       </div>
     </div>
 
+    <!-- Select Mode Toggle -->
+    <div class="toolbar glass-card">
+      <div class="search-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input v-model="search" type="text" placeholder="Search countdowns..." />
+      </div>
+      <Button 
+        :variant="selectMode ? 'primary' : 'secondary'" 
+        size="sm" 
+        @click="toggleSelectMode"
+      >
+        {{ selectMode ? 'Done' : 'Select' }}
+      </Button>
+    </div>
+
     <!-- Countdowns Grid -->
     <div class="countdowns-grid">
       <div 
-        v-for="cd in sortedCountdowns" 
+        v-for="cd in filteredCountdowns" 
         :key="cd.id"
         class="countdown-card glass-card"
-        :class="{ pinned: cd.pinned }"
+        :class="{ pinned: cd.pinned, selected: selectedIds.has(cd.id), selectable: selectMode }"
+        @click="handleCardClick(cd.id)"
       >
         <div class="countdown-progress" :style="{ background: progressColor(cd.target_date) }"></div>
         
         <div class="countdown-content">
-          <div class="countdown-header">
-            <h3>{{ cd.title }}</h3>
-            <Badge :variant="priorityVariant(cd.priority)">{{ priorityText(cd.priority) }}</Badge>
+          <!-- Select Checkbox -->
+          <div class="card-header">
+            <button 
+              v-if="selectMode"
+              class="select-checkbox"
+              :class="{ checked: selectedIds.has(cd.id) }"
+              @click.stop="toggleSelect(cd.id)"
+            >
+              <svg v-if="selectedIds.has(cd.id)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20,6 9,17 4,12" />
+              </svg>
+            </button>
+            <div class="countdown-header">
+              <h3>{{ cd.title }}</h3>
+              <Badge :variant="priorityVariant(cd.priority)">{{ priorityText(cd.priority) }}</Badge>
+            </div>
           </div>
           
           <div class="countdown-time">
@@ -56,27 +96,27 @@
           <p class="countdown-date">{{ formatDate(cd.target_date) }}</p>
         </div>
         
-        <div class="countdown-footer">
+        <div v-if="!selectMode" class="countdown-footer">
           <button 
             class="action-btn"
             :class="{ active: cd.pinned }"
-            @click="pinCountdown(cd)"
+            @click.stop="pinCountdown(cd)"
           >
             📌 {{ cd.pinned ? 'Pinned' : 'Pin' }}
           </button>
           <div class="action-group">
-            <button class="action-btn" @click="openModal(cd)">✏️</button>
-            <button class="action-btn danger" @click="deleteCountdown(cd.id)">🗑️</button>
+            <button class="action-btn" @click.stop="openModal(cd)">✏️</button>
+            <button class="action-btn danger" @click.stop="deleteCountdown(cd.id)">🗑️</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-if="countdowns.length === 0 && !countdownStore.loading" class="empty-state">
+    <div v-if="filteredCountdowns.length === 0 && !countdownStore.loading" class="empty-state">
       <div class="empty-icon">⏰</div>
-      <h3>No countdowns yet</h3>
-      <p>Add a countdown to track important dates</p>
+      <h3>{{ search ? 'No matching countdowns' : 'No countdowns yet' }}</h3>
+      <p>{{ search ? 'Try a different search term' : 'Add a countdown to track important dates' }}</p>
     </div>
 
     <!-- Modal -->
@@ -139,6 +179,9 @@ const { countdowns } = storeToRefs(countdownStore)
 const showModal = ref(false)
 const editingCountdown = ref(null)
 const form = ref({ title: '', target_date: '', priority: 'medium' })
+const search = ref('')
+const selectMode = ref(false)
+const selectedIds = ref(new Set())
 
 // Minimum datetime for picker (now)
 const minDateTime = computed(() => {
@@ -153,11 +196,19 @@ function formatDateTimeLocal(dateStr) {
   return date.toISOString().slice(0, 16)
 }
 
-const sortedCountdowns = computed(() => {
-  return [...countdowns.value].sort((a, b) => {
-    if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
-    return new Date(a.target_date) - new Date(b.target_date)
-  })
+const filteredCountdowns = computed(() => {
+  if (!search.value) {
+    return [...countdowns.value].sort((a, b) => {
+      if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
+      return new Date(a.target_date) - new Date(b.target_date)
+    })
+  }
+  return countdowns.value
+    .filter(c => c.title.toLowerCase().includes(search.value.toLowerCase()))
+    .sort((a, b) => {
+      if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
+      return new Date(a.target_date) - new Date(b.target_date)
+    })
 })
 
 const upcomingCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) > 7).length)
@@ -204,6 +255,41 @@ function priorityVariant(p) {
 
 function priorityText(p) {
   return { high: 'High', medium: 'Medium', low: 'Low' }[p] || 'Medium'
+}
+
+function toggleSelectMode() {
+  selectMode.value = !selectMode.value
+  if (!selectMode.value) {
+    selectedIds.value.clear()
+  }
+}
+
+function toggleSelect(id) {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+}
+
+function handleCardClick(id) {
+  if (selectMode.value) {
+    toggleSelect(id)
+  }
+}
+
+function clearSelection() {
+  selectedIds.value.clear()
+  selectMode.value = false
+}
+
+async function batchDelete() {
+  if (!confirm(`Delete ${selectedIds.value.size} countdowns?`)) return
+  
+  for (const id of selectedIds.value) {
+    await countdownStore.deleteCountdown(id)
+  }
+  clearSelection()
 }
 
 function openModal(cd = null) {
@@ -269,6 +355,7 @@ onMounted(() => countdownStore.fetchCountdowns())
   align-items: flex-start;
   margin-bottom: 24px;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .header-content h1 {
@@ -283,11 +370,17 @@ onMounted(() => countdownStore.fetchCountdowns())
   font-size: 14px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* Stats */
 .stats-row {
   display: flex;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .stat-item {
@@ -319,6 +412,39 @@ onMounted(() => countdownStore.fetchCountdowns())
   margin-top: 4px;
 }
 
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input svg {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+.search-input input {
+  width: 100%;
+  padding: 10px 14px 10px 42px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
 /* Grid */
 .countdowns-grid {
   display: grid;
@@ -335,6 +461,19 @@ onMounted(() => countdownStore.fetchCountdowns())
   border-color: rgba(251, 146, 60, 0.3);
 }
 
+.countdown-card.selectable {
+  cursor: pointer;
+}
+
+.countdown-card.selected {
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.countdown-card.selectable:hover {
+  background: var(--bg-hover);
+}
+
 .countdown-progress {
   height: 3px;
 }
@@ -343,12 +482,46 @@ onMounted(() => countdownStore.fetchCountdowns())
   padding: 20px;
 }
 
+.card-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.select-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.select-checkbox:hover {
+  border-color: var(--accent-primary);
+}
+
+.select-checkbox.checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.select-checkbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
 .countdown-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 16px;
+  flex: 1;
 }
 
 .countdown-header h3 {
@@ -519,5 +692,17 @@ onMounted(() => countdownStore.fetchCountdowns())
 .form-group select:focus {
   border-color: var(--accent-primary);
   outline: none;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .stats-row {
+    flex-direction: column;
+  }
+  
+  .stat-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
 </style>

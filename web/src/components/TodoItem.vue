@@ -1,10 +1,27 @@
 <template>
-  <div class="todo-item glass-card" :class="{ pinned: todo.pinned, done: todo.done }">
+  <div 
+    class="todo-item glass-card" 
+    :class="{ pinned: todo.pinned, done: todo.done, selected: selected, selectable: selectable }"
+    @click="handleClick"
+  >
+    <!-- Select Checkbox -->
+    <button 
+      v-if="selectable"
+      class="select-checkbox"
+      :class="{ checked: selected }"
+      @click.stop="$emit('select')"
+    >
+      <svg v-if="selected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+        <polyline points="20,6 9,17 4,12" />
+      </svg>
+    </button>
+
     <div class="todo-content">
       <button 
+        v-if="!selectable"
         class="checkbox"
         :class="{ checked: todo.done }"
-        @click="$emit('toggle', todo.id)"
+        @click.stop="$emit('toggle', todo.id)"
       >
         <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
           <polyline points="20,6 9,17 4,12" />
@@ -27,19 +44,19 @@
       </div>
     </div>
 
-    <div class="todo-actions">
+    <div v-if="!selectable" class="todo-actions">
       <button 
         class="action-btn"
         :class="{ active: todo.pinned }"
-        @click="$emit('pin', todo.id)"
+        @click.stop="$emit('pin', todo.id)"
         title="Pin"
       >
         📌
       </button>
-      <button class="action-btn" @click="$emit('edit', todo)" title="Edit">
+      <button class="action-btn" @click.stop="$emit('edit', todo)" title="Edit">
         ✏️
       </button>
-      <button class="action-btn danger" @click="$emit('delete', todo.id)" title="Delete">
+      <button class="action-btn danger" @click.stop="$emit('delete', todo.id)" title="Delete">
         🗑️
       </button>
     </div>
@@ -52,10 +69,18 @@ import Badge from './ui/Badge.vue'
 
 const props = defineProps({
   todo: { type: Object, required: true },
-  categories: { type: Array, default: () => [] }
+  categories: { type: Array, default: () => [] },
+  selectable: { type: Boolean, default: false },
+  selected: { type: Boolean, default: false }
 })
 
-defineEmits(['toggle', 'pin', 'edit', 'delete'])
+const emit = defineEmits(['toggle', 'pin', 'edit', 'delete', 'select'])
+
+function handleClick() {
+  if (props.selectable) {
+    emit('select')
+  }
+}
 
 const priorityVariant = computed(() => {
   const map = { high: 'danger', medium: 'warning', low: 'success' }
@@ -120,12 +145,54 @@ const dueDateText = computed(() => {
   opacity: 0.6;
 }
 
+.todo-item.selectable {
+  cursor: pointer;
+}
+
+.todo-item.selected {
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.todo-item.selectable:hover {
+  background: var(--bg-hover);
+}
+
 .todo-content {
   display: flex;
   align-items: flex-start;
   gap: 14px;
   flex: 1;
   min-width: 0;
+}
+
+/* Select Checkbox */
+.select-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  margin-top: 2px;
+}
+
+.select-checkbox:hover {
+  border-color: var(--accent-primary);
+}
+
+.select-checkbox.checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.select-checkbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
 }
 
 /* Checkbox */
