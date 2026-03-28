@@ -4,8 +4,24 @@
     "add": "添加",
     "high": "高",
     "medium": "中",
-    "low": "低"
+    "low": "低",
+    "pending": "待办",
+    "done": "完成"
   },
   "countdown": { "add": "添加" },
-  "settings": { "position": "位置", "close": "关闭" }
+  "settings": {
+    "position": "位置",
+    "opacity": "透明度",
+    "alwaysOnTop": "始终置顶",
+    "disconnect": "断开连接",
+    "close": "关闭"
+  },
+  "connection": {
+    "serverUrl": "服务器地址",
+    "apiKey": "API 密钥",
+    "connect": "连接",
+    "connecting": "连接中...",
+    "invalidKey": "无效的 API 密钥",
+    "connectionFailed": "连接失败"
+  }
 }

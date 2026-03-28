@@ -4,8 +4,24 @@
     "add": "Add",
     "high": "High",
     "medium": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "pending": "pending",
+    "done": "done"
   },
   "countdown": { "add": "Add" },
-  "settings": { "position": "Position", "close": "Close" }
+  "settings": {
+    "position": "Position",
+    "opacity": "Opacity",
+    "alwaysOnTop": "Always on Top",
+    "disconnect": "Disconnect",
+    "close": "Close"
+  },
+  "connection": {
+    "serverUrl": "Server URL",
+    "apiKey": "API Key",
+    "connect": "Connect",
+    "connecting": "Connecting...",
+    "invalidKey": "Invalid API key",
+    "connectionFailed": "Connection failed"
+  }
 }

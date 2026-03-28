@@ -97,7 +97,7 @@
     <!-- Add/Edit Modal -->
     <Transition name="modal">
       <div v-if="showAddModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
           <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white">
             {{ editingTodo ? $t('todo.edit') : 'New Task' }}
           </h2>
@@ -136,6 +136,30 @@
                   </select>
                 </div>
               </div>
+              
+              <!-- Due Date (Optional) -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+                  <label class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <input 
+                      type="checkbox" 
+                      v-model="enableDueDate" 
+                      class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                    />
+                    Enable
+                  </label>
+                </div>
+                <input 
+                  v-if="enableDueDate"
+                  v-model="form.due_date" 
+                  type="datetime-local" 
+                  class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p v-else class="text-sm text-gray-400 dark:text-gray-500 py-2">
+                  No due date set
+                </p>
+              </div>
             </div>
             <div class="flex gap-3 mt-8">
               <button 
@@ -160,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useTodoStore } from '../stores/todo'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
@@ -176,7 +200,8 @@ const filterPriority = ref('')
 const filterDone = ref('')
 const showAddModal = ref(false)
 const editingTodo = ref(null)
-const form = ref({ content: '', priority: 'medium', category_id: null })
+const enableDueDate = ref(false)
+const form = ref({ content: '', priority: 'medium', category_id: null, due_date: '' })
 
 const filteredTodos = computed(() => {
   return todos.value.filter(todo => {
@@ -198,21 +223,34 @@ const deleteTodo = async (id) => { await todoStore.deleteTodo(id) }
 
 const editTodo = (todo) => {
   editingTodo.value = todo
-  form.value = { content: todo.content, priority: todo.priority, category_id: todo.category_id }
+  const hasDueDate = !!todo.due_date
+  enableDueDate.value = hasDueDate
+  form.value = { 
+    content: todo.content, 
+    priority: todo.priority, 
+    category_id: todo.category_id,
+    due_date: hasDueDate ? todo.due_date.slice(0, 16) : ''
+  }
   showAddModal.value = true
 }
 
 const closeModal = () => {
   showAddModal.value = false
   editingTodo.value = null
-  form.value = { content: '', priority: 'medium', category_id: null }
+  enableDueDate.value = false
+  form.value = { content: '', priority: 'medium', category_id: null, due_date: '' }
 }
 
 const saveTodo = async () => {
+  const data = { 
+    ...form.value,
+    due_date: enableDueDate.value ? form.value.due_date : null
+  }
+  
   if (editingTodo.value) {
-    await todoStore.updateTodo(editingTodo.value.id, form.value)
+    await todoStore.updateTodo(editingTodo.value.id, data)
   } else {
-    await todoStore.createTodo(form.value)
+    await todoStore.createTodo(data)
   }
   closeModal()
 }

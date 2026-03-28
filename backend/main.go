@@ -30,6 +30,7 @@ type Todo struct {
 	Priority   string    `json:"priority" gorm:"size:10;default:medium"`
 	Pinned     bool      `json:"pinned" gorm:"default:false"`
 	Done       bool      `json:"done" gorm:"default:false"`
+	DueDate    *time.Time `json:"due_date"`
 	CategoryID *uint     `json:"category_id"`
 	Category   *Category `json:"category" gorm:"foreignKey:CategoryID"`
 	CreatedAt  time.Time `json:"created_at"`

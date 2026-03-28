@@ -48,9 +48,19 @@
               {{ todo.category.name }}
             </span>
 
-            <!-- Date -->
+            <!-- Due Date -->
+            <span 
+              v-if="todo.due_date" 
+              class="text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
+              :class="dueDateClass"
+            >
+              <span>📅</span>
+              {{ formatDueDate(todo.due_date) }}
+            </span>
+
+            <!-- Created Date -->
             <span class="text-xs text-gray-400 dark:text-gray-500">
-              {{ formatDate(todo.created_at) }}
+              Created {{ formatDate(todo.created_at) }}
             </span>
           </div>
         </div>
@@ -109,6 +119,22 @@ const priorityLabel = computed(() => {
   return labels[props.todo.priority] || 'Medium'
 })
 
+const dueDateClass = computed(() => {
+  if (!props.todo.due_date || props.todo.done) return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+  
+  const now = new Date()
+  const due = new Date(props.todo.due_date)
+  now.setHours(0, 0, 0, 0)
+  due.setHours(0, 0, 0, 0)
+  
+  const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
+  
+  if (diff < 0) return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'  // Overdue
+  if (diff === 0) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'  // Today
+  if (diff <= 3) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'  // Soon
+  return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'  // Upcoming
+})
+
 const formatDate = (date) => {
   const d = new Date(date)
   const now = new Date()
@@ -118,6 +144,21 @@ const formatDate = (date) => {
   if (days === 0) return 'Today'
   if (days === 1) return 'Yesterday'
   if (days < 7) return `${days} days ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const formatDueDate = (dateStr) => {
+  const d = new Date(dateStr)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  
+  const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24))
+  
+  if (diff < 0) return `${Math.abs(diff)}d overdue`
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Tomorrow'
+  if (diff <= 7) return `${diff} days`
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 </script>

@@ -1,24 +1,49 @@
 <template>
   <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-    <!-- API Key Modal -->
-    <div v-if="!hasAPIKey" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to MemoDesk</h2>
-        <p class="text-gray-500 dark:text-gray-400 mb-6">Enter your API Key to continue</p>
-        <input
-          v-model="inputAPIKey"
-          type="password"
-          placeholder="sk-memo-..."
-          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-lg"
-          @keyup.enter="saveAPIKey"
-        />
-        <p v-if="error" class="text-red-500 text-sm mt-2">{{ error }}</p>
-        <button
-          @click="saveAPIKey"
-          class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition"
-        >
-          Connect
-        </button>
+    <!-- Loading State -->
+    <div v-if="isInitializing" class="fixed inset-0 flex items-center justify-center">
+      <div class="text-center">
+        <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-gray-500 dark:text-gray-400 mt-3">Connecting...</p>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div v-else-if="!isAuthenticated" class="fixed inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl text-white">✓</span>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">MemoDesk</h1>
+          <p class="text-gray-500 dark:text-gray-400 mt-2">Enter your API Key to continue</p>
+        </div>
+
+        <form @submit.prevent="handleLogin">
+          <input
+            v-model="inputAPIKey"
+            type="password"
+            placeholder="sk-memo-..."
+            class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            :disabled="isLoggingIn"
+          />
+          <p v-if="error" class="text-red-500 text-sm mt-3 text-center">{{ error }}</p>
+          <button
+            type="submit"
+            :disabled="isLoggingIn || !inputAPIKey.trim()"
+            class="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isLoggingIn" class="flex items-center justify-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Connecting...
+            </span>
+            <span v-else>Connect</span>
+          </button>
+        </form>
+
+        <p class="text-xs text-gray-400 dark:text-gray-500 text-center mt-6">
+          Get your API Key from the server console or settings
+        </p>
       </div>
     </div>
 
@@ -33,6 +58,11 @@
               <option value="en">EN</option>
               <option value="zh">中文</option>
             </select>
+            <button @click="handleLogout" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Logout">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
             <button @click="showMobileMenu = !showMobileMenu" class="p-2 text-gray-500 dark:text-gray-400">
               {{ showMobileMenu ? '✕' : '☰' }}
             </button>
@@ -40,16 +70,16 @@
         </div>
         <!-- Mobile Nav -->
         <nav v-if="showMobileMenu" class="border-t dark:border-gray-700">
-          <router-link to="/" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+          <router-link to="/" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" @click="showMobileMenu = false">
             {{ $t('app.dashboard') }}
           </router-link>
-          <router-link to="/todos" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+          <router-link to="/todos" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" @click="showMobileMenu = false">
             {{ $t('app.todos') }}
           </router-link>
-          <router-link to="/countdowns" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+          <router-link to="/countdowns" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" @click="showMobileMenu = false">
             {{ $t('app.countdowns') }}
           </router-link>
-          <router-link to="/settings" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+          <router-link to="/settings" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" @click="showMobileMenu = false">
             {{ $t('app.settings') }}
           </router-link>
         </nav>
@@ -78,6 +108,12 @@
                 <option value="en">EN</option>
                 <option value="zh">中文</option>
               </select>
+              <button @click="handleLogout" class="text-sm text-red-500 hover:text-red-600 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -94,25 +130,64 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { hasAPIKey, setAPIKey, verifyAPIKey, getAPIKeyFromStorage } from './api/client'
+import { setAPIKey, verifyAPIKey, getAPIKeyFromStorage, clearAPIKey } from './api/client'
 
 const { locale } = useI18n()
+
+// Auth state
+const isInitializing = ref(true)
+const isAuthenticated = ref(false)
+const isLoggingIn = ref(false)
 const inputAPIKey = ref('')
 const error = ref('')
 const showMobileMenu = ref(false)
 
-const saveAPIKey = async () => {
-  if (!inputAPIKey.value) {
-    error.value = 'Please enter API Key'
+// Initialize auth state on mount
+onMounted(async () => {
+  const savedKey = getAPIKeyFromStorage()
+  if (savedKey) {
+    // Verify saved key is still valid
+    const valid = await verifyAPIKey(savedKey)
+    if (valid) {
+      setAPIKey(savedKey)
+      isAuthenticated.value = true
+    } else {
+      // Clear invalid key
+      clearAPIKey()
+    }
+  }
+  isInitializing.value = false
+})
+
+const handleLogin = async () => {
+  if (!inputAPIKey.value.trim()) {
+    error.value = 'Please enter your API Key'
     return
   }
-  const valid = await verifyAPIKey(inputAPIKey.value)
-  if (valid) {
-    setAPIKey(inputAPIKey.value)
-    error.value = ''
-  } else {
-    error.value = 'Invalid API Key'
+
+  isLoggingIn.value = true
+  error.value = ''
+
+  try {
+    const valid = await verifyAPIKey(inputAPIKey.value.trim())
+    if (valid) {
+      setAPIKey(inputAPIKey.value.trim())
+      isAuthenticated.value = true
+      inputAPIKey.value = ''
+    } else {
+      error.value = 'Invalid API Key. Please check and try again.'
+    }
+  } catch (e) {
+    error.value = 'Connection failed. Please check if the server is running.'
+  } finally {
+    isLoggingIn.value = false
   }
+}
+
+const handleLogout = () => {
+  clearAPIKey()
+  isAuthenticated.value = false
+  showMobileMenu.value = false
 }
 
 const changeLocale = () => {

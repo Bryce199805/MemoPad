@@ -7,6 +7,9 @@ const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'h
 // Get API Key from localStorage
 const getAPIKey = () => localStorage.getItem('memo_api_key')
 
+// Check if API key is set (just checks existence, not validity)
+export const hasAPIKey = () => !!getAPIKey()
+
 // Create axios instance with auth
 const createApiClient = () => {
   return axios.create({
@@ -29,10 +32,7 @@ export const setAPIKey = (key) => {
 // Get current API key
 export const getAPIKeyFromStorage = () => getAPIKey()
 
-// Check if API key is set
-export const hasAPIKey = () => !!getAPIKey()
-
-// Verify API key is valid
+// Verify API key is valid (calls backend)
 export const verifyAPIKey = async (key) => {
   try {
     const res = await axios.get(`${API_BASE}/api/verify`, {
@@ -42,6 +42,12 @@ export const verifyAPIKey = async (key) => {
   } catch {
     return false
   }
+}
+
+// Clear API key (logout)
+export const clearAPIKey = () => {
+  localStorage.removeItem('memo_api_key')
+  api = createApiClient()
 }
 
 // Export the axios instance directly
