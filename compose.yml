@@ -3,7 +3,7 @@ services:
     build: ./backend
     container_name: memopad-backend
     volumes:
-      - memo-data:/app/data
+      - ./data:/app/data
     environment:
       - DATA_DIR=/app/data
       - GIN_MODE=release
@@ -23,6 +23,3 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
-
-volumes:
-  memo-data:
