@@ -195,7 +195,7 @@ Page({
 
     const data = {
       title: form.title.trim(),
-      target_date: form.targetDate + 'T' + form.targetTime + ':00',
+      target_date: form.targetDate + 'T' + form.targetTime + ':00+08:00',
       priority: form.priority
     }
 

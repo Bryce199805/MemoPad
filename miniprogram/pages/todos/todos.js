@@ -64,6 +64,7 @@ Page({
       const categories = (catsRes.data || catsRes) || []
       const categoryNames = categories.map(c => c.name)
       this.setData({ todos, categories, categoryNames })
+      this.applyFilter()
     } catch (err) {
       console.error('Fetch todos error:', err)
     } finally {
@@ -350,8 +351,10 @@ Page({
     const data = {
       content: form.content.trim(),
       priority: form.priority,
-      category_id: form.category || null,
-      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' : null
+      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00+08:00' : null
+    }
+    if (form.category) {
+      data.category_id = form.category
     }
 
     wx.showLoading({ title: editingId ? 'Updating...' : 'Adding...' })
