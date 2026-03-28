@@ -1,0 +1,56 @@
+<wxs module="utils">
+module.exports = {
+  getPriorityVariant: function(priority) {
+    var map = { high: 'danger', medium: 'warning', low: 'success' };
+    return map[priority] || 'info';
+  },
+  getPriorityLabel: function(priority) {
+    var map = { high: '高', medium: '中', low: '低' };
+    return map[priority] || '';
+  },
+  getPriorityColor: function(priority) {
+    var map = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
+    return map[priority] || '#6366f1';
+  },
+  formatDate: function(dateStr) {
+    if (!dateStr) return '';
+    var date = getDate(dateStr);
+    return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+  },
+  calcDaysLeft: function(dateStr) {
+    if (!dateStr) return 0;
+    var target = getDate(dateStr).getTime();
+    var now = getDate().getTime();
+    var diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+    return diff >= 0 ? diff : 0;
+  }
+};
+</wxs>
+
+<view class="countdown-card">
+  <view class="countdown-strip" style="background: linear-gradient(90deg, {{utils.getPriorityColor(countdown.priority)}}, {{utils.getPriorityColor(countdown.priority)}}88)"></view>
+
+  <view class="countdown-header">
+    <text class="countdown-title">{{countdown.title}}</text>
+    <badge wx:if="{{countdown.priority}}" text="{{utils.getPriorityLabel(countdown.priority)}}" variant="{{utils.getPriorityVariant(countdown.priority)}}"></badge>
+  </view>
+
+  <view class="countdown-body">
+    <text class="countdown-days">{{utils.calcDaysLeft(countdown.target_date)}}</text>
+    <text class="countdown-days-label">天</text>
+  </view>
+
+  <text class="countdown-date">{{utils.formatDate(countdown.target_date)}}</text>
+
+  <view class="countdown-footer">
+    <view class="countdown-action" bind:tap="onPin">
+      <text>{{countdown.pinned ? '取消置顶' : '置顶'}}</text>
+    </view>
+    <view class="countdown-action" bind:tap="onEdit">
+      <text>编辑</text>
+    </view>
+    <view class="countdown-action countdown-action--danger" bind:tap="onDelete">
+      <text>删除</text>
+    </view>
+  </view>
+</view>

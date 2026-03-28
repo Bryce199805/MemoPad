@@ -1,0 +1,83 @@
+.countdown-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  overflow: hidden;
+}
+
+.countdown-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  margin-top: 8rpx;
+}
+
+.countdown-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 16rpx;
+}
+
+.countdown-body {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12rpx;
+}
+
+.countdown-days {
+  font-size: 72rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.countdown-days-label {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  margin-left: 8rpx;
+}
+
+.countdown-date {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+.countdown-footer {
+  display: flex;
+  gap: 16rpx;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 20rpx;
+}
+
+.countdown-action {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  padding: 8rpx 0;
+}
+
+.countdown-action--danger {
+  color: var(--danger);
+}
+
+.countdown-action:active {
+  opacity: 0.6;
+}

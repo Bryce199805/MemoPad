@@ -1,0 +1,131 @@
+<view class="countdowns-page">
+  <!-- Loading Skeleton -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-header"></view>
+    <view class="skeleton-stats"></view>
+    <view class="skeleton-search"></view>
+    <view class="skeleton-item" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="countdowns-header">
+      <text class="countdowns-title">Countdowns</text>
+      <view class="add-btn" bind:tap="onAddCountdown">
+        <text class="add-icon">+</text>
+        <text class="add-text">Add Countdown</text>
+      </view>
+    </view>
+
+    <!-- Stats Row -->
+    <view class="stats-row">
+      <view class="stat-card glass-card">
+        <text class="stat-value stat-value--upcoming">{{upcomingCount}}</text>
+        <text class="stat-label">Upcoming</text>
+      </view>
+      <view class="stat-card glass-card">
+        <text class="stat-value stat-value--due-soon">{{dueSoonCount}}</text>
+        <text class="stat-label">Due Soon</text>
+      </view>
+      <view class="stat-card glass-card">
+        <text class="stat-value stat-value--overdue">{{overdueCount}}</text>
+        <text class="stat-label">Overdue</text>
+      </view>
+    </view>
+
+    <!-- Search Bar -->
+    <view class="search-box glass-card">
+      <text class="search-icon">&#x1F50D;</text>
+      <input class="search-input" placeholder="Search countdowns..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
+      <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">&#x2715;</text>
+    </view>
+
+    <!-- Pinned Section -->
+    <view class="section" wx:if="{{pinned.length > 0}}">
+      <view class="section-header">
+        <text class="section-icon">&#x1F4CC;</text>
+        <text class="section-title-text">Pinned</text>
+        <badge text="{{pinned.length}}" variant="info"></badge>
+      </view>
+      <view class="countdown-list">
+        <countdown-card wx:for="{{pinned}}" wx:key="id" countdown="{{item}}"
+          bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+        </countdown-card>
+      </view>
+    </view>
+
+    <!-- Unpinned Section -->
+    <view class="section" wx:if="{{unpinned.length > 0}}">
+      <view class="section-header" wx:if="{{pinned.length > 0}}">
+        <text class="section-title-text">Countdowns</text>
+        <badge text="{{unpinned.length}}" variant="info"></badge>
+      </view>
+      <view class="countdown-list">
+        <countdown-card wx:for="{{unpinned}}" wx:key="id" countdown="{{item}}"
+          bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+        </countdown-card>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-full" wx:if="{{countdowns.length === 0}}">
+      <empty-state
+        icon="&#x23F0;"
+        title="No countdowns yet"
+        description="Tap + to add your first countdown">
+      </empty-state>
+    </view>
+
+    <view class="empty-full" wx:if="{{countdowns.length > 0 && pinned.length === 0 && unpinned.length === 0}}">
+      <empty-state
+        icon="&#x1F50D;"
+        title="No matches"
+        description="Try adjusting your search">
+      </empty-state>
+    </view>
+
+    <!-- Form Modal -->
+    <modal show="{{showFormModal}}" title="{{formTitle}}" bind:close="onCloseModal" bind:confirm="onFormSave">
+      <view class="form-body">
+        <view class="form-group">
+          <text class="form-label">Title</text>
+          <input class="form-input" placeholder="Countdown name" placeholder-style="color: var(--text-muted)"
+            value="{{form.title}}" bindinput="onFormTitleInput" maxlength="100" />
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">Target Date</text>
+          <view class="date-time-row">
+            <picker mode="date" value="{{form.targetDate}}" bindchange="onFormDateChange">
+              <view class="form-picker form-picker--half">
+                <text class="form-picker-text">{{form.targetDate || 'Select date'}}</text>
+                <text class="chip-arrow">&#x25BE;</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{form.targetTime}}" bindchange="onFormTimeChange">
+              <view class="form-picker form-picker--half">
+                <text class="form-picker-text">{{form.targetTime || 'Select time'}}</text>
+                <text class="chip-arrow">&#x25BE;</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">Priority</text>
+          <picker mode="selector" range="{{['High','Medium','Low']}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
+            <view class="form-picker">
+              <view class="form-picker-left">
+                <view class="priority-dot priority-dot--{{form.priority}}"></view>
+                <text class="form-picker-text">{{formPriorityLabel}}</text>
+              </view>
+              <text class="chip-arrow">&#x25BE;</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </modal>
+
+    <view class="safe-bottom"></view>
+  </block>
+</view>

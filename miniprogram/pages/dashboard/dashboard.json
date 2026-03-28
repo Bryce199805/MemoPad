@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "stat-card": "../../components/stat-card/stat-card",
+    "todo-item": "../../components/todo-item/todo-item",
+    "countdown-card": "../../components/countdown-card/countdown-card",
+    "badge": "../../components/badge/badge",
+    "empty-state": "../../components/empty-state/empty-state"
+  },
+  "enablePullDownRefresh": true
+}

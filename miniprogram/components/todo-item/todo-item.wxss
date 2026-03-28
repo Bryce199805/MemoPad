@@ -1,0 +1,129 @@
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-item--done {
+  opacity: 0.6;
+}
+
+/* Checkbox */
+.todo-left {
+  flex-shrink: 0;
+  padding: 8rpx 0;
+}
+
+.todo-checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  border: 3rpx solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.todo-checkbox--checked {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-color: transparent;
+}
+
+.todo-check-icon {
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+/* Content */
+.todo-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.todo-text {
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.todo-text--done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+/* Actions */
+.todo-actions {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.todo-pin-btn {
+  padding: 8rpx;
+}
+
+.pin-icon {
+  font-size: 28rpx;
+}
+
+.pin-icon--active {
+  filter: none;
+}
+
+.todo-more-btn {
+  padding: 8rpx 12rpx;
+  margin-top: 4rpx;
+}
+
+.more-icon {
+  font-size: 32rpx;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+/* Action menu */
+.todo-action-menu {
+  position: absolute;
+  right: 0;
+  top: 64rpx;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8rpx 0;
+  min-width: 160rpx;
+  z-index: 10;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+}
+
+.todo-action-item {
+  padding: 20rpx 28rpx;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.todo-action-item--danger {
+  color: var(--danger);
+}
+
+.todo-action-item:active {
+  background: var(--bg-hover);
+}

@@ -1,0 +1,231 @@
+<wxs module="filters">
+module.exports = {
+  priorityColor: function(p) {
+    var map = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
+    return map[p] || '#6366f1';
+  },
+  priorityWidth: function(count, total) {
+    if (total <= 0) return '0%';
+    return Math.round((count / total) * 100) + '%';
+  },
+  isCountdownView: function(label) {
+    return label === 'Due Soon';
+  }
+};
+</wxs>
+
+<view class="dashboard">
+  <!-- Loading -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-header"></view>
+    <view class="skeleton-cards">
+      <view class="skeleton-card"></view>
+      <view class="skeleton-card"></view>
+      <view class="skeleton-card"></view>
+      <view class="skeleton-card"></view>
+    </view>
+    <view class="skeleton-section"></view>
+    <view class="skeleton-section"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="header">
+      <view class="header-top">
+        <text class="header-title">Dashboard</text>
+        <view class="header-dot"></view>
+      </view>
+      <text class="header-date">{{todayStr}}</text>
+    </view>
+
+    <!-- Stat Cards 2x2 Grid -->
+    <scroll-view class="stat-scroll" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{false}}">
+      <view class="stat-grid stat-grid--scroll">
+        <stat-card label="Total" value="{{allTasks.length}}" active="{{expandedCard === 'Total'}}" bind:tap="onStatTap" data-label="Total"></stat-card>
+        <stat-card label="Completed" value="{{completedTasks.length}}" active="{{expandedCard === 'Completed'}}" bind:tap="onStatTap" data-label="Completed"></stat-card>
+        <stat-card label="Pending" value="{{pendingTasks.length}}" active="{{expandedCard === 'Pending'}}" bind:tap="onStatTap" data-label="Pending"></stat-card>
+        <stat-card label="Due Soon" value="{{upcomingCountdowns.length}}" active="{{expandedCard === 'Due Soon'}}" bind:tap="onStatTap" data-label="Due Soon"></stat-card>
+      </view>
+    </scroll-view>
+
+    <view class="stat-grid" wx:else>
+      <stat-card label="Total" value="{{allTasks.length}}" active="{{expandedCard === 'Total'}}" bind:tap="onStatTap" data-label="Total"></stat-card>
+      <stat-card label="Completed" value="{{completedTasks.length}}" active="{{expandedCard === 'Completed'}}" bind:tap="onStatTap" data-label="Completed"></stat-card>
+      <stat-card label="Pending" value="{{pendingTasks.length}}" active="{{expandedCard === 'Pending'}}" bind:tap="onStatTap" data-label="Pending"></stat-card>
+      <stat-card label="Due Soon" value="{{upcomingCountdowns.length}}" active="{{expandedCard === 'Due Soon'}}" bind:tap="onStatTap" data-label="Due Soon"></stat-card>
+    </view>
+
+    <!-- Expanded Preview -->
+    <view class="expanded-section" wx:if="{{expandedCard}}">
+      <view class="expanded-header">
+        <text class="expanded-title">{{expandedCard}}</text>
+        <view class="expanded-actions">
+          <text class="expanded-collapse" bind:tap="onStatTap" data-label="{{expandedCard}}">Collapse</text>
+          <text wx:if="{{expandedCard !== 'Due Soon'}}" class="expanded-view-all" bind:tap="onViewAllTodos">View all</text>
+          <text wx:else class="expanded-view-all" bind:tap="onViewAllCountdowns">View all</text>
+        </view>
+      </view>
+
+      <view class="expanded-list" wx:if="{{expandedCard !== 'Due Soon'}}">
+        <block wx:for="{{allTasks}}" wx:key="id">
+          <todo-item wx:if="{{(expandedCard === 'Total') || (expandedCard === 'Completed' && item.done) || (expandedCard === 'Pending' && !item.done)}}"
+            todo="{{item}}"
+            categories="{{categories}}"
+            bind:toggle="onToggleTodo"
+            bind:edit="onTodoEdit"
+            bind:delete="onTodoDelete"
+            bind:pin="onTodoPin">
+          </todo-item>
+        </block>
+        <empty-state wx:if="{{(expandedCard === 'Completed' && completedTasks.length === 0) || (expandedCard === 'Pending' && pendingTasks.length === 0)}}"
+          icon="📭"
+          title="No items"
+          description="Nothing here yet">
+        </empty-state>
+      </view>
+
+      <view class="expanded-countdowns" wx:else>
+        <block wx:for="{{upcomingCountdowns}}" wx:key="id">
+          <countdown-card countdown="{{item}}"></countdown-card>
+        </block>
+        <empty-state wx:if="{{upcomingCountdowns.length === 0}}"
+          icon="📅"
+          title="No upcoming countdowns"
+          description="All countdowns have passed">
+        </empty-state>
+      </view>
+    </view>
+
+    <!-- Two Column Layout -->
+    <view class="columns">
+      <!-- Left: Task Progress -->
+      <view class="column column-left">
+        <view class="glass-card">
+          <view class="card-header">
+            <text class="card-header-title">Task Progress</text>
+          </view>
+
+          <view class="progress-section">
+            <view class="progress-info">
+              <text class="progress-rate">{{completionRate}}%</text>
+              <text class="progress-label">completed</text>
+            </view>
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{completionRate}}%"></view>
+            </view>
+            <view class="progress-stats">
+              <text class="progress-stat"><text class="progress-stat-num">{{completedTasks.length}}</text> done</text>
+              <text class="progress-stat"><text class="progress-stat-num">{{pendingTasks.length}}</text> pending</text>
+            </view>
+          </view>
+
+          <!-- Priority Breakdown -->
+          <view class="priority-section" wx:if="{{priorityBars.length > 0}}">
+            <text class="priority-title">Priority Breakdown</text>
+            <view class="priority-bars">
+              <view class="priority-bar-row" wx:for="{{priorityBars}}" wx:key="priority">
+                <view class="priority-bar-label">
+                  <view class="priority-dot" style="background: {{filters.priorityColor(item.priority)}}"></view>
+                  <text class="priority-name">{{item.priority}}</text>
+                  <text class="priority-count">{{item.count}}</text>
+                </view>
+                <view class="progress-bar progress-bar--sm">
+                  <view class="progress-fill" style="width: {{filters.priorityWidth(item.count, allTasks.length)}}; background: {{filters.priorityColor(item.priority)}}"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="view-all-link" bind:tap="onViewAllTodos">
+            <text>View all tasks</text>
+            <text class="arrow">→</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Right: Upcoming Countdowns -->
+      <view class="column column-right">
+        <view class="glass-card">
+          <view class="card-header">
+            <text class="card-header-title">Upcoming</text>
+            <badge wx:if="{{upcomingCountdowns.length > 0}}" text="{{upcomingCountdowns.length}}" variant="info"></badge>
+          </view>
+
+          <view class="countdown-list" wx:if="{{upcomingCountdowns.length > 0}}">
+            <view class="countdown-mini" wx:for="{{upcomingCountdowns}}" wx:key="id">
+              <view class="countdown-mini-left">
+                <view class="countdown-mini-dot" style="background: {{filters.priorityColor(item.priority)}}"></view>
+                <text class="countdown-mini-title">{{item.title}}</text>
+              </view>
+              <text class="countdown-mini-days {{item.target_date ? (new Date(item.target_date) < new Date(new Date().toDateString()) ? 'text-danger' : new Date(item.target_date).getTime() - new Date().getTime() < 259200000 ? 'text-warning' : 'text-accent') : ''}}">{{item.target_date ? (new Date(item.target_date) >= new Date(new Date().toDateString()) ? Math.ceil((new Date(item.target_date) - new Date()) / 86400000) + 'd' : 'Overdue') : ''}}</text>
+            </view>
+          </view>
+
+          <empty-state wx:else icon="📅" title="No countdowns" description="No upcoming events"></empty-state>
+
+          <view class="view-all-link" bind:tap="onViewAllCountdowns">
+            <text>View all countdowns</text>
+            <text class="arrow">→</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Pinned Tasks -->
+    <view class="section" wx:if="{{pinnedTodos.length > 0}}">
+      <view class="section-header">
+        <text class="section-icon">📌</text>
+        <text class="section-title">Pinned Tasks</text>
+        <badge text="{{pinnedTodos.length}}" variant="info"></badge>
+      </view>
+      <view class="glass-card glass-card--compact">
+        <todo-item wx:for="{{pinnedTodos}}" wx:key="id"
+          todo="{{item}}"
+          categories="{{categories}}"
+          bind:toggle="onToggleTodo"
+          bind:edit="onTodoEdit"
+          bind:delete="onTodoDelete"
+          bind:pin="onTodoPin">
+        </todo-item>
+      </view>
+    </view>
+
+    <!-- Overdue Tasks Alert -->
+    <view class="section" wx:if="{{overdueTodos.length > 0}}">
+      <view class="section-header">
+        <text class="section-icon">⚠️</text>
+        <text class="section-title section-title--danger">Overdue Tasks</text>
+        <badge text="{{overdueTodos.length}}" variant="danger"></badge>
+      </view>
+      <view class="glass-card glass-card--alert">
+        <view class="alert-banner">
+          <text class="alert-icon">🔴</text>
+          <text class="alert-text">You have {{overdueTodos.length}} overdue task{{overdueTodos.length > 1 ? 's' : ''}}</text>
+        </view>
+        <todo-item wx:for="{{overdueTodos}}" wx:key="id"
+          todo="{{item}}"
+          categories="{{categories}}"
+          bind:toggle="onToggleTodo"
+          bind:edit="onTodoEdit"
+          bind:delete="onTodoDelete"
+          bind:pin="onTodoPin">
+        </todo-item>
+        <view class="view-all-link view-all-link--center" bind:tap="onViewAllTodos">
+          <text>View all tasks</text>
+          <text class="arrow">→</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty State for brand new users -->
+    <view class="empty-full" wx:if="{{allTasks.length === 0 && upcomingCountdowns.length === 0 && !loading}}">
+      <empty-state
+        icon="🎉"
+        title="Welcome to MemoPad"
+        description="Create your first task or countdown to get started">
+      </empty-state>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </block>
+</view>

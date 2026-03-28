@@ -1,0 +1,1 @@
+<text class="badge badge-{{variant}}" style="{{customColor ? 'background:' + customColor + '20;color:' + customColor : ''}}">{{text}}</text>

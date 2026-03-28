@@ -1,0 +1,250 @@
+<wxs module="filters">
+module.exports = {
+  priorityIndex: function(val) {
+    var map = { 'high': 0, 'medium': 1, 'low': 2 };
+    return map[val] !== undefined ? map[val] : 1;
+  },
+  categoryIndex: function(catId, categories) {
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].id === catId) return i;
+    }
+    return 0;
+  },
+  categoryName: function(catId, categories) {
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].id === catId) return categories[i].name;
+    }
+    return '';
+  },
+  isSelected: function(id, selectedIds) {
+    for (var i = 0; i < selectedIds.length; i++) {
+      if (selectedIds[i] === id) return true;
+    }
+    return false;
+  }
+};
+</wxs>
+
+<view class="todos-page">
+  <!-- Loading Skeleton -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-header"></view>
+    <view class="skeleton-filters"></view>
+    <view class="skeleton-item" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="todos-header">
+      <view class="todos-header-left">
+        <text class="todos-title">Tasks</text>
+        <text class="todos-summary">
+          <text class="summary-pending">{{pendingCount}} pending</text>
+          <text class="summary-dot">·</text>
+          <text class="summary-done">{{completedCount}} completed</text>
+        </text>
+      </view>
+      <view class="add-btn" bind:tap="onAddTask">
+        <text class="add-icon">+</text>
+        <text class="add-text">Add Task</text>
+      </view>
+    </view>
+
+    <!-- Filters Bar -->
+    <view class="filters-bar glass-card">
+      <view class="search-box">
+        <text class="search-icon">&#x1F50D;</text>
+        <input class="search-input" placeholder="Search tasks..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
+        <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">&#x2715;</text>
+      </view>
+
+      <view class="filter-row">
+        <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
+          <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{priorityLabels[filterPriority]}}</text>
+            <text class="chip-arrow">&#x25BE;</text>
+          </view>
+        </picker>
+
+        <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
+          <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{statusLabels[filterStatus]}}</text>
+            <text class="chip-arrow">&#x25BE;</text>
+          </view>
+        </picker>
+
+        <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
+          <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
+            <text class="chip-arrow">&#x25BE;</text>
+          </view>
+        </picker>
+
+        <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
+          <text>{{selectMode ? '&#x2715;' : '&#x2611;'}}</text>
+          <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Select Mode Actions -->
+    <view class="select-actions" wx:if="{{selectMode}}">
+      <text class="select-count">{{selectedIds.length}} selected</text>
+      <view class="select-btns">
+        <text class="select-action-btn" bind:tap="onSelectAll">All</text>
+        <text class="select-action-btn" bind:tap="onDeselectAll">None</text>
+        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">Delete</text>
+      </view>
+    </view>
+
+    <!-- Task Lists -->
+    <block>
+      <!-- Pinned Section -->
+      <view class="section" wx:if="{{pinned.length > 0}}">
+        <view class="section-header">
+          <text class="section-icon">&#x1F4CC;</text>
+          <text class="section-title-text">Pinned</text>
+          <badge text="{{pinned.length}}" variant="info"></badge>
+        </view>
+        <view class="glass-card glass-card--compact">
+          <view wx:for="{{pinned}}" wx:key="id" class="todo-row">
+            <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
+              <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+              </view>
+            </view>
+            <todo-item todo="{{item}}" categories="{{categories}}"
+              bind:toggle="onTodoToggle" bind:edit="onTodoEdit"
+              bind:delete="onTodoDelete" bind:pin="onTodoPin">
+            </todo-item>
+          </view>
+        </view>
+      </view>
+
+      <!-- Regular Tasks Section -->
+      <view class="section" wx:if="{{regular.length > 0}}">
+        <view class="section-header" wx:if="{{pinned.length > 0}}">
+          <text class="section-title-text">Tasks</text>
+          <badge text="{{regular.length}}" variant="info"></badge>
+        </view>
+        <view class="glass-card glass-card--compact">
+          <view wx:for="{{regular}}" wx:key="id" class="todo-row">
+            <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
+              <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+              </view>
+            </view>
+            <todo-item todo="{{item}}" categories="{{categories}}"
+              bind:toggle="onTodoToggle" bind:edit="onTodoEdit"
+              bind:delete="onTodoDelete" bind:pin="onTodoPin">
+            </todo-item>
+          </view>
+        </view>
+      </view>
+
+      <!-- Completed Section -->
+      <view class="section completed-section" wx:if="{{completed.length > 0}}">
+        <view class="section-header section-header--completed" bind:tap="onToggleCompleted">
+          <text class="collapse-arrow {{completedExpanded ? 'collapse-arrow--open' : ''}}">&#x25B6;</text>
+          <text class="section-title-text section-title-text--muted">Completed</text>
+          <badge text="{{completed.length}}" variant="success"></badge>
+          <view class="clear-btn" catchtap="onClearCompleted">
+            <text class="clear-text">Clear</text>
+          </view>
+        </view>
+        <view class="glass-card glass-card--compact" wx:if="{{completedExpanded}}">
+          <view wx:for="{{completed}}" wx:key="id" class="todo-row">
+            <view wx:if="{{selectMode}}" class="todo-checkbox-wrap" bind:tap="onToggleSelect" data-id="{{item.id}}">
+              <view class="todo-checkbox {{filters.isSelected(item.id, selectedIds) ? 'todo-checkbox--checked' : ''}}">
+                <text wx:if="{{filters.isSelected(item.id, selectedIds)}}" class="todo-check-icon">&#x2713;</text>
+              </view>
+            </view>
+            <todo-item todo="{{item}}" categories="{{categories}}"
+              bind:toggle="onTodoToggle" bind:edit="onTodoEdit"
+              bind:delete="onTodoDelete" bind:pin="onTodoPin">
+            </todo-item>
+          </view>
+        </view>
+      </view>
+
+      <!-- Empty State: no tasks at all -->
+      <view class="empty-full" wx:if="{{todos.length === 0}}">
+        <empty-state
+          icon="&#x1F4CB;"
+          title="No tasks yet"
+          description="Tap + to add your first task">
+        </empty-state>
+      </view>
+
+      <!-- Empty State: filters produced no results -->
+      <view class="empty-full" wx:if="{{todos.length > 0 && pinned.length === 0 && regular.length === 0 && (completed.length === 0 || !completedExpanded)}}">
+        <empty-state
+          icon="&#x1F50D;"
+          title="No matches"
+          description="Try adjusting your filters">
+        </empty-state>
+      </view>
+    </block>
+
+    <!-- Form Modal -->
+    <modal show="{{showFormModal}}" title="{{formTitle}}" bind:close="onCloseModal" bind:confirm="onFormSave">
+      <view class="form-body">
+        <view class="form-group">
+          <text class="form-label">Content</text>
+          <textarea class="form-textarea form-input" placeholder="What needs to be done?" placeholder-style="color: var(--text-muted)"
+            value="{{form.content}}" bindinput="onFormContentInput" maxlength="500" auto-height></textarea>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">Priority</text>
+          <picker mode="selector" range="{{['High','Medium','Low']}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
+            <view class="form-picker">
+              <view class="form-picker-left">
+                <view class="priority-dot priority-dot--{{form.priority}}"></view>
+                <text class="form-picker-text">{{formPriorityLabel}}</text>
+              </view>
+              <text class="chip-arrow">&#x25BE;</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-group" wx:if="{{categoryNames.length > 0}}">
+          <text class="form-label">Category</text>
+          <picker mode="selector" range="{{categoryNames}}" value="{{formCategoryIdx}}" bindchange="onFormCategoryChange">
+            <view class="form-picker">
+              <view class="form-picker-left">
+                <text class="form-picker-text">{{formCategoryName}}</text>
+              </view>
+              <text class="chip-arrow">&#x25BE;</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-group">
+          <view class="form-row-label" bind:tap="onToggleHasDueDate">
+            <text class="form-label" style="margin-bottom: 0;">Due Date</text>
+            <view class="toggle-switch {{form.hasDueDate ? 'toggle-switch--on' : ''}}">
+              <view class="toggle-knob"></view>
+            </view>
+          </view>
+          <view class="date-time-row" wx:if="{{form.hasDueDate}}">
+            <picker mode="date" value="{{form.dueDate}}" bindchange="onFormDateChange">
+              <view class="form-picker form-picker--half">
+                <text class="form-picker-text">{{form.dueDate || 'Select date'}}</text>
+                <text class="chip-arrow">&#x25BE;</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{form.dueTime}}" bindchange="onFormTimeChange">
+              <view class="form-picker form-picker--half">
+                <text class="form-picker-text">{{form.dueTime || 'Select time'}}</text>
+                <text class="chip-arrow">&#x25BE;</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+    </modal>
+
+    <view class="safe-bottom"></view>
+  </block>
+</view>

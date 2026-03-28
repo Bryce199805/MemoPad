@@ -1,0 +1,49 @@
+{
+  "pages": [
+    "pages/dashboard/dashboard",
+    "pages/todos/todos",
+    "pages/countdowns/countdowns",
+    "pages/settings/settings",
+    "pages/login/login"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0a0a0a",
+    "navigationBarTitleText": "MemoPad",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0a0a0a",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#6366f1",
+    "backgroundColor": "#111111",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/dashboard",
+        "text": "Dashboard",
+        "iconPath": "images/tabbar/dashboard.png",
+        "selectedIconPath": "images/tabbar/dashboard-active.png"
+      },
+      {
+        "pagePath": "pages/todos/todos",
+        "text": "Tasks",
+        "iconPath": "images/tabbar/todos.png",
+        "selectedIconPath": "images/tabbar/todos-active.png"
+      },
+      {
+        "pagePath": "pages/countdowns/countdowns",
+        "text": "Countdowns",
+        "iconPath": "images/tabbar/countdowns.png",
+        "selectedIconPath": "images/tabbar/countdowns-active.png"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "Settings",
+        "iconPath": "images/tabbar/settings.png",
+        "selectedIconPath": "images/tabbar/settings-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

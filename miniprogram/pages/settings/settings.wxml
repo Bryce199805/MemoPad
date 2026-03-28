@@ -1,0 +1,92 @@
+<view class="settings-page">
+  <!-- Loading Skeleton -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-header"></view>
+    <view class="skeleton-section"></view>
+    <view class="skeleton-section"></view>
+    <view class="skeleton-section"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="settings-header">
+      <text class="settings-title">Settings</text>
+    </view>
+
+    <!-- Profile Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">Profile</text>
+      <view class="profile-row">
+        <view class="avatar-circle">
+          <text class="avatar-letter">{{user.username ? user.username[0].toUpperCase() : '?'}}</text>
+        </view>
+        <view class="profile-info">
+          <text class="profile-name">{{user.username || 'Unknown'}}</text>
+          <text class="profile-email">{{user.email || 'No email'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Categories Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">Categories</text>
+
+      <!-- Add Form -->
+      <view class="cat-add-form">
+        <input class="cat-name-input" placeholder="Category name" placeholder-style="color: var(--text-muted)"
+          value="{{newCatName}}" bindinput="onCatNameInput" maxlength="30" />
+        <picker mode="selector" range="{{colorLabels}}" value="{{newCatColorIdx}}" bindchange="onCatColorChange">
+          <view class="cat-color-picker">
+            <view class="cat-color-dot" style="background: {{newCatColor}}"></view>
+            <text class="chip-arrow">&#x25BE;</text>
+          </view>
+        </picker>
+        <view class="cat-add-btn" bind:tap="onAddCategory">
+          <text class="cat-add-text">Add</text>
+        </view>
+      </view>
+
+      <!-- Category List -->
+      <view class="cat-list" wx:if="{{categories.length > 0}}">
+        <view class="cat-item" wx:for="{{categories}}" wx:key="id">
+          <view class="cat-item-left">
+            <view class="cat-color-dot cat-color-dot--sm" style="background: {{item.color || '#6366f1'}}"></view>
+            <text class="cat-item-name">{{item.name}}</text>
+          </view>
+          <view class="cat-item-right">
+            <text class="cat-item-count">{{catUsageCounts[item.id] || 0}}</text>
+            <view class="cat-delete-btn" bind:tap="onDeleteCategory" data-id="{{item.id}}" data-name="{{item.name}}">
+              <text class="cat-delete-icon">&#x2715;</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{categories.length === 0}}" class="cat-empty">
+        <empty-state
+          icon="&#x1F3F7;"
+          title="No categories"
+          description="Add your first category above">
+        </empty-state>
+      </view>
+    </view>
+
+    <!-- Server Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">Server</text>
+      <view class="server-info">
+        <text class="server-label">Base URL</text>
+        <text class="server-value">{{baseUrl}}</text>
+      </view>
+    </view>
+
+    <!-- Danger Zone -->
+    <view class="section-card danger-zone">
+      <view class="logout-btn" bind:tap="onLogout">
+        <text class="logout-text">Logout</text>
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </block>
+</view>

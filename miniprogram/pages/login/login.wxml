@@ -1,0 +1,76 @@
+<view class="login-page">
+  <!-- Background gradient -->
+  <view class="bg-gradient"></view>
+
+  <view class="login-container">
+    <!-- Logo -->
+    <view class="logo-area">
+      <view class="logo-icon">
+        <text class="logo-check">&#10003;</text>
+      </view>
+      <text class="app-name">MemoPad</text>
+      <text class="app-tagline">Capture your thoughts</text>
+    </view>
+
+    <!-- Tab switcher -->
+    <view class="tab-switcher">
+      <view class="tab-item {{mode === 'login' ? 'tab-active' : ''}}" bindtap="switchMode">
+        <text>Login</text>
+      </view>
+      <view class="tab-item {{mode === 'register' ? 'tab-active' : ''}}" bindtap="switchMode">
+        <text>Register</text>
+      </view>
+      <view class="tab-indicator" style="left: {{mode === 'login' ? '0%' : '50%'}}"></view>
+    </view>
+
+    <!-- Form -->
+    <view class="form">
+      <view class="form-group">
+        <text class="form-label">Username</text>
+        <input
+          class="form-input"
+          type="text"
+          placeholder="Enter your username"
+          placeholder-class="input-placeholder"
+          value="{{username}}"
+          bindinput="onUsernameInput"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">Password</text>
+        <input
+          class="form-input"
+          password
+          placeholder="Enter your password"
+          placeholder-class="input-placeholder"
+          value="{{password}}"
+          bindinput="onPasswordInput"
+        />
+      </view>
+
+      <view class="form-group" wx:if="{{mode === 'register'}}">
+        <text class="form-label">Email (optional)</text>
+        <input
+          class="form-input"
+          type="text"
+          placeholder="Enter your email"
+          placeholder-class="input-placeholder"
+          value="{{email}}"
+          bindinput="onEmailInput"
+        />
+      </view>
+
+      <!-- Error display -->
+      <view class="error-box" wx:if="{{error}}">
+        <text class="error-text">{{error}}</text>
+      </view>
+
+      <!-- Submit button -->
+      <button class="submit-btn {{loading ? 'btn-disabled' : ''}}" bindtap="submit" disabled="{{loading}}">
+        <text wx:if="{{!loading}}">{{mode === 'login' ? 'Login' : 'Register'}}</text>
+        <view class="loading-spinner" wx:else></view>
+      </button>
+    </view>
+  </view>
+</view>
