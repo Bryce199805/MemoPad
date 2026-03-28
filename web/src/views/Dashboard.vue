@@ -7,69 +7,140 @@
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-      <StatCard 
-        label="Total Tasks" 
-        :value="stats.todos?.total || 0" 
-        :icon-bg="iconColors.blue"
-        class="clickable"
-        @click="showTasks('all')"
+      <div 
+        class="stat-card glass-card" 
+        :class="{ expanded: expandedSection === 'total' }"
+        @click="toggleSection('total')"
       >
-        <template #icon>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4" />
-            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-          </svg>
-        </template>
-      </StatCard>
+        <div class="stat-main">
+          <div class="stat-icon" :style="{ background: iconColors.blue }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+            </svg>
+          </div>
+          <div class="stat-content">
+            <p class="stat-label">Total Tasks</p>
+            <p class="stat-value">{{ stats.todos?.total || 0 }}</p>
+          </div>
+          <span class="expand-icon">{{ expandedSection === 'total' ? '▲' : '▼' }}</span>
+        </div>
+        <Transition name="expand">
+          <div v-if="expandedSection === 'total'" class="stat-preview" @click.stop>
+            <div class="preview-tasks">
+              <div v-for="todo in allTasks.slice(0, 5)" :key="todo.id" class="preview-task">
+                <button class="mini-checkbox" :class="{ checked: todo.done }" @click.stop="toggleTodo(todo.id)">
+                  <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </button>
+                <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
+              </div>
+              <p v-if="todos.length === 0" class="no-tasks">No tasks yet</p>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
-      <StatCard 
-        label="Completed" 
-        :value="stats.todos?.done || 0" 
-        :icon-bg="iconColors.green"
-        class="clickable"
-        @click="showTasks('done')"
+      <div 
+        class="stat-card glass-card"
+        :class="{ expanded: expandedSection === 'done' }"
+        @click="toggleSection('done')"
       >
-        <template #icon>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-            <polyline points="22,4 12,14.01 9,11.01" />
-          </svg>
-        </template>
-      </StatCard>
+        <div class="stat-main">
+          <div class="stat-icon" :style="{ background: iconColors.green }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+              <polyline points="22,4 12,14.01 9,11.01" />
+            </svg>
+          </div>
+          <div class="stat-content">
+            <p class="stat-label">Completed</p>
+            <p class="stat-value">{{ stats.todos?.done || 0 }}</p>
+          </div>
+          <span class="expand-icon">{{ expandedSection === 'done' ? '▲' : '▼' }}</span>
+        </div>
+        <Transition name="expand">
+          <div v-if="expandedSection === 'done'" class="stat-preview" @click.stop>
+            <div class="preview-tasks">
+              <div v-for="todo in completedTasks.slice(0, 5)" :key="todo.id" class="preview-task">
+                <button class="mini-checkbox checked" @click.stop="toggleTodo(todo.id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </button>
+                <span class="task-text done">{{ todo.content }}</span>
+              </div>
+              <p v-if="completedTasks.length === 0" class="no-tasks">No completed tasks</p>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
-      <StatCard 
-        label="Pending" 
-        :value="stats.todos?.pending || 0" 
-        :icon-bg="iconColors.yellow"
-        class="clickable"
-        @click="showTasks('pending')"
+      <div 
+        class="stat-card glass-card"
+        :class="{ expanded: expandedSection === 'pending' }"
+        @click="toggleSection('pending')"
       >
-        <template #icon>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12,6 12,12 16,14" />
-          </svg>
-        </template>
-      </StatCard>
+        <div class="stat-main">
+          <div class="stat-icon" :style="{ background: iconColors.yellow }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12,6 12,12 16,14" />
+            </svg>
+          </div>
+          <div class="stat-content">
+            <p class="stat-label">Pending</p>
+            <p class="stat-value">{{ stats.todos?.pending || 0 }}</p>
+          </div>
+          <span class="expand-icon">{{ expandedSection === 'pending' ? '▲' : '▼' }}</span>
+        </div>
+        <Transition name="expand">
+          <div v-if="expandedSection === 'pending'" class="stat-preview" @click.stop>
+            <div class="preview-tasks">
+              <div v-for="todo in pendingTasks.slice(0, 5)" :key="todo.id" class="preview-task">
+                <button class="mini-checkbox" @click.stop="toggleTodo(todo.id)"></button>
+                <span class="task-text">{{ todo.content }}</span>
+              </div>
+              <p v-if="pendingTasks.length === 0" class="no-tasks">No pending tasks</p>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
-      <StatCard 
-        label="Due Soon" 
-        :value="stats.countdowns?.due_soon || 0" 
-        :icon-bg="iconColors.purple"
-        class="clickable"
-        @click="showTasks('due')"
+      <div 
+        class="stat-card glass-card"
+        :class="{ expanded: expandedSection === 'due' }"
+        @click="toggleSection('due')"
       >
-        <template #icon>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" />
-          </svg>
-        </template>
-      </StatCard>
+        <div class="stat-main">
+          <div class="stat-icon" :style="{ background: iconColors.purple }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" />
+            </svg>
+          </div>
+          <div class="stat-content">
+            <p class="stat-label">Due Soon</p>
+            <p class="stat-value">{{ stats.countdowns?.due_soon || 0 }}</p>
+          </div>
+          <span class="expand-icon">{{ expandedSection === 'due' ? '▲' : '▼' }}</span>
+        </div>
+        <Transition name="expand">
+          <div v-if="expandedSection === 'due'" class="stat-preview" @click.stop>
+            <div class="preview-countdowns">
+              <div v-for="cd in dueSoonCountdowns" :key="cd.id" class="preview-countdown">
+                <span class="countdown-title">{{ cd.title }}</span>
+                <span class="countdown-days" :class="getDaysClass(cd.target_date)">{{ daysLeft(cd.target_date) }}d</span>
+              </div>
+              <p v-if="dueSoonCountdowns.length === 0" class="no-tasks">No upcoming countdowns</p>
+            </div>
+          </div>
+        </Transition>
+      </div>
     </div>
 
-    <!-- Progress & Recent Tasks -->
+    <!-- Progress Section -->
     <div class="content-grid">
-      <!-- Progress Card -->
       <Card class="progress-card">
         <template #header>Task Progress</template>
         <div class="progress-content">
@@ -85,49 +156,45 @@
           </div>
         </div>
         
-        <!-- Recent Pending Tasks -->
-        <div class="recent-tasks">
-          <h4>Recent Pending Tasks</h4>
-          <div v-if="pendingTasks.length === 0" class="empty-tasks">
+        <!-- Recent Tasks -->
+        <div class="recent-section">
+          <div class="recent-header">
+            <h4>Recent Pending Tasks</h4>
+            <router-link to="/todos" class="view-all">View all →</router-link>
+          </div>
+          <div v-if="pendingTasks.length === 0" class="empty-state">
             <p>No pending tasks</p>
           </div>
-          <div v-else class="task-list">
+          <div v-else class="recent-tasks">
             <div 
               v-for="todo in pendingTasks.slice(0, 5)" 
               :key="todo.id" 
               class="task-item"
-              @click="goToTodos(todo.id)"
             >
               <button 
-                class="mini-checkbox"
+                class="task-checkbox"
                 :class="{ checked: todo.done }"
-                @click.stop="toggleTodo(todo.id)"
+                @click="toggleTodo(todo.id)"
               >
                 <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
               </button>
-              <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
-              <Badge :variant="getPriorityVariant(todo.priority)" size="sm">{{ getPriorityLabel(todo.priority) }}</Badge>
+              <span class="task-content" :class="{ done: todo.done }">{{ todo.content }}</span>
+              <span class="task-priority" :class="todo.priority">{{ todo.priority }}</span>
             </div>
           </div>
-          <router-link to="/todos" class="view-all">View all tasks →</router-link>
         </div>
       </Card>
 
       <!-- Upcoming Countdowns -->
       <Card class="countdowns-card">
         <template #header>Upcoming Countdowns</template>
-        <div class="countdown-list">
-          <div v-if="upcomingCountdowns.length === 0" class="empty-countdowns">
-            <p>No upcoming countdowns</p>
-          </div>
-          <div 
-            v-for="cd in upcomingCountdowns.slice(0, 5)" 
-            :key="cd.id" 
-            class="countdown-item"
-            @click="goToCountdowns(cd.id)"
-          >
+        <div v-if="upcomingCountdowns.length === 0" class="empty-state">
+          <p>No upcoming countdowns</p>
+        </div>
+        <div v-else class="upcoming-countdowns">
+          <div v-for="cd in upcomingCountdowns.slice(0, 5)" :key="cd.id" class="countdown-item">
             <div class="countdown-info">
               <span class="countdown-title">{{ cd.title }}</span>
               <span class="countdown-date">{{ formatDate(cd.target_date) }}</span>
@@ -138,46 +205,9 @@
             </div>
           </div>
         </div>
-        <router-link to="/countdowns" class="view-all">View all countdowns →</router-link>
+        <router-link to="/countdowns" class="view-all">View all →</router-link>
       </Card>
     </div>
-
-    <!-- Task Preview Modal -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-        <div class="modal glass-card">
-          <div class="modal-header">
-            <h2>{{ modalTitle }}</h2>
-            <button class="close-btn" @click="closeModal">×</button>
-          </div>
-          <div class="modal-body">
-            <div v-if="modalTasks.length === 0" class="empty-state">
-              <p>No tasks in this category</p>
-            </div>
-            <div v-else class="task-list">
-              <div 
-                v-for="todo in modalTasks" 
-                :key="todo.id" 
-                class="task-item"
-                @click="goToTodos(todo.id)"
-              >
-                <button 
-                  class="mini-checkbox"
-                  :class="{ checked: todo.done }"
-                  @click.stop="toggleTodo(todo.id)"
-                >
-                  <svg v-if="todo.done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20,6 9,17 4,12" />
-                  </svg>
-                </button>
-                <span class="task-text" :class="{ done: todo.done }">{{ todo.content }}</span>
-                <Badge :variant="getPriorityVariant(todo.priority)" size="sm">{{ getPriorityLabel(todo.priority) }}</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
@@ -189,17 +219,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTodoStore } from '../stores/todo'
 import { useCountdownStore } from '../stores/countdown'
 import { storeToRefs } from 'pinia'
 import api from '../api/client'
-import StatCard from '../components/ui/StatCard.vue'
 import Card from '../components/ui/Card.vue'
-import Badge from '../components/ui/Badge.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const todoStore = useTodoStore()
 const countdownStore = useCountdownStore()
@@ -208,37 +234,26 @@ const { countdowns } = storeToRefs(countdownStore)
 
 const stats = ref({ todos: {}, countdowns: {} })
 const loading = ref(true)
-const showModal = ref(false)
-const modalType = ref('all')
+const expandedSection = ref(null)
 
 const iconColors = {
-  blue: 'rgba(99, 102, 241, 0.15)',
-  green: 'rgba(34, 197, 94, 0.15)',
-  yellow: 'rgba(245, 158, 11, 0.15)',
-  purple: 'rgba(139, 92, 246, 0.15)'
+  blue: 'rgba(99, 102, 241, 0.2)',
+  green: 'rgba(34, 197, 94, 0.2)',
+  yellow: 'rgba(245, 158, 11, 0.2)',
+  purple: 'rgba(139, 92, 246, 0.2)'
 }
 
+// Computed
+const allTasks = computed(() => [...todos.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
+const completedTasks = computed(() => todos.value.filter(t => t.done))
 const pendingTasks = computed(() => todos.value.filter(t => !t.done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
 const upcomingCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
+const dueSoonCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0 && daysLeft(c.target_date) <= 7))
 
-const modalTitle = computed(() => {
-  const titles = {
-    all: 'All Tasks',
-    done: 'Completed Tasks',
-    pending: 'Pending Tasks',
-    due: 'Due Soon'
-  }
-  return titles[modalType.value] || 'Tasks'
-})
-
-const modalTasks = computed(() => {
-  switch (modalType.value) {
-    case 'done': return todos.value.filter(t => t.done)
-    case 'pending': return pendingTasks.value
-    case 'due': return todos.value.filter(t => !t.done && t.due_date && daysLeft(t.due_date) <= 7 && daysLeft(t.due_date) >= 0)
-    default: return todos.value
-  }
-})
+// Methods
+function toggleSection(section) {
+  expandedSection.value = expandedSection.value === section ? null : section
+}
 
 function daysLeft(date) {
   const target = new Date(date)
@@ -252,14 +267,6 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function getPriorityVariant(p) {
-  return { high: 'danger', medium: 'warning', low: 'success' }[p] || 'default'
-}
-
-function getPriorityLabel(p) {
-  return { high: 'H', medium: 'M', low: 'L' }[p] || 'M'
-}
-
 function getDaysClass(date) {
   const days = daysLeft(date)
   if (days < 0) return 'overdue'
@@ -267,39 +274,29 @@ function getDaysClass(date) {
   return 'normal'
 }
 
-function showTasks(type) {
-  modalType.value = type
-  showModal.value = true
-}
-
-function closeModal() {
-  showModal.value = false
-}
-
-function goToTodos(id) {
-  closeModal()
-  router.push('/todos')
-}
-
-function goToCountdowns(id) {
-  router.push('/countdowns')
-}
-
 async function toggleTodo(id) {
   await todoStore.toggleTodo(id)
+  // Refresh stats after toggle
+  await fetchStats()
+}
+
+async function fetchStats() {
+  try {
+    const res = await api.get('/api/stats')
+    stats.value = res.data.data || res.data
+  } catch (e) {
+    console.error('Failed to fetch stats:', e)
+  }
 }
 
 async function fetchAll() {
   loading.value = true
   try {
-    const [statsRes] = await Promise.all([
-      api.get('/api/stats'),
+    await Promise.all([
+      fetchStats(),
       todoStore.fetchTodos(),
       countdownStore.fetchCountdowns()
     ])
-    stats.value = statsRes.data.data || statsRes.data
-  } catch (e) {
-    console.error('Failed to fetch data:', e)
   } finally {
     loading.value = false
   }
@@ -315,14 +312,14 @@ onMounted(fetchAll)
 }
 
 .dashboard-header {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .dashboard-header h1 {
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .dashboard-header p {
@@ -334,87 +331,90 @@ onMounted(fetchAll)
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.stat-card.clickable {
+.stat-card {
   cursor: pointer;
-}
-
-.stat-card.clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
-}
-
-/* Content Grid */
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-/* Progress */
-.progress-content {
-  margin-bottom: 20px;
-}
-
-.progress-bar {
-  height: 12px;
-  background: var(--bg-tertiary);
-  border-radius: 999px;
+  transition: all 0.25s ease;
   overflow: hidden;
-  margin-bottom: 8px;
 }
 
-.progress-fill {
-  height: 100%;
-  background: var(--accent-gradient);
-  border-radius: 999px;
-  transition: width 0.5s ease;
+.stat-card:hover {
+  transform: translateY(-2px);
 }
 
-.progress-info {
+.stat-card.expanded {
+  grid-column: span 1;
+}
+
+.stat-main {
   display: flex;
-  justify-content: space-between;
-  font-size: 14px;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--text-primary);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 13px;
   color: var(--text-secondary);
+  margin-bottom: 4px;
 }
 
-.progress-percent {
-  font-weight: 600;
-  color: var(--accent-primary);
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
 }
 
-/* Recent Tasks */
-.recent-tasks h4 {
-  font-size: 14px;
-  font-weight: 600;
+.expand-icon {
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.task-list {
+/* Preview Section */
+.stat-preview {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 0;
+}
+
+.preview-tasks, .preview-countdowns {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 12px;
 }
 
-.task-item {
+.preview-task, .preview-countdown {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 10px 12px;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.task-item:hover {
-  background: var(--bg-hover);
+  border-radius: 8px;
 }
 
 .mini-checkbox {
@@ -453,16 +453,100 @@ onMounted(fetchAll)
   color: var(--text-muted);
 }
 
-.empty-tasks, .empty-countdowns {
-  padding: 20px;
+.no-tasks {
   text-align: center;
   color: var(--text-muted);
+  padding: 16px;
+  font-size: 13px;
+}
+
+.countdown-title {
+  flex: 1;
   font-size: 14px;
+  color: var(--text-primary);
+}
+
+.countdown-days {
+  text-align: center;
+}
+
+.countdown-days.normal { color: var(--accent-primary); }
+.countdown-days.soon { color: var(--warning); }
+.countdown-days.overdue { color: var(--danger); }
+
+/* Expand Animation */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.25s ease;
+  max-height: 300px;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Progress */
+.progress-content {
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  height: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.progress-percent {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+/* Recent Section */
+.recent-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.recent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.recent-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .view-all {
-  display: block;
-  margin-top: 12px;
   font-size: 13px;
   color: var(--accent-primary);
   text-decoration: none;
@@ -472,20 +556,87 @@ onMounted(fetchAll)
   text-decoration: underline;
 }
 
+.recent-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.task-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-checkbox.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.task-checkbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+.task-content {
+  flex: 1;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.task-content.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.task-priority {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.task-priority.high { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+.task-priority.medium { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.task-priority.low { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
 /* Countdowns */
+.upcoming-countdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .countdown-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 12px 14px;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  margin-bottom: 8px;
-}
-
-.countdown-item:hover {
-  background: var(--bg-hover);
+  border-radius: 10px;
 }
 
 .countdown-info {
@@ -494,8 +645,8 @@ onMounted(fetchAll)
   gap: 4px;
 }
 
-.countdown-title {
-  font-size: 14px;
+.countdown-info .countdown-title {
+  font-size: 15px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -505,74 +656,16 @@ onMounted(fetchAll)
   color: var(--text-muted);
 }
 
-.countdown-days {
-  text-align: center;
-}
-
-.days-num {
+.countdown-days .days-num {
   font-size: 24px;
   font-weight: 700;
   line-height: 1;
-}
-
-.days-label {
-  font-size: 11px;
-  color: var(--text-muted);
   display: block;
 }
 
-.countdown-days.normal .days-num { color: var(--accent-primary); }
-.countdown-days.soon .days-num { color: var(--warning); }
-.countdown-days.overdue .days-num { color: var(--danger); }
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 1000;
-}
-
-.modal {
-  width: 100%;
-  max-width: 500px;
-  max-height: 70vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.close-btn {
-  font-size: 24px;
+.countdown-days .days-label {
+  font-size: 11px;
   color: var(--text-muted);
-  line-height: 1;
-}
-
-.close-btn:hover {
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 16px 24px 24px;
-  overflow-y: auto;
 }
 
 /* Loading */
@@ -584,13 +677,13 @@ onMounted(fetchAll)
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: 3px solid var(--border-color);
   border-top-color: var(--accent-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 @keyframes spin {
@@ -611,6 +704,10 @@ onMounted(fetchAll)
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .stat-card.expanded {
+    grid-column: span 1;
   }
 }
 </style>

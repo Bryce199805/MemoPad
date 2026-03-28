@@ -183,6 +183,20 @@ const enableDueDate = ref(false)
 const showAddCategory = ref(false)
 const newCategoryName = ref('')
 const newCategoryColor = ref('#6366f1')
+
+// Color palette for categories
+const categoryColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
+
+// Generate random color different from existing categories
+function generateRandomColor() {
+  const usedColors = categories.value.map(c => c.color)
+  const available = categoryColors.filter(c => !usedColors.includes(c))
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)]
+  }
+  // All colors used, pick random from full palette
+  return categoryColors[Math.floor(Math.random() * categoryColors.length)]
+}
 const form = ref({
   content: '',
   priority: 'medium',
@@ -215,7 +229,7 @@ function openModal(todo = null) {
   editingTodo.value = todo
   showAddCategory.value = false
   newCategoryName.value = ''
-  newCategoryColor.value = '#6366f1'
+  newCategoryColor.value = generateRandomColor()
   
   if (todo) {
     enableDueDate.value = !!todo.due_date
@@ -260,7 +274,7 @@ async function createCategory() {
   
   showAddCategory.value = false
   newCategoryName.value = ''
-  newCategoryColor.value = '#6366f1'
+  newCategoryColor.value = generateRandomColor()
 }
 
 async function saveTodo() {
