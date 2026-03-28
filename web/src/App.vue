@@ -10,21 +10,7 @@
       <p>Loading...</p>
     </div>
 
-    <!-- Admin Layout -->
-    <template v-else-if="authStore.isAuthenticated && authStore.isAdmin">
-      <AdminLayout>
-        <router-view />
-      </AdminLayout>
-    </template>
-
-    <!-- User Layout -->
-    <template v-else-if="authStore.isAuthenticated">
-      <DefaultLayout>
-        <router-view />
-      </DefaultLayout>
-    </template>
-
-    <!-- Login View -->
+    <!-- Main Content -->
     <template v-else>
       <router-view />
     </template>
@@ -35,8 +21,6 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
-import DefaultLayout from './layouts/DefaultLayout.vue'
-import AdminLayout from './layouts/AdminLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

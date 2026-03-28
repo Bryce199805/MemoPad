@@ -1,45 +1,50 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import DefaultLayout from '../layouts/DefaultLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 
 const routes = [
+  // Login - no layout
   {
     path: '/login',
     name: 'Login',
     component: () => import('../views/LoginView.vue'),
     meta: { guest: true }
   },
+  // User routes - with DefaultLayout
   {
     path: '/',
-    name: 'Dashboard',
-    component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true, requiresUser: true }
+    component: DefaultLayout,
+    meta: { requiresAuth: true, requiresUser: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: () => import('../views/Dashboard.vue')
+      },
+      {
+        path: 'todos',
+        name: 'Todos',
+        component: () => import('../views/TodoManage.vue')
+      },
+      {
+        path: 'countdowns',
+        name: 'Countdowns',
+        component: () => import('../views/CountdownManage.vue')
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('../views/Settings.vue')
+      },
+      {
+        path: 'feedback',
+        name: 'Feedback',
+        component: () => import('../views/Feedback.vue')
+      }
+    ]
   },
-  {
-    path: '/todos',
-    name: 'Todos',
-    component: () => import('../views/TodoManage.vue'),
-    meta: { requiresAuth: true, requiresUser: true }
-  },
-  {
-    path: '/countdowns',
-    name: 'Countdowns',
-    component: () => import('../views/CountdownManage.vue'),
-    meta: { requiresAuth: true, requiresUser: true }
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: () => import('../views/Settings.vue'),
-    meta: { requiresAuth: true, requiresUser: true }
-  },
-  {
-    path: '/feedback',
-    name: 'Feedback',
-    component: () => import('../views/Feedback.vue'),
-    meta: { requiresAuth: true, requiresUser: true }
-  },
-  // Admin routes - separate layout from user routes
+  // Admin routes - with AdminLayout
   {
     path: '/admin',
     component: AdminLayout,

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,110 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+// RateLimiter - simple in-memory rate limiter
+type RateLimiter struct {
+	requests map[string]*ClientInfo
+	mu       sync.RWMutex
+}
+
+type ClientInfo struct {
+	count     int
+	firstSeen time.Time
+	blocked   bool
+	blockedAt time.Time
+}
+
+var rateLimiter = &RateLimiter{
+	requests: make(map[string]*ClientInfo),
+}
+
+// Cleanup old entries periodically
+func init() {
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for range ticker.C {
+			rateLimiter.mu.Lock()
+			now := time.Now()
+			for ip, info := range rateLimiter.requests {
+				// Remove entries older than 1 hour
+				if now.Sub(info.firstSeen) > time.Hour {
+					delete(rateLimiter.requests, ip)
+				}
+				// Unblock after 5 minutes
+				if info.blocked && now.Sub(info.blockedAt) > 5*time.Minute {
+					info.blocked = false
+					info.count = 0
+					info.firstSeen = now
+				}
+			}
+			rateLimiter.mu.Unlock()
+		}
+	}()
+}
+
+// rateLimitMiddleware - limits requests per IP
+func rateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+
+		rateLimiter.mu.Lock()
+		defer rateLimiter.mu.Unlock()
+
+		now := time.Now()
+		info, exists := rateLimiter.requests[ip]
+
+		if !exists {
+			rateLimiter.requests[ip] = &ClientInfo{
+				count:     1,
+				firstSeen: now,
+			}
+			c.Next()
+			return
+		}
+
+		// Check if blocked
+		if info.blocked {
+			c.JSON(http.StatusTooManyRequests, Response{
+				Success:   false,
+				Error:     "Too many requests. Please try again later.",
+				ErrorCode: "RATE_LIMITED",
+			})
+			c.Abort()
+			return
+		}
+
+		// Reset if window expired
+		if now.Sub(info.firstSeen) > window {
+			info.count = 1
+			info.firstSeen = now
+			c.Next()
+			return
+		}
+
+		info.count++
+
+		// Block if exceeded
+		if info.count > maxRequests {
+			info.blocked = true
+			info.blockedAt = now
+			c.JSON(http.StatusTooManyRequests, Response{
+				Success:   false,
+				Error:     "Too many requests. Please try again later.",
+				ErrorCode: "RATE_LIMITED",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// loginRateLimitMiddleware - stricter limits for auth endpoints
+func loginRateLimitMiddleware() gin.HandlerFunc {
+	return rateLimitMiddleware(10, time.Minute) // 10 login attempts per minute
+}
 
 // Response represents standard API response
 type Response struct {
@@ -176,8 +281,8 @@ func main() {
 	// Auth routes (no auth required)
 	auth := r.Group("/api/auth")
 	{
-		auth.POST("/register", registerHandler)
-		auth.POST("/login", loginHandler)
+		auth.POST("/register", loginRateLimitMiddleware(), registerHandler)
+		auth.POST("/login", loginRateLimitMiddleware(), loginHandler)
 		auth.GET("/verify", authMiddleware(), verifyHandler)
 		auth.GET("/check-admin", checkAdminHandler) // 检查是否已配置管理员
 	}
