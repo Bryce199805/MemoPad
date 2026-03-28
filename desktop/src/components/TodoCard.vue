@@ -10,11 +10,10 @@
       <span class="todo-text" :class="{ done: todo.done }">{{ todo.content }}</span>
     </div>
     
-    <span class="priority-badge" :class="todo.priority">{{ priorityLabel }}</span>
-    
     <button class="pin-btn" :class="{ active: todo.pinned }" @click="$emit('pin', todo.id)">
       📌
     </button>
+    <span class="priority-badge" :class="todo.priority">{{ priorityLabel }}</span>
   </div>
 </template>
 
@@ -38,20 +37,10 @@ const priorityLabel = computed(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid transparent;
   border-radius: 10px;
   margin-bottom: 6px;
   transition: all 0.15s;
-}
-
-.todo-card:hover {
-  border-color: rgba(255,255,255,0.1);
-}
-
-.todo-card.pinned {
-  border-color: rgba(251, 146, 60, 0.3);
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, transparent 100%);
 }
 
 .todo-card.done {
@@ -87,12 +76,13 @@ const priorityLabel = computed(() => {
 
 .todo-text {
   font-size: 13px;
-  color: rgba(255,255,255,0.9);
+  color: inherit;
 }
 
 .todo-text.done {
   text-decoration: line-through;
-  color: rgba(255,255,255,0.4);
+  color: inherit;
+  opacity: 0.5;
 }
 
 .priority-badge {
@@ -130,10 +120,6 @@ const priorityLabel = computed(() => {
 }
 
 .pin-btn:hover, .pin-btn.active {
-  opacity: 1;
-}
-
-.pin-btn.active {
   opacity: 1;
 }
 </style>

@@ -6,34 +6,83 @@ use tauri::{
     Emitter, Manager, WindowEvent,
 };
 
+const SNAP_THRESHOLD: i32 = 15;
+
+fn snap_to_edges(window: &tauri::WebviewWindow) {
+    if let Ok(pos) = window.outer_position() {
+        if let Ok(size) = window.outer_size() {
+            let ww = size.width as i32;
+            let wh = size.height as i32;
+            let wx = pos.x;
+            let wy = pos.y;
+            let mut new_x = wx;
+            let mut new_y = wy;
+
+            if let Ok(monitors) = window.available_monitors() {
+                for monitor in monitors {
+                    if let Ok(monitor_size) = monitor.size() {
+                        if let Ok(monitor_pos) = monitor.position() {
+                            let mx = monitor_pos.x;
+                            let my = monitor_pos.y;
+                            let mw = monitor_size.width as i32;
+                            let mh = monitor_size.height as i32;
+
+                            // Left edge
+                            if (wx - mx).abs() <= SNAP_THRESHOLD {
+                                new_x = mx;
+                            }
+                            // Right edge
+                            if (wx + ww - mx - mw).abs() <= SNAP_THRESHOLD {
+                                new_x = mx + mw - ww;
+                            }
+                            // Top edge
+                            if (wy - my).abs() <= SNAP_THRESHOLD {
+                                new_y = my;
+                            }
+                            // Bottom edge
+                            if (wy + wh - my - mh).abs() <= SNAP_THRESHOLD {
+                                new_y = my + mh - wh;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if new_x != wx || new_y != wy {
+                let _ = window.set_position(tauri::Position::Physical(
+                    tauri::PhysicalPosition::new(new_x, new_y),
+                ));
+            }
+        }
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            // Get the main window
             let window = app.get_webview_window("main").unwrap();
-            
-            // Set initial window properties
             window.set_shadow(true).unwrap();
             window.set_ignore_cursor_events(false).unwrap();
-            
-            // Save window position when moved
-            let window_clone = window.clone();
+
+            let window_emit = window.clone();
+            let window_snap = window.clone();
             window.on_window_event(move |event| {
                 if let WindowEvent::Moved(position) = event {
-                    // Save position to localStorage via frontend
-                    let _ = window_clone.emit("window-moved", position);
+                    let _ = window_emit.emit("window-moved", position);
+                    let snap_window = window_snap.clone();
+                    std::thread::spawn(move || {
+                        snap_to_edges(&snap_window);
+                    });
                 }
             });
-            
-            // Create tray menu
+
             let show_item = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
             let hide_item = MenuItem::with_id(app, "hide", "Hide", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            
+
             let menu = Menu::with_items(app, &[&show_item, &hide_item, &quit_item])?;
-            
-            // Create system tray
+
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
@@ -70,7 +119,7 @@ fn main() {
                     }
                 })
                 .build(app)?;
-            
+
             Ok(())
         })
         .run(tauri::generate_context!())

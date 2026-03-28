@@ -1,13 +1,14 @@
 <template>
   <div
     class="app-window"
-    :class="['font-' + store.fontColor]"
-    :style="{
-      background: store.transparentBackground
-        ? `rgba(10, 10, 10, ${opacity/100})`
-        : `#111111`,
-      backdropFilter: store.transparentBackground ? 'blur(20px)' : 'none'
-    }"
+    :class="['theme-' + store.theme]"
+    :style="store.theme === 'transparent' ? {
+      background: `rgba(10, 10, 10, ${store.opacity/100})`,
+      backdropFilter: 'blur(20px)'
+    } : store.transparentBackground ? {
+      background: `rgba(10, 10, 10, ${store.opacity/100})`,
+      backdropFilter: 'blur(20px)'
+    } : {}
   >
     <!-- Login Screen -->
     <div v-if="!store.isConnected" class="login-screen" data-tauri-drag-region>
@@ -101,11 +102,11 @@
             >{{ store.alwaysOnTop ? 'ON' : 'OFF' }}</button>
           </div>
           <div class="setting-row">
-            <label>Text Color</label>
-            <select class="color-select" :value="store.fontColor" @change="store.setFontColor($event.target.value)">
-              <option value="white">White</option>
-              <option value="light">Light Gray</option>
+            <label>Theme</label>
+            <select class="theme-select" :value="store.theme" @change="store.setTheme($event.target.value)">
               <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="transparent">Glass</option>
             </select>
           </div>
           <button class="logout-btn" @click="handleLogout">Logout</button>
@@ -113,18 +114,34 @@
       </Transition>
 
       <!-- Quick Add -->
-      <div class="quick-add">
-        <input
-          v-model="newTodo"
-          @keyup.enter="addTodo"
-          placeholder="Add a task..."
-        />
-        <select v-model="newPriority">
-          <option value="high">H</option>
-          <option value="medium">M</option>
-          <option value="low">L</option>
-        </select>
-        <button class="add-btn" @click="addTodo">+</button>
+      <div class="quick-add-wrapper">
+        <button v-if="!showAddMenu" class="quick-add-toggle" @click="showAddMenu = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <div v-else class="quick-add-expanded">
+          <div class="add-type-tabs">
+            <button :class="{ active: addType === 'task' }" @click="addType = 'task'">Task</button>
+            <button :class="{ active: addType === 'countdown' }" @click="addType = 'countdown'">Countdown</button>
+            <button class="close-add" @click="showAddMenu = false">×</button>
+          </div>
+          <div v-if="addType === 'task'" class="add-form">
+            <input v-model="newTodo" @keyup.enter="addTodo" placeholder="Add a task..." />
+            <select v-model="newPriority">
+              <option value="high">H</option>
+              <option value="medium">M</option>
+              <option value="low">L</option>
+            </select>
+            <button class="add-btn" @click="addTodo">+</button>
+          </div>
+          <div v-else class="add-form countdown-form">
+            <input v-model="newCountdownTitle" placeholder="Countdown title..." class="cd-title-input" />
+            <input v-model="newCountdownDate" type="date" class="cd-date-input" />
+            <button class="add-btn" @click="addCountdown">+</button>
+          </div>
+        </div>
       </div>
 
       <!-- Content -->
@@ -195,6 +212,10 @@ const store = useAppStore()
 const showSettings = ref(false)
 const newTodo = ref('')
 const newPriority = ref('medium')
+const showAddMenu = ref(false)
+const addType = ref('task')
+const newCountdownTitle = ref('')
+const newCountdownDate = ref('')
 const loginUsername = ref('')
 const loginPassword = ref('')
 const showPassword = ref(false)
@@ -217,6 +238,19 @@ async function addTodo() {
   if (!newTodo.value.trim()) return
   const ok = await store.addTodo(newTodo.value.trim(), newPriority.value)
   if (ok) newTodo.value = ''
+}
+
+async function addCountdown() {
+  if (!newCountdownTitle.value.trim() || !newCountdownDate.value) return
+  const ok = await store.addCountdown(
+    newCountdownTitle.value.trim(),
+    newCountdownDate.value
+  )
+  if (ok) {
+    newCountdownTitle.value = ''
+    newCountdownDate.value = ''
+    showAddMenu.value = false
+  }
 }
 
 async function testConnection() {
@@ -249,8 +283,11 @@ async function minimizeWindow() {
 async function toggleAlwaysOnTop() {
   const newVal = !store.alwaysOnTop
   store.setAlwaysOnTop(newVal)
-  const window = getCurrentWindow()
-  await window.setAlwaysOnTop(newVal)
+  try {
+    await getCurrentWindow().setAlwaysOnTop(newVal)
+  } catch (e) {
+    console.warn('Failed to set always on top:', e)
+  }
 }
 
 function daysLeft(dateStr) {
@@ -274,8 +311,11 @@ function daysClass(dateStr) {
 
 onMounted(async () => {
   if (store.alwaysOnTop) {
-    const window = getCurrentWindow()
-    await window.setAlwaysOnTop(true)
+    try {
+      await getCurrentWindow().setAlwaysOnTop(true)
+    } catch (e) {
+      console.warn('Failed to set always on top:', e)
+    }
   }
 
   if (store.apiKey) {
@@ -292,10 +332,161 @@ onMounted(async () => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Font colors */
-.font-white { color: white; }
-.font-light { color: rgba(255,255,255,0.8); }
-.font-dark { color: rgba(255,255,255,0.9); }
+/* Theme: Dark */
+.theme-dark {
+  background: #111111;
+  color: white;
+}
+.theme-dark .login-screen { background: #0f0f0f; }
+.theme-dark .login-screen h1 { color: white; }
+.theme-dark .login-subtitle { color: rgba(255,255,255,0.5); }
+.theme-dark .login-form input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
+.theme-dark .login-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-dark .advanced-toggle { color: rgba(255,255,255,0.4); }
+.theme-dark .advanced-section { border-color: rgba(255,255,255,0.08); }
+.theme-dark .eye-btn { color: rgba(255,255,255,0.6); }
+.theme-dark .error-msg { color: #f87171; }
+.theme-dark .test-result.success { color: #4ade80; }
+.theme-dark .test-result.error { color: #f87171; }
+.theme-dark .connect-btn, .theme-dark .test-btn { color: white; }
+.theme-dark .test-btn { background: rgba(255,255,255,0.08); }
+.theme-dark .spinner { border-color: rgba(255,255,255,0.3); border-top-color: white; }
+.theme-dark .app-header { border-color: rgba(255,255,255,0.06); }
+.theme-dark .app-title { color: white; }
+.theme-dark .header-btn { color: rgba(255,255,255,0.5); }
+.theme-dark .header-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.theme-dark .settings-panel { border-color: rgba(255,255,255,0.06); }
+.theme-dark .setting-row label { color: rgba(255,255,255,0.6); }
+.theme-dark .toggle-btn { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+.theme-dark .theme-select { background: rgba(255,255,255,0.1); color: white; }
+.theme-dark .logout-btn { background: rgba(239, 68, 68, 0.15); }
+.theme-dark .quick-add-wrapper { border-color: rgba(255,255,255,0.06); }
+.theme-dark .quick-add-toggle { color: rgba(255,255,255,0.3); }
+.theme-dark .quick-add-toggle:hover { color: rgba(255,255,255,0.6); }
+.theme-dark .add-type-tabs button { color: rgba(255,255,255,0.4); }
+.theme-dark .add-type-tabs button.active { color: white; background: rgba(255,255,255,0.1); }
+.theme-dark .add-type-tabs .close-add { color: rgba(255,255,255,0.3); }
+.theme-dark .add-form input, .theme-dark .add-form select { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: white; }
+.theme-dark .add-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-dark :deep(.todo-card) { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }
+.theme-dark :deep(.todo-card:hover) { border-color: rgba(255,255,255,0.1); }
+.theme-dark :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.3); background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, transparent 100%); }
+.theme-dark :deep(.todo-text) { color: rgba(255,255,255,0.9); }
+.theme-dark :deep(.todo-text.done) { color: rgba(255,255,255,0.4); }
+.theme-dark :deep(.checkbox) { border-color: rgba(255,255,255,0.3); }
+.theme-dark :deep(.pin-btn) { color: rgba(255,255,255,0.5); }
+.theme-dark .countdown-card { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+.theme-dark .countdown-title { color: rgba(255,255,255,0.9); }
+.theme-dark .countdown-days { color: rgba(255,255,255,0.6); }
+.theme-dark .section-title { color: rgba(255,255,255,0.4); }
+.theme-dark .empty-state p { color: rgba(255,255,255,0.4); }
+.theme-dark .app-footer { border-color: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+.theme-dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+
+/* Theme: Light */
+.theme-light {
+  background: #f5f5f5;
+  color: #333;
+}
+.theme-light .login-screen { background: #ffffff; }
+.theme-light .login-screen h1 { color: #111; }
+.theme-light .login-subtitle { color: #999; }
+.theme-light .login-form input { background: #f0f0f0; border-color: #e0e0e0; color: #333; }
+.theme-light .login-form input::placeholder { color: #aaa; }
+.theme-light .advanced-toggle { color: #999; }
+.theme-light .advanced-section { border-color: #e0e0e0; }
+.theme-light .eye-btn { color: #999; }
+.theme-light .error-msg { color: #dc2626; }
+.theme-light .test-result.success { color: #16a34a; }
+.theme-light .test-result.error { color: #dc2626; }
+.theme-light .connect-btn, .theme-light .test-btn { color: white; }
+.theme-light .test-btn { background: rgba(0,0,0,0.06); }
+.theme-light .spinner { border-color: rgba(0,0,0,0.15); border-top-color: white; }
+.theme-light .app-header { border-color: #e0e0e0; }
+.theme-light .app-title { color: #333; }
+.theme-light .header-btn { color: #999; }
+.theme-light .header-btn:hover { background: #e8e8e8; color: #333; }
+.theme-light .settings-panel { border-color: #e0e0e0; }
+.theme-light .setting-row label { color: #666; }
+.theme-light .toggle-btn { background: #e0e0e0; color: #888; }
+.theme-light .toggle-btn.active { background: #6366f1; color: white; }
+.theme-light .theme-select { background: #e0e0e0; color: #333; }
+.theme-light .logout-btn { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+.theme-light .quick-add-wrapper { border-color: #e0e0e0; }
+.theme-light .quick-add-toggle { color: #999; }
+.theme-light .quick-add-toggle:hover { color: #666; }
+.theme-light .add-type-tabs button { color: #999; }
+.theme-light .add-type-tabs button.active { color: #333; background: #e0e0e0; }
+.theme-light .add-type-tabs .close-add { color: #999; }
+.theme-light .add-form input, .theme-light .add-form select { background: #f0f0f0; border-color: #e0e0e0; color: #333; }
+.theme-light .add-form input::placeholder { color: #aaa; }
+.theme-light :deep(.todo-card) { background: rgba(0,0,0,0.03); border-color: #e0e0e0; }
+.theme-light :deep(.todo-card:hover) { border-color: #ccc; }
+.theme-light :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.4); background: linear-gradient(135deg, rgba(251, 146, 60, 0.06) 0%, transparent 100%); }
+.theme-light :deep(.todo-text) { color: #333; }
+.theme-light :deep(.todo-text.done) { color: #999; }
+.theme-light :deep(.checkbox) { border-color: #ccc; }
+.theme-light :deep(.pin-btn) { color: #999; }
+.theme-light .countdown-card { background: rgba(0,0,0,0.03); border-color: #e0e0e0; }
+.theme-light .countdown-title { color: #333; }
+.theme-light .countdown-days { color: #999; }
+.theme-light .section-title { color: #999; }
+.theme-light .empty-state p { color: #999; }
+.theme-light .app-footer { border-color: #e0e0e0; color: #999; }
+.theme-light .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+
+/* Theme: Glass (transparent) */
+.theme-transparent {
+  background: rgba(10, 10, 10, 0.75);
+  color: white;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.theme-transparent .login-screen { background: transparent; }
+.theme-transparent .login-screen h1 { color: white; }
+.theme-transparent .login-subtitle { color: rgba(255,255,255,0.5); }
+.theme-transparent .login-form input { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
+.theme-transparent .login-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-transparent .advanced-toggle { color: rgba(255,255,255,0.4); }
+.theme-transparent .advanced-section { border-color: rgba(255,255,255,0.08); }
+.theme-transparent .eye-btn { color: rgba(255,255,255,0.6); }
+.theme-transparent .error-msg { color: #f87171; }
+.theme-transparent .test-result.success { color: #4ade80; }
+.theme-transparent .test-result.error { color: #f87171; }
+.theme-transparent .connect-btn, .theme-transparent .test-btn { color: white; }
+.theme-transparent .test-btn { background: rgba(255,255,255,0.08); }
+.theme-transparent .spinner { border-color: rgba(255,255,255,0.3); border-top-color: white; }
+.theme-transparent .app-header { border-color: rgba(255,255,255,0.08); }
+.theme-transparent .app-title { color: white; }
+.theme-transparent .header-btn { color: rgba(255,255,255,0.5); }
+.theme-transparent .header-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.theme-transparent .settings-panel { border-color: rgba(255,255,255,0.08); }
+.theme-transparent .setting-row label { color: rgba(255,255,255,0.6); }
+.theme-transparent .toggle-btn { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+.theme-transparent .theme-select { background: rgba(255,255,255,0.1); color: white; }
+.theme-transparent .logout-btn { background: rgba(239, 68, 68, 0.15); }
+.theme-transparent .quick-add-wrapper { border-color: rgba(255,255,255,0.08); }
+.theme-transparent .quick-add-toggle { color: rgba(255,255,255,0.3); }
+.theme-transparent .quick-add-toggle:hover { color: rgba(255,255,255,0.6); }
+.theme-transparent .add-type-tabs button { color: rgba(255,255,255,0.4); }
+.theme-transparent .add-type-tabs button.active { color: white; background: rgba(255,255,255,0.1); }
+.theme-transparent .add-type-tabs .close-add { color: rgba(255,255,255,0.3); }
+.theme-transparent .add-form input, .theme-transparent .add-form select { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: white; }
+.theme-transparent .add-form input::placeholder { color: rgba(255,255,255,0.3); }
+.theme-transparent :deep(.todo-card) { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+.theme-transparent :deep(.todo-card:hover) { border-color: rgba(255,255,255,0.15); }
+.theme-transparent :deep(.todo-card.pinned) { border-color: rgba(251, 146, 60, 0.3); background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, transparent 100%); }
+.theme-transparent :deep(.todo-text) { color: rgba(255,255,255,0.9); }
+.theme-transparent :deep(.todo-text.done) { color: rgba(255,255,255,0.4); }
+.theme-transparent :deep(.checkbox) { border-color: rgba(255,255,255,0.3); }
+.theme-transparent :deep(.pin-btn) { color: rgba(255,255,255,0.5); }
+.theme-transparent .countdown-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+.theme-transparent .countdown-title { color: rgba(255,255,255,0.9); }
+.theme-transparent .countdown-days { color: rgba(255,255,255,0.6); }
+.theme-transparent .section-title { color: rgba(255,255,255,0.4); }
+.theme-transparent .empty-state p { color: rgba(255,255,255,0.4); }
+.theme-transparent .app-footer { border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+.theme-transparent .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
 /* Login */
 .login-screen {
@@ -303,9 +494,8 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 32px;
-  background: #0f0f0f;
+  padding: 24px 32px;
+  overflow-y: auto;
 }
 
 .login-logo {
@@ -329,7 +519,6 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 4px;
-  color: white;
 }
 
 .login-subtitle {
@@ -348,10 +537,7 @@ onMounted(async () => {
 
 .login-form input {
   padding: 14px 16px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  color: white;
   font-size: 14px;
 }
 
@@ -380,19 +566,16 @@ onMounted(async () => {
 }
 
 .error-msg {
-  color: #f87171;
   font-size: 13px;
   text-align: center;
 }
 
 .test-result.success {
-  color: #4ade80;
   font-size: 12px;
   text-align: center;
 }
 
 .test-result.error {
-  color: #f87171;
   font-size: 12px;
   text-align: center;
 }
@@ -401,7 +584,6 @@ onMounted(async () => {
   padding: 14px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-radius: 12px;
-  color: white;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -410,7 +592,6 @@ onMounted(async () => {
 }
 
 .test-btn {
-  background: rgba(255,255,255,0.08);
   padding: 10px;
   font-size: 13px;
 }
@@ -419,7 +600,6 @@ onMounted(async () => {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -438,7 +618,6 @@ onMounted(async () => {
   margin-top: 16px;
   padding: 10px 0;
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
   cursor: pointer;
 }
 
@@ -465,7 +644,6 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .header-left {
@@ -508,12 +686,6 @@ onMounted(async () => {
   justify-content: center;
   border-radius: 8px;
   font-size: 14px;
-  color: rgba(255,255,255,0.5);
-}
-
-.header-btn:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
 }
 
 .header-btn svg {
@@ -524,7 +696,6 @@ onMounted(async () => {
 /* Settings */
 .settings-panel {
   padding: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -538,7 +709,6 @@ onMounted(async () => {
 
 .setting-row label {
   font-size: 13px;
-  color: rgba(255,255,255,0.6);
 }
 
 .setting-row input[type="range"] {
@@ -548,11 +718,9 @@ onMounted(async () => {
 
 .toggle-btn {
   padding: 6px 12px;
-  background: rgba(255,255,255,0.1);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.5);
 }
 
 .toggle-btn.active {
@@ -560,54 +728,91 @@ onMounted(async () => {
   color: white;
 }
 
-.color-select {
+.theme-select {
   padding: 4px 8px;
-  background: rgba(255,255,255,0.1);
   border-radius: 6px;
-  color: white;
   font-size: 12px;
 }
 
 .logout-btn {
   padding: 10px;
-  background: rgba(239, 68, 68, 0.15);
   border-radius: 8px;
-  color: #f87171;
   font-size: 13px;
   font-weight: 500;
   margin-top: 4px;
 }
 
 /* Quick Add */
-.quick-add {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
+.quick-add-wrapper {
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
-.quick-add input {
+.quick-add-toggle {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+.quick-add-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quick-add-expanded {
+  padding: 8px 16px 12px;
+}
+
+.add-type-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.add-type-tabs button {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: none;
+}
+
+.add-type-tabs .close-add {
+  margin-left: auto;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+.add-form {
+  display: flex;
+  gap: 8px;
+}
+
+.add-form input {
   flex: 1;
   padding: 10px 14px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
-  color: white;
   font-size: 13px;
 }
 
-.quick-add input::placeholder {
+.add-form input::placeholder {
   color: rgba(255,255,255,0.3);
 }
 
-.quick-add select {
+.add-form select {
   width: 40px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
-  color: white;
   font-size: 12px;
   text-align: center;
+}
+
+.countdown-form .cd-date-input {
+  flex: 0 0 120px;
+}
+.countdown-form .cd-title-input {
+  flex: 1;
 }
 
 .add-btn {
@@ -629,8 +834,6 @@ onMounted(async () => {
 /* Countdown Card */
 .countdown-card {
   padding: 10px 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
   border-radius: 10px;
   margin-bottom: 6px;
 }
@@ -643,13 +846,11 @@ onMounted(async () => {
 
 .countdown-title {
   font-size: 13px;
-  color: rgba(255,255,255,0.9);
 }
 
 .countdown-days {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.6);
 }
 
 .countdown-days.overdue {
@@ -674,7 +875,6 @@ onMounted(async () => {
 .section-title {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -697,7 +897,6 @@ onMounted(async () => {
 }
 
 .empty-state p {
-  color: rgba(255,255,255,0.4);
   font-size: 14px;
 }
 
@@ -706,9 +905,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   padding: 10px 16px;
-  border-top: 1px solid rgba(255,255,255,0.06);
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
 }
 
 /* Scrollbar */
@@ -721,7 +918,6 @@ onMounted(async () => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
   border-radius: 2px;
 }
 

@@ -16,7 +16,7 @@ export const useAppStore = defineStore('app', () => {
   if (!localStorage.getItem('memo_transparent_bg')) {
     localStorage.setItem('memo_transparent_bg', 'false')
   }
-  const fontColor = ref(localStorage.getItem('memo_font_color') || 'white')
+  const theme = ref(localStorage.getItem('memo_theme') || 'dark')
 
   // Data
   const todos = ref([])
@@ -208,6 +208,27 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  async function addCountdown(title, targetDate, priority = 'medium') {
+    try {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/countdowns`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ title, target_date: targetDate, priority })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        countdowns.value.unshift(data.data || data)
+        return true
+      }
+      error.value = 'Failed to add countdown'
+      return false
+    } catch (e) {
+      error.value = 'Failed to add countdown'
+      return false
+    }
+  }
+
   // Settings
   function setOpacity(val) {
     opacity.value = val
@@ -224,22 +245,22 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('memo_transparent_bg', val)
   }
 
-  function setFontColor(val) {
-    fontColor.value = val
-    localStorage.setItem('memo_font_color', val)
+  function setTheme(val) {
+    theme.value = val
+    localStorage.setItem('memo_theme', val)
   }
 
   return {
     // State
     serverUrl, apiKey, isConnected, user,
-    opacity, alwaysOnTop, transparentBackground, fontColor,
+    opacity, alwaysOnTop, transparentBackground, theme,
     todos, countdowns, loading, error,
     hasServerUrl,
     // Computed
     pinnedTodos, regularTodos, doneTodos, pendingCount, doneCount,
     // Actions
     connect, loginWithPassword, disconnect, fetchData,
-    addTodo, toggleTodo, pinTodo,
-    setOpacity, setAlwaysOnTop, setTransparentBackground, setFontColor
+    addTodo, toggleTodo, pinTodo, addCountdown,
+    setOpacity, setAlwaysOnTop, setTransparentBackground, setTheme
   }
 })
