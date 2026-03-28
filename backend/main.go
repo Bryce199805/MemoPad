@@ -374,7 +374,7 @@ func getApiKeyHandler(c *gin.Context) {
 
 func regenerateApiKeyHandler(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
-	newKey := "mp_" + generateRandomString(32)
+	newKey := generateAPIKey()
 	if err := db.Model(&User{}).Where("id = ?", userID).Update("api_key", newKey).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse("Failed to regenerate API key", "INTERNAL_ERROR"))
 		return
