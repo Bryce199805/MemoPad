@@ -1,5 +1,8 @@
 <template>
   <div class="dashboard">
+    <!-- Debug: Check if component renders -->
+    <p style="color: white; padding: 20px;">Dashboard loaded</p>
+    
     <!-- Header -->
     <div class="dashboard-header">
       <div>
