@@ -1,10 +1,14 @@
 const api = require('./api')
-const app = getApp()
+
+function getAppInstance() {
+  return getApp()
+}
 
 function login(username, password) {
   return api.post('/api/auth/login', { username, password }).then(res => {
     if (res.success) {
       wx.setStorageSync('memo_api_key', res.data.api_key)
+      const app = getAppInstance()
       app.globalData.apiKey = res.data.api_key
       app.globalData.user = res.data.user
       app.globalData.isAuthenticated = true
@@ -19,6 +23,7 @@ function register(username, password, email) {
   return api.post('/api/auth/register', data).then(res => {
     if (res.success) {
       wx.setStorageSync('memo_api_key', res.data.api_key)
+      const app = getAppInstance()
       app.globalData.apiKey = res.data.api_key
       app.globalData.user = res.data.user
       app.globalData.isAuthenticated = true
@@ -30,6 +35,7 @@ function register(username, password, email) {
 function verify() {
   return api.get('/api/auth/verify').then(res => {
     if (res.success) {
+      const app = getAppInstance()
       app.globalData.user = res.data.user
       app.globalData.isAuthenticated = true
     }
@@ -39,6 +45,7 @@ function verify() {
 
 function logout() {
   wx.removeStorageSync('memo_api_key')
+  const app = getAppInstance()
   app.globalData.apiKey = ''
   app.globalData.user = null
   app.globalData.isAuthenticated = false

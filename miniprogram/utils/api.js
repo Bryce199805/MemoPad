@@ -1,10 +1,27 @@
-const app = getApp()
+function getAppData() {
+  return getApp().globalData
+}
+
+function getBaseUrl() {
+  try {
+    return getAppData().baseUrl || ''
+  } catch (e) {
+    return ''
+  }
+}
 
 function request(options) {
   return new Promise((resolve, reject) => {
-    const apiKey = wx.getStorageSync('memo_api_key') || app.globalData.apiKey
+    let baseUrl = getBaseUrl()
+    let url = baseUrl + options.url
+    // Prevent double slashes
+    if (baseUrl.endsWith('/') && options.url.startsWith('/')) {
+      url = baseUrl.slice(0, -1) + options.url
+    }
+
+    const apiKey = wx.getStorageSync('memo_api_key') || ''
     wx.request({
-      url: app.globalData.baseUrl + options.url,
+      url: url,
       method: options.method || 'GET',
       data: options.data || {},
       timeout: 15000,
@@ -15,9 +32,12 @@ function request(options) {
       success(res) {
         if (res.statusCode === 401) {
           wx.removeStorageSync('memo_api_key')
-          app.globalData.apiKey = ''
-          app.globalData.user = null
-          app.globalData.isAuthenticated = false
+          try {
+            const app = getApp()
+            app.globalData.apiKey = ''
+            app.globalData.user = null
+            app.globalData.isAuthenticated = false
+          } catch (e) {}
           wx.redirectTo({ url: '/pages/login/login' })
           reject(new Error('Unauthorized'))
           return
