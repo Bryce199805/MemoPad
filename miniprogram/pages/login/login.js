@@ -75,7 +75,12 @@ Page({
       }
 
       if (res.success) {
-        wx.switchTab({ url: '/pages/dashboard/dashboard' })
+        const user = res.data && res.data.user
+        if (user && user.role === 'admin') {
+          wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
+        } else {
+          wx.switchTab({ url: '/pages/dashboard/dashboard' })
+        }
       } else {
         this.setData({ error: res.message || (mode === 'login' ? 'Login failed' : 'Registration failed') })
       }

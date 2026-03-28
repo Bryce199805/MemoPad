@@ -1,0 +1,88 @@
+<wxs module="utils">
+module.exports = {
+  statusVariant: function(status) {
+    var map = { open: 'danger', in_progress: 'warning', resolved: 'success', closed: 'info' }
+    return map[status] || 'info'
+  },
+  statusLabel: function(status) {
+    var map = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
+    return map[status] || status
+  },
+  formatDate: function(dateStr) {
+    if (!dateStr) return ''
+    var d = getDate(dateStr)
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0')
+  }
+}
+</wxs>
+
+<view class="tickets-page">
+  <!-- Loading -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-item" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="page-header">
+      <text class="page-title">Feedback</text>
+      <view class="add-btn" bind:tap="onOpenModal">
+        <text class="add-icon">+</text>
+        <text class="add-text">New</text>
+      </view>
+    </view>
+
+    <!-- Ticket List -->
+    <view class="ticket-list" wx:if="{{tickets.length > 0}}">
+      <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id">
+        <view class="ticket-header">
+          <text class="ticket-title">{{item.title}}</text>
+          <badge text="{{utils.statusLabel(item.status)}}" variant="{{utils.statusVariant(item.status)}}"></badge>
+        </view>
+        <view class="ticket-body" wx:if="{{item.description}}">
+          <text class="ticket-desc">{{item.description}}</text>
+        </view>
+        <view class="ticket-footer">
+          <badge text="{{item.priority}}" variant="{{item.priority === 'high' ? 'danger' : item.priority === 'low' ? 'success' : 'warning'}}"></badge>
+          <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
+        </view>
+        <view class="ticket-reply" wx:if="{{item.reply}}">
+          <text class="reply-label">Reply:</text>
+          <text class="reply-text">{{item.reply}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty -->
+    <view class="empty-full" wx:if="{{tickets.length === 0}}">
+      <empty-state icon="💬" title="No feedback" description="Submit your first feedback"></empty-state>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </block>
+
+  <!-- Submit Modal -->
+  <modal show="{{showModal}}" title="Submit Feedback" bind:close="onCloseModal" bind:confirm="onSubmit">
+    <view class="form-body">
+      <view class="form-group">
+        <text class="form-label">Title</text>
+        <input class="form-input" placeholder="Brief description" placeholder-style="color: var(--text-muted)"
+          value="{{form.title}}" bindinput="onTitleInput" maxlength="200" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">Description</text>
+        <textarea class="form-textarea" placeholder="More details..." placeholder-style="color: var(--text-muted)"
+          value="{{form.description}}" bindinput="onDescInput" maxlength="2000"></textarea>
+      </view>
+      <view class="form-group">
+        <text class="form-label">Priority</text>
+        <picker mode="selector" range="{{['High','Medium','Low']}}" value="{{priorityIdx}}" bindchange="onPriorityChange">
+          <view class="form-picker">
+            <text>{{['High','Medium','Low'][priorityIdx]}}</text>
+            <text class="chip-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+  </modal>
+</view>

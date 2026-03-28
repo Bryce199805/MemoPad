@@ -1,0 +1,199 @@
+/* Admin Dashboard */
+.admin-dashboard {
+  min-height: 100vh;
+  padding: 32rpx;
+  padding-top: 48rpx;
+}
+
+/* Loading */
+.loading-skeleton {
+  padding-top: 48rpx;
+}
+
+.skeleton-header {
+  height: 80rpx;
+  width: 200rpx;
+  background: var(--bg-tertiary);
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.skeleton-card {
+  height: 140rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+}
+
+/* Header */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+}
+
+.admin-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-subtitle {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+.logout-btn {
+  font-size: 24rpx;
+  color: var(--danger);
+  padding: 12rpx 24rpx;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12rpx;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.stat-card {
+  padding: 24rpx !important;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+}
+
+.stat-value--success { color: var(--success); }
+.stat-value--warning { color: var(--warning); }
+
+.stat-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* Section */
+.section {
+  margin-bottom: 32rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.view-all {
+  font-size: 24rpx;
+  color: var(--accent-primary);
+}
+
+/* Action Cards */
+.action-cards {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-card {
+  flex: 1;
+  padding: 24rpx !important;
+  text-align: center;
+}
+
+.action-card:active {
+  opacity: 0.8;
+}
+
+.action-icon {
+  font-size: 48rpx;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.action-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.action-desc {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* Ticket List */
+.ticket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.ticket-card {
+  padding: 20rpx 24rpx !important;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.ticket-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 12rpx;
+}
+
+.ticket-meta {
+  display: flex;
+  gap: 16rpx;
+}
+
+.ticket-user {
+  font-size: 22rpx;
+  color: var(--accent-primary);
+}
+
+.ticket-date {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}

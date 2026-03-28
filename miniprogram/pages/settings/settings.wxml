@@ -79,6 +79,15 @@
         value="{{baseUrl}}" bindinput="onBaseUrlInput" />
     </view>
 
+    <!-- Feedback Section -->
+    <view class="section-card glass-card" wx:if="{{user.role !== 'admin'}}">
+      <text class="section-card-title">Support</text>
+      <view class="admin-link" bind:tap="onGoTickets">
+        <text class="admin-link-text">Feedback & Issues</text>
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
     <!-- Admin Section -->
     <view class="section-card glass-card" wx:if="{{user.role === 'admin'}}">
       <text class="section-card-title">Admin</text>

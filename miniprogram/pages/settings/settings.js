@@ -149,7 +149,11 @@ Page({
   },
 
   onGoAdmin() {
-    wx.navigateTo({ url: '/pages/admin/admin' })
+    wx.navigateTo({ url: '/pages/admin-dashboard/admin-dashboard' })
+  },
+
+  onGoTickets() {
+    wx.navigateTo({ url: '/pages/tickets/tickets' })
   },
 
   onShareAppMessage() {

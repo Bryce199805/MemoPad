@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "badge": "../../components/badge/badge",
+    "empty-state": "../../components/empty-state/empty-state",
+    "modal": "../../components/modal/modal"
+  },
+  "navigationBarTitleText": "Feedback",
+  "enablePullDownRefresh": true
+}
