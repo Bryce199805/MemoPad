@@ -38,7 +38,8 @@
         <div v-for="cat in categories" :key="cat.id" class="category-item">
           <div class="category-color" :style="{ background: cat.color }"></div>
           <span class="category-name">{{ cat.name }}</span>
-          <button class="delete-btn" @click="deleteCategory(cat.id)">🗑️</button>
+          <span class="usage-count">{{ getCategoryUsage(cat.id) }} tasks</span>
+          <button class="delete-btn" @click="deleteCategory(cat.id, cat.name)">🗑️</button>
         </div>
         <p v-if="categories.length === 0" class="empty-text">No categories yet</p>
       </div>
@@ -81,9 +82,12 @@ import { storeToRefs } from 'pinia'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 
+import { useTodoStore } from '../stores/todo'
+
 const router = useRouter()
 const authStore = useAuthStore()
 const categoryStore = useCategoryStore()
+const todoStore = useTodoStore()
 const { categories } = storeToRefs(categoryStore)
 
 const theme = ref('dark')
@@ -110,7 +114,19 @@ async function addCategory() {
   newCategory.value = { name: '', color: '#6366f1' }
 }
 
-const deleteCategory = (id) => categoryStore.deleteCategory(id)
+function getCategoryUsage(catId) {
+  return todoStore.todos.filter(t => t.category_id === catId).length
+}
+
+function deleteCategory(id, name) {
+  const usage = getCategoryUsage(id)
+  const msg = usage > 0
+    ? `Category "${name}" has ${usage} task(s). They will be unlinked. Delete anyway?`
+    : `Delete category "${name}"?`
+  if (confirm(msg)) {
+    categoryStore.deleteCategory(id)
+  }
+}
 
 onMounted(() => {
   categoryStore.fetchCategories()
@@ -224,6 +240,11 @@ onMounted(() => {
 .category-name {
   flex: 1;
   font-weight: 500;
+}
+
+.usage-count {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .delete-btn {

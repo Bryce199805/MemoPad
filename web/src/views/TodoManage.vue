@@ -41,9 +41,13 @@
         <option value="low">Low</option>
       </select>
       <select v-model="filterStatus" class="filter-select">
+        <option value="">All</option>
         <option value="pending">Pending</option>
         <option value="completed">Completed</option>
-        <option value="">All</option>
+      </select>
+      <select v-model="filterCategory" class="filter-select">
+        <option value="">All Categories</option>
+        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
       </select>
       <Button 
         :variant="selectMode ? 'primary' : 'secondary'" 
@@ -226,6 +230,7 @@ const { categories } = storeToRefs(categoryStore)
 const search = ref('')
 const filterPriority = ref('')
 const filterStatus = ref('')
+const filterCategory = ref('')
 const showModal = ref(false)
 const editingTodo = ref(null)
 const enableDueDate = ref(false)
@@ -266,10 +271,11 @@ const filteredTodos = computed(() => {
   return todos.value.filter(todo => {
     const matchSearch = todo.content.toLowerCase().includes(search.value.toLowerCase())
     const matchPriority = !filterPriority.value || todo.priority === filterPriority.value
-    const matchStatus = filterStatus.value === '' || 
+    const matchStatus = filterStatus.value === '' ||
       (filterStatus.value === 'completed' && todo.done) ||
       (filterStatus.value === 'pending' && !todo.done)
-    return matchSearch && matchPriority && matchStatus
+    const matchCategory = !filterCategory.value || todo.category_id === Number(filterCategory.value)
+    return matchSearch && matchPriority && matchStatus && matchCategory
   })
 })
 
