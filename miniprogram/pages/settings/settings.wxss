@@ -108,6 +108,13 @@
   white-space: nowrap;
 }
 
+.profile-role {
+  font-size: 22rpx;
+  color: var(--accent-primary);
+  display: block;
+  margin-top: 4rpx;
+}
+
 /* Category Add Form */
 .cat-add-form {
   display: flex;

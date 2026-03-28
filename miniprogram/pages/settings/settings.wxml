@@ -23,6 +23,7 @@
         <view class="profile-info">
           <text class="profile-name">{{user.username || 'Unknown'}}</text>
           <text class="profile-email">{{user.email || 'No email'}}</text>
+          <text class="profile-role" wx:if="{{user.role}}">Role: {{user.role}}</text>
         </view>
       </view>
     </view>
