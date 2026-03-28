@@ -135,6 +135,7 @@ page {
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 28rpx;
+  box-sizing: border-box;
 }
 .form-input:focus { border-color: var(--accent-primary); }
 .form-label {

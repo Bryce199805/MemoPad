@@ -34,14 +34,14 @@ module.exports = {
   <view class="todo-content">
     <text class="todo-text {{todo.done ? 'todo-text--done' : ''}}">{{todo.content}}</text>
 
-    <view class="todo-meta" wx:if="{{todo.priority || todo.category || todo.due_date}}">
+    <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
       <badge wx:if="{{todo.priority}}" text="{{todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
       <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
-      <badge wx:if="{{todo.due_date}}" text="{{utils.formatDueDate(todo.due_date)}}" variant="info"></badge>
     </view>
   </view>
 
   <view class="todo-actions">
+    <text wx:if="{{todo.due_date}}" class="todo-due-date">{{utils.formatDueDate(todo.due_date)}}</text>
     <view wx:if="{{todo.pinned}}" class="todo-action-btn todo-pin-btn" bind:tap="onPin">
       <text class="pin-icon pin-icon--active">📌</text>
     </view>

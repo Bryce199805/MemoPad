@@ -15,7 +15,7 @@ Component({
   },
   methods: {
     onTap() {
-      this.triggerEvent('tap');
+      this.triggerEvent('tap', { label: this.data.label });
     }
   }
 });

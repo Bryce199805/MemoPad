@@ -107,7 +107,7 @@ Page({
   },
 
   onStatTap(e) {
-    const label = e.currentTarget.dataset.label
+    const label = e.detail.label || (e.currentTarget.dataset && e.currentTarget.dataset.label) || ''
     if (this.data.expandedCard === label) {
       this.setData({ expandedCard: '' })
     } else {
