@@ -1,6 +1,6 @@
 App({
   globalData: {
-    baseUrl: 'http://47.92.31.140'  // 服务器地址
+    baseUrl: ''  // 服务器地址
   },
 
   onLaunch() {

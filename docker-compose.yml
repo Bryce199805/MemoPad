@@ -1,0 +1,33 @@
+services:
+  backend:
+    build: ./backend
+    container_name: memopad-backend
+    restart: unless-stopped
+    volumes:
+      - backend-data:/app/data
+    environment:
+      - GIN_MODE=release
+      - DATA_DIR=/app/data
+      # Uncomment and set admin credentials if needed
+      # - ADMIN_USERNAME=admin
+      # - ADMIN_PASSWORD=your_password
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build: ./web
+    container_name: memopad-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /opt/memopad/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+
+volumes:
+  backend-data:

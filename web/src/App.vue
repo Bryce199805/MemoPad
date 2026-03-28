@@ -1,19 +1,18 @@
 <template>
-  <div class="app">
-    <!-- Loading Screen -->
-    <div v-if="!authStore.initialized" class="loading-screen">
-      <div class="logo-loader">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      <p>Loading...</p>
+  <div class="app" style="background: yellow; min-height: 100vh;">
+    <h1 style="color: black; font-size: 30px; padding: 20px;">APP TEST - If you see this, Vue works!</h1>
+    <p style="color: black; padding: 20px;">initialized: {{ authStore.initialized }}</p>
+    <p style="color: black; padding: 20px;">isAuthenticated: {{ authStore.isAuthenticated }}</p>
+    <p style="color: black; padding: 20px;">isAdmin: {{ authStore.isAdmin }}</p>
+    
+    <div v-if="!authStore.initialized" style="background: orange; padding: 20px;">
+      Loading...
     </div>
-
-    <!-- Main Content -->
-    <template v-else>
+    
+    <div v-else style="background: green; padding: 20px;">
+      <p style="color: white;">Auth initialized, showing router-view:</p>
       <router-view />
-    </template>
+    </div>
   </div>
 </template>
 
@@ -25,7 +24,6 @@ import { useAuthStore } from './stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Handle auth invalidation from API interceptor
 const handleAuthInvalid = () => {
   authStore.logout()
   router.push('/login')
@@ -43,40 +41,5 @@ onUnmounted(() => {
 <style scoped>
 .app {
   min-height: 100vh;
-  background: var(--bg-primary);
-}
-
-.loading-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.logo-loader {
-  width: 48px;
-  height: 48px;
-  padding: 12px;
-  background: var(--accent-gradient);
-  border-radius: var(--radius-lg);
-  animation: pulse 1.5s infinite;
-}
-
-.logo-loader svg {
-  width: 100%;
-  height: 100%;
-  color: white;
-}
-
-.loading-screen p {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.95); }
 }
 </style>
