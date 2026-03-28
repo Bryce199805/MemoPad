@@ -306,9 +306,11 @@ async function addTodo() {
 
 async function addCountdown() {
   if (!newCountdownTitle.value.trim() || !newCountdownDate.value) return
+  // Convert YYYY-MM-DD to ISO 8601 format
+  const targetDate = new Date(newCountdownDate.value).toISOString()
   const ok = await store.addCountdown(
     newCountdownTitle.value.trim(),
-    newCountdownDate.value
+    targetDate
   )
   if (ok) {
     newCountdownTitle.value = ''
@@ -918,16 +920,18 @@ onMounted(async () => {
 }
 
 .cd-date-input {
-  width: 80px;
-  padding: 10px 8px;
+  width: 100px;
+  padding: 10px 6px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
 }
 
 .cd-date-input::-webkit-calendar-picker-indicator {
   filter: invert(0.7);
   cursor: pointer;
+  width: 14px;
+  height: 14px;
 }
 
 .date-placeholder {
