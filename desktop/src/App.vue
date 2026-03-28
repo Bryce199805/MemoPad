@@ -2,13 +2,7 @@
   <div
     class="app-window"
     :class="['theme-' + store.theme]"
-    :style="store.theme === 'transparent' ? {
-      background: `rgba(10, 10, 10, ${store.opacity/100})`,
-      backdropFilter: 'blur(20px)'
-    } : store.transparentBackground ? {
-      background: `rgba(10, 10, 10, ${store.opacity/100})`,
-      backdropFilter: 'blur(20px)'
-    } : {}
+    :style="appStyle"
   >
     <!-- Login Screen -->
     <div v-if="!store.isConnected" class="login-screen" data-tauri-drag-region>
@@ -203,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useAppStore } from './stores/app'
 import TodoCard from './components/TodoCard.vue'
@@ -222,6 +216,16 @@ const showPassword = ref(false)
 const showAdvanced = ref(!store.serverUrl || !store.apiKey)
 const testing = ref(false)
 const testResult = ref(null)
+
+const appStyle = computed(() => {
+  if (store.theme === 'transparent' || store.transparentBackground) {
+    return {
+      background: `rgba(10, 10, 10, ${store.opacity / 100})`,
+      backdropFilter: 'blur(20px)'
+    }
+  }
+  return {}
+})
 
 async function handleLogin() {
   await store.loginWithPassword(loginUsername.value, loginPassword.value)
