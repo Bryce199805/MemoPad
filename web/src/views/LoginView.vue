@@ -123,8 +123,13 @@ async function handleSubmit() {
   }
 
   if (success) {
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    // Redirect based on user role
+    const redirect = route.query.redirect
+    if (redirect) {
+      router.push(redirect)
+    } else {
+      router.push(authStore.isAdmin ? '/admin' : '/')
+    }
   }
 }
 </script>

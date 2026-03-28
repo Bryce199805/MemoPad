@@ -1,5 +1,45 @@
 <template>
   <div class="admin-layout">
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <div class="mobile-header-content">
+        <span class="mobile-title">Admin</span>
+        <div class="mobile-actions">
+          <button @click="showMobileMenu = !showMobileMenu" class="mobile-menu-btn">
+            <svg v-if="!showMobileMenu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Nav -->
+      <nav v-if="showMobileMenu" class="mobile-nav">
+        <router-link to="/admin" class="mobile-nav-item" @click="showMobileMenu = false">
+          <span>Dashboard</span>
+        </router-link>
+        <router-link to="/admin/users" class="mobile-nav-item" @click="showMobileMenu = false">
+          <span>Users</span>
+        </router-link>
+        <router-link to="/admin/tickets" class="mobile-nav-item" @click="showMobileMenu = false">
+          <span>Tickets</span>
+          <span v-if="openTicketCount > 0" class="mobile-badge">{{ openTicketCount }}</span>
+        </router-link>
+        <router-link to="/admin/config" class="mobile-nav-item" @click="showMobileMenu = false">
+          <span>Config</span>
+        </router-link>
+        <button @click="handleLogout" class="mobile-logout">
+          Logout
+        </button>
+      </nav>
+    </header>
+
     <!-- Sidebar -->
     <aside class="admin-sidebar">
       <div class="sidebar-header">
@@ -81,6 +121,7 @@ import api from '../api/client'
 const router = useRouter()
 const authStore = useAuthStore()
 const openTicketCount = ref(0)
+const showMobileMenu = ref(false)
 
 const userInitial = computed(() => {
   return authStore.user?.username?.charAt(0).toUpperCase() || '?'
@@ -278,14 +319,103 @@ defineExpose({ fetchTicketCount })
   min-height: 100vh;
 }
 
+/* Mobile Header */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 100;
+}
+
+.mobile-header-content {
+  height: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-title {
+  font-weight: 700;
+  font-size: 18px;
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mobile-menu-btn {
+  padding: 8px;
+  color: var(--text-secondary);
+}
+
+.mobile-menu-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.mobile-nav {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.mobile-nav-item.router-link-active {
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  color: white;
+}
+
+.mobile-badge {
+  padding: 2px 8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mobile-logout {
+  width: 100%;
+  padding: 14px 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--danger);
+  font-weight: 500;
+  text-align: left;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .admin-sidebar {
     display: none;
   }
 
+  .mobile-header {
+    display: block;
+  }
+
   .main-content {
     margin-left: 0;
+    margin-top: 60px;
     padding: 20px 16px;
   }
 }

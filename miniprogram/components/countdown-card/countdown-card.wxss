@@ -5,6 +5,8 @@
   border-radius: 24rpx;
   padding: 32rpx;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .countdown-strip {
@@ -26,7 +28,7 @@
 .countdown-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #e5e5e5;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -44,19 +46,19 @@
 .countdown-days {
   font-size: 72rpx;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #e5e5e5;
   line-height: 1;
 }
 
 .countdown-days-label {
   font-size: 28rpx;
-  color: var(--text-secondary);
+  color: #737373;
   margin-left: 8rpx;
 }
 
 .countdown-date {
   font-size: 24rpx;
-  color: var(--text-muted);
+  color: #525252;
   display: block;
   margin-bottom: 24rpx;
 }
@@ -64,18 +66,18 @@
 .countdown-footer {
   display: flex;
   gap: 16rpx;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 20rpx;
 }
 
 .countdown-action {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #737373;
   padding: 8rpx 0;
 }
 
 .countdown-action--danger {
-  color: var(--danger);
+  color: #ef4444;
 }
 
 .countdown-action:active {
