@@ -122,16 +122,43 @@
             <button class="close-add" @click="showAddMenu = false">×</button>
           </div>
           <div v-if="addType === 'task'" class="add-form">
-            <input v-model="newTodo" @keyup.enter="addTodo" placeholder="Add a task..." />
-            <select v-model="newPriority">
-              <option value="high">H</option>
-              <option value="medium">M</option>
-              <option value="low">L</option>
-            </select>
+            <textarea
+              v-model="newTodo"
+              @keydown.enter.exact.prevent="addTodo"
+              placeholder="Add a task..."
+              rows="1"
+              class="task-input"
+            ></textarea>
+            <div class="priority-btns">
+              <button
+                class="priority-btn high"
+                :class="{ active: newPriority === 'high' }"
+                @click="newPriority = 'high'"
+                title="High"
+              >H</button>
+              <button
+                class="priority-btn medium"
+                :class="{ active: newPriority === 'medium' }"
+                @click="newPriority = 'medium'"
+                title="Medium"
+              >M</button>
+              <button
+                class="priority-btn low"
+                :class="{ active: newPriority === 'low' }"
+                @click="newPriority = 'low'"
+                title="Low"
+              >L</button>
+            </div>
             <button class="add-btn" @click="addTodo">+</button>
           </div>
           <div v-else class="add-form countdown-form">
-            <input v-model="newCountdownTitle" placeholder="Countdown title..." class="cd-title-input" />
+            <textarea
+              v-model="newCountdownTitle"
+              placeholder="Countdown title..."
+              class="cd-title-input"
+              rows="1"
+              @keydown.enter.exact.prevent="addCountdown"
+            ></textarea>
             <input v-model="newCountdownDate" type="date" class="cd-date-input" />
             <button class="add-btn" @click="addCountdown">+</button>
           </div>
@@ -810,18 +837,48 @@ onMounted(async () => {
 .add-form {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
 }
 
-.add-form input {
+.add-form textarea {
   flex: 1;
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 13px;
+  resize: none;
+  min-height: 40px;
+  max-height: 80px;
+  overflow-y: auto;
+  line-height: 1.4;
 }
 
-.add-form input::placeholder {
+.add-form textarea::placeholder {
   color: rgba(255,255,255,0.3);
 }
+
+.priority-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.priority-btn {
+  width: 28px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.4;
+  transition: all 0.15s;
+}
+
+.priority-btn.active {
+  opacity: 1;
+}
+
+.priority-btn.high { background: rgba(239, 68, 68, 0.3); color: #f87171; }
+.priority-btn.medium { background: rgba(245, 158, 11, 0.3); color: #fbbf24; }
+.priority-btn.low { background: rgba(34, 197, 94, 0.3); color: #4ade80; }
 
 .add-form select {
   width: 40px;
