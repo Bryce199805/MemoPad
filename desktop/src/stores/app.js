@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
   // Connection state
-  const serverUrl = ref(localStorage.getItem('memo_server_url') || 'http://localhost:3000')
+  const serverUrl = ref(localStorage.getItem('memo_server_url') || '')
   const apiKey = ref(localStorage.getItem('memo_api_key') || '')
   const isConnected = ref(false)
   const user = ref(null)
@@ -11,7 +11,7 @@ export const useAppStore = defineStore('app', () => {
   // Settings
   const opacity = ref(Number(localStorage.getItem('memo_opacity')) || 95)
   const alwaysOnTop = ref(localStorage.getItem('memo_always_on_top') === 'true')
-  const transparentBackground = ref(localStorage.getItem('memo_transparent_bg') !== 'false') // Default true
+  const transparentBackground = ref(localStorage.getItem('memo_transparent_bg') === 'true')
   const fontColor = ref(localStorage.getItem('memo_font_color') || 'white')
 
   // Data
@@ -22,9 +22,11 @@ export const useAppStore = defineStore('app', () => {
 
   // Computed
   const pinnedTodos = computed(() => todos.value.filter(t => t.pinned && !t.done))
-  const regularTodos = computed(() => todos.value.filter(t => !t.pinned || t.done))
+  const regularTodos = computed(() => todos.value.filter(t => !t.pinned && !t.done))
+  const doneTodos = computed(() => todos.value.filter(t => t.done))
   const pendingCount = computed(() => todos.value.filter(t => !t.done).length)
   const doneCount = computed(() => todos.value.filter(t => t.done).length)
+  const hasServerUrl = computed(() => !!serverUrl.value.trim())
 
   // Headers helper
   const getHeaders = () => ({
@@ -32,7 +34,7 @@ export const useAppStore = defineStore('app', () => {
     'X-API-Key': apiKey.value
   })
 
-  // Connection
+  // Connection via API key (advanced)
   async function connect() {
     if (!serverUrl.value.trim() || !apiKey.value.trim()) {
       error.value = 'Server URL and API key are required'
@@ -43,7 +45,8 @@ export const useAppStore = defineStore('app', () => {
     error.value = null
 
     try {
-      const res = await fetch(`${serverUrl.value}/api/auth/verify`, {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/auth/verify`, {
         headers: getHeaders()
       })
 
@@ -69,15 +72,17 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // Connection via username/password
   async function loginWithPassword(username, password) {
     if (!serverUrl.value.trim() || !username.trim() || !password.trim()) {
-      error.value = 'All fields are required'
+      error.value = 'Server URL, username and password are required'
       return false
     }
     loading.value = true
     error.value = null
     try {
-      const res = await fetch(`${serverUrl.value}/api/auth/login`, {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -121,9 +126,10 @@ export const useAppStore = defineStore('app', () => {
     error.value = null
 
     try {
+      const url = serverUrl.value.replace(/\/+$/, '')
       const [todosRes, cdsRes] = await Promise.all([
-        fetch(`${serverUrl.value}/api/todos`, { headers: getHeaders() }),
-        fetch(`${serverUrl.value}/api/countdowns`, { headers: getHeaders() })
+        fetch(`${url}/api/todos`, { headers: getHeaders() }),
+        fetch(`${url}/api/countdowns`, { headers: getHeaders() })
       ])
 
       if (todosRes.ok && cdsRes.ok) {
@@ -142,7 +148,8 @@ export const useAppStore = defineStore('app', () => {
   // Todo actions
   async function addTodo(content, priority = 'medium') {
     try {
-      const res = await fetch(`${serverUrl.value}/api/todos`, {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/todos`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ content, priority })
@@ -153,6 +160,7 @@ export const useAppStore = defineStore('app', () => {
         todos.value.unshift(data.data || data)
         return true
       }
+      error.value = 'Failed to add task'
       return false
     } catch (e) {
       error.value = 'Failed to add task'
@@ -162,7 +170,8 @@ export const useAppStore = defineStore('app', () => {
 
   async function toggleTodo(id) {
     try {
-      const res = await fetch(`${serverUrl.value}/api/todos/${id}/toggle`, {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/todos/${id}/toggle`, {
         method: 'PATCH',
         headers: getHeaders()
       })
@@ -179,7 +188,8 @@ export const useAppStore = defineStore('app', () => {
 
   async function pinTodo(id) {
     try {
-      const res = await fetch(`${serverUrl.value}/api/todos/${id}/pin`, {
+      const url = serverUrl.value.replace(/\/+$/, '')
+      const res = await fetch(`${url}/api/todos/${id}/pin`, {
         method: 'PATCH',
         headers: getHeaders()
       })
@@ -200,7 +210,7 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('memo_opacity', val)
   }
 
-  async function setAlwaysOnTop(val) {
+  function setAlwaysOnTop(val) {
     alwaysOnTop.value = val
     localStorage.setItem('memo_always_on_top', val)
   }
@@ -220,8 +230,9 @@ export const useAppStore = defineStore('app', () => {
     serverUrl, apiKey, isConnected, user,
     opacity, alwaysOnTop, transparentBackground, fontColor,
     todos, countdowns, loading, error,
+    hasServerUrl,
     // Computed
-    pinnedTodos, regularTodos, pendingCount, doneCount,
+    pinnedTodos, regularTodos, doneTodos, pendingCount, doneCount,
     // Actions
     connect, loginWithPassword, disconnect, fetchData,
     addTodo, toggleTodo, pinTodo,

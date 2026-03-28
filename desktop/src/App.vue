@@ -1,16 +1,16 @@
 <template>
-  <div 
+  <div
     class="app-window"
     :class="['font-' + store.fontColor]"
     :style="{
-      background: store.transparentBackground 
+      background: store.transparentBackground
         ? `rgba(10, 10, 10, ${opacity/100})`
-        : `linear-gradient(135deg, rgba(10, 10, 10, ${opacity/100}) 0%, rgba(20, 20, 20, ${opacity/100}) 50%, rgba(10, 10, 10, ${opacity/100}) 100%)`,
+        : `linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(20, 20, 20, 0.95) 50%, rgba(10, 10, 10, 0.95) 100%)`,
       backdropFilter: store.transparentBackground ? 'blur(20px)' : 'none'
     }"
   >
     <!-- Login Screen -->
-    <div v-if="!store.isConnected" class="login-screen">
+    <div v-if="!store.isConnected" class="login-screen" data-tauri-drag-region>
       <div class="login-logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -19,9 +19,14 @@
       <h1>MemoDesk</h1>
       <p class="login-subtitle">Sign in to your account</p>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleLogin" class="login-form" @mousedown.stop @click.stop>
         <input v-model="loginUsername" type="text" placeholder="Username" autocomplete="username" />
-        <input v-model="loginPassword" type="password" placeholder="Password" autocomplete="current-password" />
+        <div class="password-field">
+          <input v-model="loginPassword" :type="showPassword ? 'text' : 'password'" placeholder="Password" autocomplete="current-password" />
+          <button type="button" class="eye-btn" @click="showPassword = !showPassword">
+            {{ showPassword ? '🙈' : '👁' }}
+          </button>
+        </div>
         <p v-if="store.error" class="error-msg">{{ store.error }}</p>
         <button type="submit" :disabled="store.loading" class="connect-btn">
           <span v-if="store.loading" class="spinner"></span>
@@ -29,15 +34,20 @@
         </button>
       </form>
 
-      <!-- Advanced Settings (collapsed by default) -->
-      <div class="advanced-toggle" @click="showAdvanced = !showAdvanced">
-        <span>Advanced</span>
+      <!-- Advanced Settings -->
+      <div class="advanced-toggle" @mousedown.stop @click="showAdvanced = !showAdvanced">
+        <span>Advanced Settings</span>
         <span class="toggle-arrow" :class="{ expanded: showAdvanced }">›</span>
       </div>
-      <div v-if="showAdvanced" class="advanced-section">
+      <div v-if="showAdvanced" class="advanced-section" @mousedown.stop>
         <div class="login-form">
-          <input v-model="store.serverUrl" type="text" placeholder="Server URL" />
+          <input v-model="store.serverUrl" type="text" placeholder="Server URL (e.g., https://your-domain.com)" />
           <input v-model="store.apiKey" type="password" placeholder="API Key" />
+          <button type="button" class="test-btn" :disabled="testing" @click="testConnection">
+            <span v-if="testing" class="spinner"></span>
+            <span v-else>Test Connection</span>
+          </button>
+          <p v-if="testResult" class="test-result" :class="testResult.type">{{ testResult.msg }}</p>
         </div>
       </div>
     </div>
@@ -46,7 +56,7 @@
     <template v-else>
       <!-- Header -->
       <header class="app-header" data-tauri-drag-region>
-        <div class="header-left">
+        <div class="header-left" data-tauri-drag-region>
           <div class="app-logo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -54,8 +64,8 @@
           </div>
           <span class="app-title">MemoDesk</span>
         </div>
-        
-        <div class="header-actions" data-tauri-drag-region>
+
+        <div class="header-actions">
           <button class="header-btn" @click="showSettings = !showSettings" title="Settings">
             ⚙️
           </button>
@@ -76,7 +86,7 @@
           </div>
           <div class="setting-row">
             <label>Transparent BG</label>
-            <button 
+            <button
               class="toggle-btn"
               :class="{ active: store.transparentBackground }"
               @click="store.setTransparentBackground(!store.transparentBackground)"
@@ -84,7 +94,7 @@
           </div>
           <div class="setting-row">
             <label>Always on Top</label>
-            <button 
+            <button
               class="toggle-btn"
               :class="{ active: store.alwaysOnTop }"
               @click="toggleAlwaysOnTop"
@@ -96,10 +106,9 @@
               <option value="white">White</option>
               <option value="light">Light Gray</option>
               <option value="dark">Dark</option>
-              <option value="auto">Auto</option>
             </select>
           </div>
-          <button class="disconnect-btn" @click="handleDisconnect">Disconnect</button>
+          <button class="logout-btn" @click="handleLogout">Logout</button>
         </div>
       </Transition>
 
@@ -132,9 +141,20 @@
           />
         </div>
 
+        <!-- Countdowns -->
+        <div v-if="store.countdowns.length > 0" class="section">
+          <div class="section-title">⏳ Countdowns</div>
+          <div v-for="cd in store.countdowns" :key="cd.id" class="countdown-card">
+            <div class="countdown-info">
+              <span class="countdown-title">{{ cd.title }}</span>
+              <span class="countdown-days" :class="daysClass(cd.target_date)">{{ daysLeft(cd.target_date) }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Tasks -->
         <div class="section">
-          <div v-if="store.pinnedTodos.length > 0" class="section-title">Tasks</div>
+          <div v-if="store.pinnedTodos.length > 0 || store.countdowns.length > 0" class="section-title">Tasks</div>
           <TodoCard
             v-for="todo in store.regularTodos"
             :key="todo.id"
@@ -145,7 +165,7 @@
         </div>
 
         <!-- Empty -->
-        <div v-if="store.todos.length === 0 && !store.loading" class="empty-state">
+        <div v-if="store.todos.length === 0 && store.countdowns.length === 0 && !store.loading" class="empty-state">
           <div class="empty-icon">📝</div>
           <p>No tasks yet</p>
         </div>
@@ -177,21 +197,48 @@ const newTodo = ref('')
 const newPriority = ref('medium')
 const loginUsername = ref('')
 const loginPassword = ref('')
-const showAdvanced = ref(!store.apiKey)
+const showPassword = ref(false)
+const showAdvanced = ref(!store.serverUrl || !store.apiKey)
+const testing = ref(false)
+const testResult = ref(null)
 
 async function handleLogin() {
   await store.loginWithPassword(loginUsername.value, loginPassword.value)
 }
 
-function handleDisconnect() {
+function handleLogout() {
   store.disconnect()
   showSettings.value = false
+  loginUsername.value = ''
+  loginPassword.value = ''
 }
 
 async function addTodo() {
   if (!newTodo.value.trim()) return
-  await store.addTodo(newTodo.value.trim(), newPriority.value)
-  newTodo.value = ''
+  const ok = await store.addTodo(newTodo.value.trim(), newPriority.value)
+  if (ok) newTodo.value = ''
+}
+
+async function testConnection() {
+  if (!store.serverUrl.trim()) {
+    testResult.value = { type: 'error', msg: 'Server URL is required' }
+    return
+  }
+  testing.value = true
+  testResult.value = null
+  try {
+    const url = store.serverUrl.replace(/\/+$/, '')
+    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) })
+    if (res.ok) {
+      testResult.value = { type: 'success', msg: 'Connected!' }
+    } else {
+      testResult.value = { type: 'error', msg: `Server responded with ${res.status}` }
+    }
+  } catch (e) {
+    testResult.value = { type: 'error', msg: 'Cannot connect to server' }
+  } finally {
+    testing.value = false
+  }
 }
 
 async function minimizeWindow() {
@@ -206,14 +253,31 @@ async function toggleAlwaysOnTop() {
   await window.setAlwaysOnTop(newVal)
 }
 
+function daysLeft(dateStr) {
+  const target = new Date(dateStr)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  target.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24))
+  if (diff < 0) return `${Math.abs(diff)}d overdue`
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Tomorrow'
+  return `${diff}d left`
+}
+
+function daysClass(dateStr) {
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24))
+  if (diff < 0) return 'overdue'
+  if (diff <= 3) return 'soon'
+  return ''
+}
+
 onMounted(async () => {
-  // Apply saved settings
   if (store.alwaysOnTop) {
     const window = getCurrentWindow()
     await window.setAlwaysOnTop(true)
   }
-  
-  // Auto-connect if API key exists
+
   if (store.apiKey) {
     await store.connect()
   }
@@ -225,10 +289,15 @@ onMounted(async () => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: transparent;
+  user-select: none;
 }
+
+/* Font colors */
+.font-white { color: white; }
+.font-light { color: rgba(255,255,255,0.8); }
+.font-dark { color: rgba(255,255,255,0.9); }
 
 /* Login */
 .login-screen {
@@ -239,49 +308,6 @@ onMounted(async () => {
   justify-content: center;
   padding: 32px;
   background: #0f0f0f;
-  border-radius: 16px;
-  margin: 0;
-}
-
-.advanced-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 280px;
-  margin-top: 16px;
-  padding: 10px 0;
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-}
-
-.toggle-arrow {
-  transition: transform 0.2s;
-}
-
-.toggle-arrow.expanded {
-  transform: rotate(90deg);
-}
-
-.advanced-section {
-  width: 100%;
-  max-width: 280px;
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-.font-white { color: white; }
-.font-light { color: rgba(255,255,255,0.8); }
-.font-dark { color: rgba(255,255,255,0.9); }
-.font-auto { color: white; }
-
-.color-select {
-  padding: 4px 8px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 6px;
-  color: white;
-  font-size: 12px;
 }
 
 .login-logo {
@@ -305,6 +331,7 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 4px;
+  color: white;
 }
 
 .login-subtitle {
@@ -323,7 +350,7 @@ onMounted(async () => {
 
 .login-form input {
   padding: 14px 16px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
   color: white;
@@ -334,13 +361,45 @@ onMounted(async () => {
   color: rgba(255,255,255,0.3);
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  font-size: 16px;
+  padding: 4px;
+  line-height: 1;
+}
+
 .error-msg {
   color: #f87171;
   font-size: 13px;
   text-align: center;
 }
 
-.connect-btn {
+.test-result.success {
+  color: #4ade80;
+  font-size: 12px;
+  text-align: center;
+}
+
+.test-result.error {
+  color: #f87171;
+  font-size: 12px;
+  text-align: center;
+}
+
+.connect-btn, .test-btn {
   padding: 14px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-radius: 12px;
@@ -350,6 +409,12 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.test-btn {
+  background: rgba(255,255,255,0.08);
+  padding: 10px;
+  font-size: 13px;
 }
 
 .spinner {
@@ -365,13 +430,44 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
+/* Advanced */
+.advanced-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 16px;
+  padding: 10px 0;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+}
+
+.toggle-arrow {
+  transition: transform 0.2s;
+  font-size: 16px;
+}
+
+.toggle-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.advanced-section {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
 /* Header */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .header-left {
@@ -415,7 +511,6 @@ onMounted(async () => {
   border-radius: 8px;
   font-size: 14px;
   color: rgba(255,255,255,0.5);
-  transition: all 0.15s;
 }
 
 .header-btn:hover {
@@ -431,7 +526,7 @@ onMounted(async () => {
 /* Settings */
 .settings-panel {
   padding: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -445,7 +540,7 @@ onMounted(async () => {
 
 .setting-row label {
   font-size: 13px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.6);
 }
 
 .setting-row input[type="range"] {
@@ -467,13 +562,22 @@ onMounted(async () => {
   color: white;
 }
 
-.disconnect-btn {
+.color-select {
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+}
+
+.logout-btn {
   padding: 10px;
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   border-radius: 8px;
   color: #f87171;
   font-size: 13px;
   font-weight: 500;
+  margin-top: 4px;
 }
 
 /* Quick Add */
@@ -481,13 +585,13 @@ onMounted(async () => {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .quick-add input {
   flex: 1;
   padding: 10px 14px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   color: white;
@@ -500,7 +604,7 @@ onMounted(async () => {
 
 .quick-add select {
   width: 40px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   color: white;
@@ -515,6 +619,41 @@ onMounted(async () => {
   color: white;
   font-size: 18px;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Countdown Card */
+.countdown-card {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+.countdown-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.countdown-title {
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+}
+
+.countdown-days {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+}
+
+.countdown-days.overdue {
+  color: #f87171;
+}
+
+.countdown-days.soon {
+  color: #fbbf24;
 }
 
 /* Content */
@@ -563,12 +702,12 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   padding: 10px 16px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255,255,255,0.06);
   font-size: 12px;
   color: rgba(255,255,255,0.4);
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -585,12 +724,12 @@ onMounted(async () => {
 /* Transition */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .slide-enter-from,
 .slide-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-8px);
 }
 </style>
