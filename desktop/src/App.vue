@@ -175,6 +175,23 @@
           />
         </div>
 
+        <!-- Done -->
+        <div v-if="store.doneTodos.length > 0" class="section">
+          <div class="section-title done-title" @click="showDone = !showDone">
+            <span>{{ showDone ? '▼' : '▶' }}</span>
+            <span>Done ({{ store.doneCount }})</span>
+          </div>
+          <div v-if="showDone">
+            <TodoCard
+              v-for="todo in store.doneTodos"
+              :key="todo.id"
+              :todo="todo"
+              @toggle="store.toggleTodo"
+              @pin="store.pinTodo"
+            />
+          </div>
+        </div>
+
         <!-- Empty -->
         <div v-if="store.todos.length === 0 && store.countdowns.length === 0 && !store.loading" class="empty-state">
           <div class="empty-icon">📝</div>
@@ -210,6 +227,7 @@ const showAddMenu = ref(false)
 const addType = ref('task')
 const newCountdownTitle = ref('')
 const newCountdownDate = ref('')
+const showDone = ref(false)
 const loginUsername = ref('')
 const loginPassword = ref('')
 const showPassword = ref(false)
@@ -882,6 +900,22 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
+}
+
+.done-title {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.done-title:hover {
+  opacity: 0.8;
+}
+
+.done-title span:first-child {
+  font-size: 8px;
 }
 
 /* Empty & Loading */
