@@ -235,16 +235,6 @@ function handleLogout() {
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
 }
 
-.admin-link {
-  color: #14b8a6;
-}
-
-.admin-link.router-link-active {
-  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
-  color: white;
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
-}
-
 /* Footer */
 .sidebar-footer {
   padding: 16px;
