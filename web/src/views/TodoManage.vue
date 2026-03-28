@@ -1,9 +1,6 @@
 <template>
-  <div class="todos-page" style="background: blue; min-height: 500px;">
-    <h1 style="color: white; font-size: 50px;">TASKS TEST</h1>
-    <p style="color: white;">If you see this, routing to /todos works!</p>
-    <!-- Original content below -->
-    <div class="page-header" style="display: none;">
+  <div class="todos-page">
+    <div class="page-header">
       <div class="header-content">
         <h1>Tasks</h1>
         <p class="subtitle">{{ pendingCount }} pending · {{ doneCount }} completed</p>

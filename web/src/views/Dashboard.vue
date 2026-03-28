@@ -1,7 +1,12 @@
 <template>
-  <div class="dashboard" style="background: red; min-height: 500px;">
-    <h1 style="color: white; font-size: 50px;">DASHBOARD TEST</h1>
-    <p style="color: white;">If you see this, routing works!</p>
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Welcome back, {{ authStore.user?.username }} &middot; {{ todayDate }}</p>
+      </div>
+    </div>
 
     <!-- Stat Cards Row - compact, click to expand -->
     <div class="stats-row">
