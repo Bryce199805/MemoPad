@@ -75,13 +75,18 @@ type Category struct {
 }
 
 // SystemConfig 系统配置
-
 type SystemConfig struct {
 	ID           uint   `json:"id" gorm:"primaryKey"`
 	Key          string `json:"key" gorm:"size:50;uniqueIndex;not null"`
 	Value        string `json:"value" gorm:"size:500"`
 	Description  string `json:"description" gorm:"size:200"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// Stats for dashboard
+type Stats struct {
+	Todos      TodoStats      `json:"todos"`
+	Countdowns CountdownStats `json:"countdowns"`
 }
 
 type TodoStats struct {
