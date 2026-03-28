@@ -27,7 +27,8 @@
         "skipTaskbar": false,
         "center": true,
         "visible": true,
-        "focus": true
+        "focus": true,
+        "theme": "dark"
       }
     ],
     "security": {

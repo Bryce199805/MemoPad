@@ -12,6 +12,10 @@ export const useAppStore = defineStore('app', () => {
   const opacity = ref(Number(localStorage.getItem('memo_opacity')) || 95)
   const alwaysOnTop = ref(localStorage.getItem('memo_always_on_top') === 'true')
   const transparentBackground = ref(localStorage.getItem('memo_transparent_bg') === 'true')
+  // Fix legacy cache: if key doesn't exist, default to opaque
+  if (!localStorage.getItem('memo_transparent_bg')) {
+    localStorage.setItem('memo_transparent_bg', 'false')
+  }
   const fontColor = ref(localStorage.getItem('memo_font_color') || 'white')
 
   // Data

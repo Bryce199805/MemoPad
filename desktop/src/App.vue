@@ -5,7 +5,7 @@
     :style="{
       background: store.transparentBackground
         ? `rgba(10, 10, 10, ${opacity/100})`
-        : `linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(20, 20, 20, 0.95) 50%, rgba(10, 10, 10, 0.95) 100%)`,
+        : `#111111`,
       backdropFilter: store.transparentBackground ? 'blur(20px)' : 'none'
     }"
   >
@@ -290,8 +290,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: transparent;
-  user-select: none;
 }
 
 /* Font colors */
@@ -614,12 +612,18 @@ onMounted(async () => {
 
 .add-btn {
   width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-radius: 10px;
   color: white;
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.add-btn:active {
+  opacity: 0.8;
 }
 
 /* Countdown Card */
