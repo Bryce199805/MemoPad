@@ -7,6 +7,10 @@ Component({
     title: {
       type: String,
       value: ''
+    },
+    hideFooter: {
+      type: Boolean,
+      value: false
     }
   },
 

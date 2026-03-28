@@ -168,7 +168,7 @@ module.exports = {
   </block>
 
   <!-- Ticket Detail Modal -->
-  <modal show="{{showTicketDetail}}" title="Ticket Details" bind:close="onCloseTicketDetail">
+  <modal show="{{showTicketDetail}}" title="Ticket Details" hideFooter="{{true}}" bind:close="onCloseTicketDetail">
     <view class="ticket-detail" wx:if="{{currentTicket}}">
       <view class="detail-row">
         <text class="detail-label">Title</text>
@@ -194,6 +194,9 @@ module.exports = {
         <text class="action-btn action-btn--primary" bind:tap="onUpdateStatus" data-status="in_progress">In Progress</text>
         <text class="action-btn action-btn--success" bind:tap="onUpdateStatus" data-status="resolved">Resolve</text>
         <text class="action-btn action-btn--danger" bind:tap="onDeleteTicket">Delete</text>
+      </view>
+      <view class="detail-close">
+        <text class="action-btn" bind:tap="onCloseTicketDetail">Close</text>
       </view>
     </view>
   </modal>

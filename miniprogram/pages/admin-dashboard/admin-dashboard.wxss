@@ -418,6 +418,17 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.detail-close {
+  display: flex;
+  justify-content: center;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+}
+
+.detail-close .action-btn {
+  padding: 16rpx 48rpx;
+}
+
 /* Empty */
 .empty-state {
   padding: 60rpx 0;
