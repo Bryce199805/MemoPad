@@ -176,6 +176,10 @@ func main() {
 
 		// Stats
 		api.GET("/stats", getStats)
+
+		// API Key
+		api.GET("/auth/api-key", getApiKeyHandler)
+		api.POST("/auth/api-key/regenerate", regenerateApiKeyHandler)
 	}
 
 	r.Run(":3000")
@@ -358,6 +362,25 @@ func verifyHandler(c *gin.Context) {
 			"username": user.Username,
 			"email":    user.Email,
 		},
+	}))
+}
+
+func getApiKeyHandler(c *gin.Context) {
+	user := c.MustGet("user").(User)
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
+		"api_key": user.APIKey,
+	}))
+}
+
+func regenerateApiKeyHandler(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	newKey := "mp_" + generateRandomString(32)
+	if err := db.Model(&User{}).Where("id = ?", userID).Update("api_key", newKey).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to regenerate API key", "INTERNAL_ERROR"))
+		return
+	}
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
+		"api_key": newKey,
 	}))
 }
 

@@ -16,6 +16,17 @@
       </div>
     </Card>
 
+    <!-- API Key -->
+    <Card class="section-card">
+      <template #header>API Key</template>
+      <p class="api-key-desc">Use this key to connect desktop apps</p>
+      <div class="api-key-row">
+        <input class="api-key-input" :value="apiKey" readonly />
+        <Button variant="secondary" size="sm" @click="copyApiKey">Copy</Button>
+        <Button variant="danger" size="sm" @click="regenerateApiKey">Regenerate</Button>
+      </div>
+    </Card>
+
     <!-- Categories Section -->
     <Card class="section-card">
       <template #header>Categories</template>
@@ -81,6 +92,7 @@ import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
+import api from '../api/client'
 
 import { useTodoStore } from '../stores/todo'
 
@@ -92,6 +104,19 @@ const { categories } = storeToRefs(categoryStore)
 
 const theme = ref('dark')
 const newCategory = ref({ name: '', color: '#6366f1' })
+const apiKey = ref('')
+
+const copyApiKey = () => { navigator.clipboard.writeText(apiKey.value) }
+
+async function regenerateApiKey() {
+  if (confirm('Regenerate API key? The old key will stop working.')) {
+    const res = await api.post('/api/auth/api-key/regenerate')
+    if (res.data?.data?.api_key) {
+      apiKey.value = res.data.data.api_key
+      authStore.logout()
+    }
+  }
+}
 
 const userInitial = computed(() => {
   return authStore.user?.username?.charAt(0).toUpperCase() || '?'
@@ -131,7 +156,8 @@ function deleteCategory(id, name) {
 
 onMounted(() => {
   categoryStore.fetchCategories()
-  
+  api.get('/api/auth/api-key').then(r => { if (r.data?.data?.api_key) apiKey.value = r.data.data.api_key })
+
   // Load saved theme
   const savedTheme = localStorage.getItem('theme') || 'dark'
   theme.value = savedTheme
@@ -302,4 +328,9 @@ onMounted(() => {
   margin-bottom: 16px;
   font-size: 14px;
 }
+
+/* API Key */
+.api-key-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.api-key-row { display: flex; gap: 8px; align-items: center; }
+.api-key-input { flex: 1; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: monospace; font-size: 13px; }
 </style>

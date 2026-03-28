@@ -1,6 +1,7 @@
 <template>
   <div 
     class="app-window"
+    :class="['font-' + store.fontColor]"
     :style="{
       background: store.transparentBackground 
         ? `rgba(10, 10, 10, ${opacity/100})`
@@ -16,27 +17,29 @@
         </svg>
       </div>
       <h1>MemoDesk</h1>
-      <p class="login-subtitle">Connect to your server</p>
+      <p class="login-subtitle">Sign in to your account</p>
 
-      <form @submit.prevent="handleConnect" class="login-form">
-        <input
-          v-model="store.serverUrl"
-          type="text"
-          placeholder="Server URL (e.g., http://localhost:3000)"
-        />
-        <input
-          v-model="store.apiKey"
-          type="password"
-          placeholder="API Key"
-        />
-        
+      <form @submit.prevent="handleLogin" class="login-form">
+        <input v-model="loginUsername" type="text" placeholder="Username" autocomplete="username" />
+        <input v-model="loginPassword" type="password" placeholder="Password" autocomplete="current-password" />
         <p v-if="store.error" class="error-msg">{{ store.error }}</p>
-        
         <button type="submit" :disabled="store.loading" class="connect-btn">
           <span v-if="store.loading" class="spinner"></span>
-          <span v-else>Connect</span>
+          <span v-else>Sign In</span>
         </button>
       </form>
+
+      <!-- Advanced Settings (collapsed by default) -->
+      <div class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+        <span>Advanced</span>
+        <span class="toggle-arrow" :class="{ expanded: showAdvanced }">›</span>
+      </div>
+      <div v-if="showAdvanced" class="advanced-section">
+        <div class="login-form">
+          <input v-model="store.serverUrl" type="text" placeholder="Server URL" />
+          <input v-model="store.apiKey" type="password" placeholder="API Key" />
+        </div>
+      </div>
     </div>
 
     <!-- Main App -->
@@ -86,6 +89,15 @@
               :class="{ active: store.alwaysOnTop }"
               @click="toggleAlwaysOnTop"
             >{{ store.alwaysOnTop ? 'ON' : 'OFF' }}</button>
+          </div>
+          <div class="setting-row">
+            <label>Text Color</label>
+            <select class="color-select" :value="store.fontColor" @change="store.setFontColor($event.target.value)">
+              <option value="white">White</option>
+              <option value="light">Light Gray</option>
+              <option value="dark">Dark</option>
+              <option value="auto">Auto</option>
+            </select>
           </div>
           <button class="disconnect-btn" @click="handleDisconnect">Disconnect</button>
         </div>
@@ -163,9 +175,12 @@ const store = useAppStore()
 const showSettings = ref(false)
 const newTodo = ref('')
 const newPriority = ref('medium')
+const loginUsername = ref('')
+const loginPassword = ref('')
+const showAdvanced = ref(!store.apiKey)
 
-async function handleConnect() {
-  await store.connect()
+async function handleLogin() {
+  await store.loginWithPassword(loginUsername.value, loginPassword.value)
 }
 
 function handleDisconnect() {
@@ -223,6 +238,50 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   padding: 32px;
+  background: #0f0f0f;
+  border-radius: 16px;
+  margin: 0;
+}
+
+.advanced-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 16px;
+  padding: 10px 0;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+
+.toggle-arrow {
+  transition: transform 0.2s;
+}
+
+.toggle-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.advanced-section {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.font-white { color: white; }
+.font-light { color: rgba(255,255,255,0.8); }
+.font-dark { color: rgba(255,255,255,0.9); }
+.font-auto { color: white; }
+
+.color-select {
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
 }
 
 .login-logo {

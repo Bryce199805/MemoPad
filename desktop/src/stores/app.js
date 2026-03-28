@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', () => {
   const opacity = ref(Number(localStorage.getItem('memo_opacity')) || 95)
   const alwaysOnTop = ref(localStorage.getItem('memo_always_on_top') === 'true')
   const transparentBackground = ref(localStorage.getItem('memo_transparent_bg') !== 'false') // Default true
+  const fontColor = ref(localStorage.getItem('memo_font_color') || 'white')
 
   // Data
   const todos = ref([])
@@ -59,6 +60,41 @@ export const useAppStore = defineStore('app', () => {
       }
 
       error.value = 'Invalid credentials'
+      return false
+    } catch (e) {
+      error.value = 'Cannot connect to server'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loginWithPassword(username, password) {
+    if (!serverUrl.value.trim() || !username.trim() || !password.trim()) {
+      error.value = 'All fields are required'
+      return false
+    }
+    loading.value = true
+    error.value = null
+    try {
+      const res = await fetch(`${serverUrl.value}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && data.data?.api_key) {
+          apiKey.value = data.data.api_key
+          localStorage.setItem('memo_server_url', serverUrl.value)
+          localStorage.setItem('memo_api_key', data.data.api_key)
+          user.value = data.data.user
+          isConnected.value = true
+          fetchData()
+          return true
+        }
+      }
+      error.value = 'Invalid username or password'
       return false
     } catch (e) {
       error.value = 'Cannot connect to server'
@@ -174,16 +210,21 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('memo_transparent_bg', val)
   }
 
+  function setFontColor(val) {
+    fontColor.value = val
+    localStorage.setItem('memo_font_color', val)
+  }
+
   return {
     // State
     serverUrl, apiKey, isConnected, user,
-    opacity, alwaysOnTop, transparentBackground,
+    opacity, alwaysOnTop, transparentBackground, fontColor,
     todos, countdowns, loading, error,
     // Computed
     pinnedTodos, regularTodos, pendingCount, doneCount,
     // Actions
-    connect, disconnect, fetchData,
+    connect, loginWithPassword, disconnect, fetchData,
     addTodo, toggleTodo, pinTodo,
-    setOpacity, setAlwaysOnTop, setTransparentBackground
+    setOpacity, setAlwaysOnTop, setTransparentBackground, setFontColor
   }
 })
