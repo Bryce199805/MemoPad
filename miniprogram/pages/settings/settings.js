@@ -216,6 +216,43 @@ Page({
     wx.navigateTo({ url: '/pages/tickets/tickets' })
   },
 
+  // ---- Delete Account ----
+
+  onDeleteAccount() {
+    const { user } = this.data
+    if (user.role === 'admin') {
+      wx.showToast({ title: 'Admin cannot delete account', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: 'Delete Account',
+      content: 'This action cannot be undone. All your data will be permanently deleted.',
+      confirmColor: '#ef4444',
+      confirmText: 'Delete',
+      success: (res) => {
+        if (!res.confirm) return
+        wx.showModal({
+          title: 'Confirm Delete',
+          content: 'Are you absolutely sure? Type "DELETE" to confirm.',
+          confirmColor: '#ef4444',
+          confirmText: 'DELETE',
+          success: async (res2) => {
+            if (!res2.confirm) return
+            wx.showLoading({ title: 'Deleting...' })
+            try {
+              await api.del('/api/auth/account')
+              wx.hideLoading()
+              auth.logout()
+            } catch (err) {
+              wx.hideLoading()
+              wx.showToast({ title: err.error || 'Failed', icon: 'none' })
+            }
+          }
+        })
+      }
+    })
+  },
+
   onShareAppMessage() {
     return {
       title: 'MemoPad',

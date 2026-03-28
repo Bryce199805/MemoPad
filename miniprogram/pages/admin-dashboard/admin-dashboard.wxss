@@ -429,6 +429,59 @@
   color: #525252;
 }
 
+/* Filter Row */
+.filter-row {
+  margin-bottom: 16rpx;
+}
+
+.filter-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #a3a3a3;
+}
+
+.chip-arrow {
+  font-size: 20rpx;
+  color: #525252;
+}
+
+/* Config Tab */
+.config-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.config-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.config-label {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #e5e5e5;
+}
+
+.config-desc {
+  font-size: 22rpx;
+  color: #737373;
+}
+
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }

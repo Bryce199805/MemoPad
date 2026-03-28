@@ -47,21 +47,25 @@ Page({
   async fetchAll() {
     this.setData({ loading: true })
     try {
-      const [usersRes, ticketsRes] = await Promise.all([
+      const [usersRes, ticketsRes, configRes, statsRes] = await Promise.all([
         api.get('/api/admin/users'),
-        api.get('/api/admin/tickets')
+        api.get('/api/admin/tickets'),
+        api.get('/api/admin/config'),
+        api.get('/api/admin/stats')
       ])
       const users = (usersRes.data || usersRes) || []
       const tickets = (ticketsRes.data || ticketsRes) || []
+      const config = (configRes.data || configRes) || {}
+      const adminStats = (statsRes.data || statsRes) || {}
       
       const stats = {
-        totalUsers: users.length,
-        activeUsers: users.filter(u => !u.disabled).length,
+        totalUsers: adminStats.users?.total || users.length,
+        activeUsers: adminStats.users?.active || users.filter(u => !u.disabled).length,
         openTickets: tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
         totalTickets: tickets.length
       }
       
-      this.setData({ users, tickets, stats })
+      this.setData({ users, tickets, filteredTickets: tickets, stats, config })
     } catch (err) {
       console.error('Fetch admin data error:', err)
     } finally {
@@ -73,6 +77,17 @@ Page({
   onSwitchTab(e) {
     const tab = e.currentTarget.dataset.tab
     this.setData({ activeTab: tab })
+  },
+
+  // Ticket filter
+  onTicketFilterChange(e) {
+    const filter = e.detail.value
+    const { tickets } = this.data
+    let filteredTickets = tickets
+    if (filter) {
+      filteredTickets = tickets.filter(t => t.status === filter)
+    }
+    this.setData({ ticketFilter: filter, filteredTickets })
   },
 
   // Users
@@ -192,6 +207,16 @@ Page({
           wx.showToast({ title: 'Failed', icon: 'none' })
         }
       }
+    })
+  },
+
+  // Config
+  onToggleRegistration(e) {
+    const enabled = e.detail.value
+    this.setData({ 'config.registration_enabled': enabled })
+    api.put('/api/admin/config', { registration_enabled: enabled }).catch(() => {
+      wx.showToast({ title: 'Failed to update', icon: 'none' })
+      this.setData({ 'config.registration_enabled': !enabled })
     })
   },
 

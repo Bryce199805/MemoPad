@@ -373,3 +373,35 @@
   font-weight: 600;
   color: var(--danger);
 }
+
+/* Delete Account */
+.section-card-title--danger {
+  color: var(--danger);
+}
+
+.danger-desc {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.delete-account-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.delete-account-btn:active {
+  opacity: 0.7;
+}
+
+.delete-account-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--danger);
+}

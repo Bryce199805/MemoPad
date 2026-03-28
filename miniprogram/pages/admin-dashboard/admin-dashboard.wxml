@@ -44,6 +44,10 @@ module.exports = {
         <text class="tab-icon">🎫</text>
         <text class="tab-text">Tickets</text>
       </view>
+      <view class="admin-tab {{activeTab === 'config' ? 'admin-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="config">
+        <text class="tab-icon">⚙</text>
+        <text class="tab-text">Config</text>
+      </view>
     </view>
 
     <!-- Dashboard Tab -->
@@ -117,8 +121,17 @@ module.exports = {
 
     <!-- Tickets Tab -->
     <view class="tab-content" wx:if="{{activeTab === 'tickets'}}">
+      <!-- Filter -->
+      <view class="filter-row">
+        <picker mode="selector" range="{{['All', 'Open', 'In Progress', 'Resolved', 'Closed']}}" value="{{ticketFilter ? ['open', 'in_progress', 'resolved', 'closed'].indexOf(ticketFilter) + 1 : 0}}" bindchange="onTicketFilterChange">
+          <view class="filter-picker">
+            <text>{{ticketFilter ? utils.statusLabel(ticketFilter) : 'All Tickets'}}</text>
+            <text class="chip-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
       <view class="ticket-list">
-        <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
+        <view class="ticket-card" wx:for="{{filteredTickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
           <view class="ticket-header">
             <text class="ticket-title">{{item.title}}</text>
             <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
@@ -133,8 +146,21 @@ module.exports = {
         </view>
       </view>
 
-      <view class="empty-state" wx:if="{{tickets.length === 0}}">
-        <text class="empty-text">No tickets yet</text>
+      <view class="empty-state" wx:if="{{filteredTickets.length === 0}}">
+        <text class="empty-text">No tickets found</text>
+      </view>
+    </view>
+
+    <!-- Config Tab -->
+    <view class="tab-content" wx:if="{{activeTab === 'config'}}">
+      <view class="config-card">
+        <view class="config-row">
+          <view class="config-info">
+            <text class="config-label">User Registration</text>
+            <text class="config-desc">Allow new users to register accounts</text>
+          </view>
+          <switch checked="{{config.registration_enabled}}" bindchange="onToggleRegistration" color="#14b8a6" />
+        </view>
       </view>
     </view>
 

@@ -126,6 +126,15 @@
       </view>
     </view>
 
+    <!-- Delete Account (non-admin only) -->
+    <view class="section-card danger-zone" wx:if="{{user.role !== 'admin'}}">
+      <text class="section-card-title section-card-title--danger">Delete Account</text>
+      <text class="danger-desc">This action cannot be undone. All your data will be permanently deleted.</text>
+      <view class="delete-account-btn" bind:tap="onDeleteAccount">
+        <text class="delete-account-text">Delete My Account</text>
+      </view>
+    </view>
+
     <view class="safe-bottom"></view>
   </block>
 </view>
