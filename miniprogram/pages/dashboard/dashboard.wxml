@@ -84,78 +84,71 @@ module.exports = {
       </view>
     </view>
 
-    <!-- Two Column Layout -->
-    <view class="columns">
-      <!-- Left: Task Progress -->
-      <view class="column column-left">
-        <view class="glass-card">
-          <view class="card-header">
-            <text class="card-header-title">Task Progress</text>
-          </view>
+    <!-- Task Progress -->
+    <view class="glass-card" style="margin-bottom: 20rpx;">
+      <view class="card-header">
+        <text class="card-header-title">Task Progress</text>
+      </view>
 
-          <view class="progress-section">
-            <view class="progress-info">
-              <text class="progress-rate">{{completionRate}}%</text>
-              <text class="progress-label">completed</text>
-            </view>
-            <view class="progress-bar">
-              <view class="progress-fill" style="width: {{completionRate}}%"></view>
-            </view>
-            <view class="progress-stats">
-              <text class="progress-stat"><text class="progress-stat-num">{{completedTasks.length}}</text> done</text>
-              <text class="progress-stat"><text class="progress-stat-num">{{pendingTasks.length}}</text> pending</text>
-            </view>
-          </view>
+      <view class="progress-section">
+        <view class="progress-info">
+          <text class="progress-rate">{{completionRate}}%</text>
+          <text class="progress-label">completed</text>
+        </view>
+        <view class="progress-bar">
+          <view class="progress-fill" style="width: {{completionRate}}%"></view>
+        </view>
+        <view class="progress-stats">
+          <text class="progress-stat"><text class="progress-stat-num">{{completedTasks.length}}</text> done</text>
+          <text class="progress-stat"><text class="progress-stat-num">{{pendingTasks.length}}</text> pending</text>
+        </view>
+      </view>
 
-          <!-- Priority Breakdown -->
-          <view class="priority-section" wx:if="{{priorityBars.length > 0}}">
-            <text class="priority-title">Priority Breakdown</text>
-            <view class="priority-bars">
-              <view class="priority-bar-row" wx:for="{{priorityBars}}" wx:key="priority">
-                <view class="priority-bar-label">
-                  <view class="priority-dot" style="background: {{filters.priorityColor(item.priority)}}"></view>
-                  <text class="priority-name">{{item.priority}}</text>
-                  <text class="priority-count">{{item.count}}</text>
-                </view>
-                <view class="progress-bar progress-bar--sm">
-                  <view class="progress-fill" style="width: {{filters.priorityWidth(item.count, allTasks.length)}}; background: {{filters.priorityColor(item.priority)}}"></view>
-                </view>
-              </view>
+      <!-- Priority Breakdown -->
+      <view class="priority-section" wx:if="{{priorityBars.length > 0}}">
+        <text class="priority-title">Priority Breakdown</text>
+        <view class="priority-bars">
+          <view class="priority-bar-row" wx:for="{{priorityBars}}" wx:key="priority">
+            <view class="priority-bar-label">
+              <view class="priority-dot" style="background: {{filters.priorityColor(item.priority)}}"></view>
+              <text class="priority-name">{{item.priority}}</text>
+              <text class="priority-count">{{item.count}}</text>
             </view>
-          </view>
-
-          <view class="view-all-link" bind:tap="onViewAllTodos">
-            <text>View all tasks</text>
-            <text class="arrow">→</text>
+            <view class="progress-bar progress-bar--sm">
+              <view class="progress-fill" style="width: {{filters.priorityWidth(item.count, allTasks.length)}}; background: {{filters.priorityColor(item.priority)}}"></view>
+            </view>
           </view>
         </view>
       </view>
 
-      <!-- Right: Upcoming Countdowns -->
-      <view class="column column-right">
-        <view class="glass-card">
-          <view class="card-header">
-            <text class="card-header-title">Upcoming</text>
-            <badge wx:if="{{upcomingCountdowns.length > 0}}" text="{{upcomingCountdowns.length}}" variant="info"></badge>
-          </view>
+      <view class="view-all-link" bind:tap="onViewAllTodos">
+        <text>View all tasks</text>
+        <text class="arrow">→</text>
+      </view>
+    </view>
 
-          <view class="countdown-list" wx:if="{{upcomingCountdowns.length > 0}}">
-            <view class="countdown-mini" wx:for="{{upcomingCountdowns}}" wx:key="id">
-              <view class="countdown-mini-left">
-                <view class="countdown-mini-dot" wx:if="{{item.priority}}" style="background: {{filters.priorityColor(item.priority)}}"></view>
-                <text class="countdown-mini-title">{{item.title}}</text>
-              </view>
-              <text class="countdown-mini-days {{item.daysClass}}">{{item.daysText}}</text>
-            </view>
-          </view>
+    <!-- Upcoming Countdowns -->
+    <view class="glass-card">
+      <view class="card-header">
+        <text class="card-header-title">Upcoming</text>
+        <badge wx:if="{{upcomingCountdowns.length > 0}}" text="{{upcomingCountdowns.length}}" variant="info"></badge>
+      </view>
 
-          <empty-state wx:else icon="📅" title="No countdowns" description="No upcoming events"></empty-state>
-
-          <view class="view-all-link" bind:tap="onViewAllCountdowns">
-            <text>View all countdowns</text>
-            <text class="arrow">→</text>
+      <view class="countdown-list" wx:if="{{upcomingCountdowns.length > 0}}">
+        <view class="countdown-mini" wx:for="{{upcomingCountdowns}}" wx:key="id">
+          <view class="countdown-mini-left">
+            <view class="countdown-mini-dot" wx:if="{{item.priority}}" style="background: {{filters.priorityColor(item.priority)}}"></view>
+            <text class="countdown-mini-title">{{item.title}}</text>
           </view>
+          <text class="countdown-mini-days {{item.daysClass}}">{{item.daysText}}</text>
         </view>
+      </view>
+
+      <empty-state wx:else icon="📅" title="No countdowns" description="No upcoming events"></empty-state>
+
+      <view class="view-all-link" bind:tap="onViewAllCountdowns">
+        <text>View all countdowns</text>
+        <text class="arrow">→</text>
       </view>
     </view>
 

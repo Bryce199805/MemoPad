@@ -1,22 +1,20 @@
 .empty-state {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16rpx;
   padding: 32rpx 24rpx;
 }
 
 .empty-icon {
-  font-size: 40rpx;
-  flex-shrink: 0;
+  font-size: 48rpx;
+  margin-bottom: 12rpx;
 }
 
 .empty-title {
   font-size: 26rpx;
   font-weight: 500;
   color: var(--text-secondary);
-  white-space: nowrap;
 }
 
 .empty-desc {
