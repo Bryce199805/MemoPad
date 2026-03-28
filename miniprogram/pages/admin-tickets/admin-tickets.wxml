@@ -1,8 +1,8 @@
 <wxs module="utils">
 module.exports = {
   statusVariant: function(status) {
-    var map = { open: 'danger', in_progress: 'warning', resolved: 'success', closed: 'info' }
-    return map[status] || 'info'
+    var map = { open: 'danger', in_progress: 'warning', resolved: 'success', closed: 'muted' }
+    return map[status] || 'muted'
   },
   statusLabel: function(status) {
     var map = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
@@ -23,6 +23,11 @@ module.exports = {
   </view>
 
   <block wx:else>
+    <!-- Header -->
+    <view class="page-header">
+      <text class="page-title">Tickets</text>
+    </view>
+
     <!-- Filters -->
     <view class="filter-bar">
       <text class="filter-chip {{filter === 'all' ? 'filter-chip--active' : ''}}" bind:tap="onFilterChange" data-filter="all">All</text>
@@ -33,10 +38,10 @@ module.exports = {
 
     <!-- Ticket List -->
     <view class="ticket-list">
-      <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{filter === 'all' || item.status === filter}}" bind:tap="onViewTicket" data-id="{{item.id}}">
+      <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{filter === 'all' || item.status === filter}}" bind:tap="onViewTicket" data-id="{{item.id}}">
         <view class="ticket-header">
           <text class="ticket-title">{{item.title}}</text>
-          <badge text="{{utils.statusLabel(item.status)}}" variant="{{utils.statusVariant(item.status)}}"></badge>
+          <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
         </view>
         <view class="ticket-body">
           <text class="ticket-desc">{{item.description || 'No description'}}</text>
@@ -57,7 +62,7 @@ module.exports = {
   </block>
 
   <!-- Detail Modal -->
-  <modal show="{{showDetail}}" title="Ticket Details" bind:close="onCloseDetail">
+  <modal show="{{showDetail}}" title="Ticket Details" bind:close="onCloseModal">
     <view class="ticket-detail" wx:if="{{currentTicket}}">
       <view class="detail-row">
         <text class="detail-label">Title</text>
@@ -69,11 +74,11 @@ module.exports = {
       </view>
       <view class="detail-row">
         <text class="detail-label">Status</text>
-        <badge text="{{utils.statusLabel(currentTicket.status)}}" variant="{{utils.statusVariant(currentTicket.status)}}"></badge>
+        <text class="ticket-status ticket-status--{{currentTicket.status}}">{{utils.statusLabel(currentTicket.status)}}</text>
       </view>
       <view class="detail-row">
         <text class="detail-label">Priority</text>
-        <badge text="{{currentTicket.priority}}" variant="{{currentTicket.priority === 'high' ? 'danger' : currentTicket.priority === 'low' ? 'success' : 'warning'}}"></badge>
+        <text class="ticket-status ticket-status--{{currentTicket.priority}}">{{currentTicket.priority}}</text>
       </view>
       <view class="detail-row">
         <text class="detail-label">Description</text>
