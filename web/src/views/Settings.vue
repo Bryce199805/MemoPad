@@ -64,22 +64,29 @@
           :class="['theme-btn', { active: theme === 'dark' }]"
           @click="setTheme('dark')"
         >
-          🌙 Dark
+          Dark
         </button>
         <button 
           :class="['theme-btn', { active: theme === 'light' }]"
           @click="setTheme('light')"
         >
-          ☀️ Light
+          Light
         </button>
       </div>
     </Card>
 
-    <!-- Danger Zone -->
-    <Card class="section-card danger-zone">
-      <template #header>Danger Zone</template>
-      <p class="danger-text">Once you logout, you'll need to sign in again.</p>
-      <Button variant="danger" @click="handleLogout">Logout</Button>
+    <!-- Logout Section -->
+    <Card class="section-card">
+      <template #header>Session</template>
+      <p class="session-text">Sign out of your account</p>
+      <Button variant="secondary" @click="handleLogout">Logout</Button>
+    </Card>
+
+    <!-- Danger Zone - Only for non-admin users -->
+    <Card v-if="!authStore.isAdmin" class="section-card danger-zone">
+      <template #header>Delete Account</template>
+      <p class="danger-text">This action cannot be undone. All your data will be permanently deleted.</p>
+      <Button variant="danger" @click="handleDeleteAccount">Delete My Account</Button>
     </Card>
   </div>
 </template>
@@ -144,6 +151,19 @@ function setTheme(t) {
 function handleLogout() {
   authStore.logout()
   router.push('/login')
+}
+
+async function handleDeleteAccount() {
+  if (!confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.')) return
+  if (!confirm('This is your last chance. Type "DELETE" to confirm.')) return
+  
+  try {
+    await api.delete('/api/auth/account')
+    authStore.logout()
+    router.push('/login')
+  } catch (e) {
+    alert(e.response?.data?.error || 'Failed to delete account')
+  }
 }
 
 async function addCategory() {
@@ -347,6 +367,13 @@ onMounted(() => {
 }
 
 .danger-text {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Session Section */
+.session-text {
   color: var(--text-secondary);
   margin-bottom: 16px;
   font-size: 14px;

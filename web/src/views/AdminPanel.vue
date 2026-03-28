@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-page">
+  <div class="admin-page admin-theme">
     <div class="page-header">
       <h1>Admin Panel</h1>
       <p class="subtitle">User management and system configuration</p>
@@ -156,13 +156,20 @@
               <select v-model="ticket.status" @change="updateTicketStatus(ticket)" class="status-select">
                 <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
                 <option value="closed">Closed</option>
               </select>
+              <Button
+                v-if="ticket.status !== 'resolved'"
+                variant="success"
+                size="sm"
+                @click="resolveTicket(ticket)"
+              >
+                Resolve
+              </Button>
               <Button variant="secondary" size="sm" @click="openReplyModal(ticket)">
                 Reply
               </Button>
-              <Button variant="danger" size="sm" @click="deleteTicket(ticket)">
+              <Button variant="danger" size="sm" @click="deleteTicket(ticket)" class="delete-btn">
                 Delete
               </Button>
             </div>
@@ -291,6 +298,15 @@ async function updateTicketStatus(ticket) {
   }
 }
 
+async function resolveTicket(ticket) {
+  try {
+    await api.put(`/api/admin/tickets/${ticket.id}`, { status: 'resolved' })
+    ticket.status = 'resolved'
+  } catch (e) {
+    alert(e.response?.data?.error || 'Failed to resolve ticket')
+  }
+}
+
 function openReplyModal(ticket) {
   replyTicket.value = ticket
   replyText.value = ticket.reply || ''
@@ -379,6 +395,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Admin Theme - Teal/Cyan colors instead of purple */
+.admin-theme {
+  --admin-primary: #14b8a6;
+  --admin-secondary: #06b6d4;
+  --admin-gradient: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+}
+
 .admin-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -426,9 +449,9 @@ onMounted(() => {
   justify-content: center;
 }
 
-.stat-icon.users { background: rgba(99, 102, 241, 0.2); }
+.stat-icon.users { background: rgba(20, 184, 166, 0.2); }
 .stat-icon.active { background: rgba(34, 197, 94, 0.2); }
-.stat-icon.data { background: rgba(59, 130, 246, 0.2); }
+.stat-icon.data { background: rgba(6, 182, 212, 0.2); }
 .stat-icon.recent { background: rgba(245, 158, 11, 0.2); }
 
 .stat-info {
@@ -473,8 +496,8 @@ onMounted(() => {
 }
 
 .tab.active {
-  color: var(--accent-primary);
-  border-bottom-color: var(--accent-primary);
+  color: #14b8a6;
+  border-bottom-color: #14b8a6;
 }
 
 /* Table */
@@ -592,8 +615,8 @@ onMounted(() => {
 }
 
 .toggle input:checked + .slider {
-  background-color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background-color: #14b8a6;
+  border-color: #14b8a6;
 }
 
 .toggle input:checked + .slider::before {
@@ -729,6 +752,10 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.ticket-actions .delete-btn {
+  margin-left: auto;
 }
 
 .status-select {

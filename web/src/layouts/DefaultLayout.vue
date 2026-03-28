@@ -22,21 +22,24 @@
           <span>Dashboard</span>
         </router-link>
 
-        <router-link to="/todos" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4" />
-            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-          </svg>
-          <span>Tasks</span>
-        </router-link>
+        <!-- 业务功能：仅非管理员可见 -->
+        <template v-if="!authStore.isAdmin">
+          <router-link to="/todos" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+            </svg>
+            <span>Tasks</span>
+          </router-link>
 
-        <router-link to="/countdowns" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12,6 12,12 16,14" />
-          </svg>
-          <span>Countdowns</span>
-        </router-link>
+          <router-link to="/countdowns" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12,6 12,12 16,14" />
+            </svg>
+            <span>Countdowns</span>
+          </router-link>
+        </template>
 
         <router-link to="/settings" class="nav-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,12 +104,15 @@
         <router-link to="/" class="mobile-nav-item" @click="showMobileMenu = false">
           <span>Dashboard</span>
         </router-link>
-        <router-link to="/todos" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Tasks</span>
-        </router-link>
-        <router-link to="/countdowns" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Countdowns</span>
-        </router-link>
+        <!-- 业务功能：仅非管理员可见 -->
+        <template v-if="!authStore.isAdmin">
+          <router-link to="/todos" class="mobile-nav-item" @click="showMobileMenu = false">
+            <span>Tasks</span>
+          </router-link>
+          <router-link to="/countdowns" class="mobile-nav-item" @click="showMobileMenu = false">
+            <span>Countdowns</span>
+          </router-link>
+        </template>
         <router-link to="/settings" class="mobile-nav-item" @click="showMobileMenu = false">
           <span>Settings</span>
         </router-link>
@@ -241,7 +247,13 @@ function handleLogout() {
 }
 
 .admin-link {
-  color: var(--warning);
+  color: #14b8a6;
+}
+
+.admin-link.router-link-active {
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
 }
 
 /* Footer */

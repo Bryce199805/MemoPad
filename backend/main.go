@@ -214,6 +214,9 @@ func main() {
 		api.POST("/tickets", createTicket)
 		api.GET("/tickets/:id", getTicket)
 
+		// Account management
+		api.DELETE("/auth/account", deleteOwnAccount)
+
 		// API Key
 		api.GET("/auth/api-key", getApiKeyHandler)
 		api.POST("/auth/api-key/regenerate", regenerateApiKeyHandler)
@@ -483,6 +486,31 @@ func regenerateApiKeyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
 		"api_key": newKey,
 	}))
+}
+
+// deleteOwnAccount allows users to delete their own account (not for admins)
+func deleteOwnAccount(c *gin.Context) {
+	user := c.MustGet("user").(User)
+	
+	// Prevent admin from deleting their own account
+	if user.Role == "admin" {
+		c.JSON(http.StatusForbidden, errorResponse("Admin cannot delete their own account", "FORBIDDEN"))
+		return
+	}
+
+	// Delete user's data first
+	db.Where("user_id = ?", user.ID).Delete(&Todo{})
+	db.Where("user_id = ?", user.ID).Delete(&Countdown{})
+	db.Where("user_id = ?", user.ID).Delete(&Category{})
+	db.Where("user_id = ?", user.ID).Delete(&Ticket{})
+
+	// Delete user
+	if err := db.Delete(&User{}, user.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete account", "INTERNAL_ERROR"))
+		return
+	}
+
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Account deleted"}))
 }
 
 // Todo handlers

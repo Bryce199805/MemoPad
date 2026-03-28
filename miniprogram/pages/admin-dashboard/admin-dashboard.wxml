@@ -64,7 +64,7 @@
         <text class="view-all" bind:tap="onGoTickets">View all →</text>
       </view>
       <view class="ticket-list">
-        <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}">
+        <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
           <view class="ticket-header">
             <text class="ticket-title">{{item.title}}</text>
             <badge text="{{item.status}}" variant="{{item.status === 'open' ? 'danger' : item.status === 'resolved' ? 'success' : 'warning'}}"></badge>
