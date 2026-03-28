@@ -83,6 +83,20 @@ type SystemConfig struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+// Ticket 工单模型
+type Ticket struct {
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	UserID      uint      `json:"user_id" gorm:"index;not null"`
+	User        *User     `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Title       string    `json:"title" gorm:"size:200;not null"`
+	Description string    `json:"description" gorm:"size:2000"`
+	Priority    string    `json:"priority" gorm:"size:10;default:medium"`  // high/medium/low
+	Status      string    `json:"status" gorm:"size:20;default:open"`      // open/in_progress/resolved/closed
+	Reply       string    `json:"reply" gorm:"size:2000"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 // Stats for dashboard
 type Stats struct {
 	Todos      TodoStats      `json:"todos"`
@@ -132,7 +146,7 @@ func main() {
 	}
 
 	// Auto migrate
-	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{})
+	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{}, &Ticket{})
 
 	// Initialize default system config
 	initSystemConfig()
@@ -195,6 +209,11 @@ func main() {
 		// Stats
 		api.GET("/stats", getStats)
 
+		// Tickets (工单)
+		api.GET("/tickets", getTickets)
+		api.POST("/tickets", createTicket)
+		api.GET("/tickets/:id", getTicket)
+
 		// API Key
 		api.GET("/auth/api-key", getApiKeyHandler)
 		api.POST("/auth/api-key/regenerate", regenerateApiKeyHandler)
@@ -216,6 +235,11 @@ func main() {
 
 		// Statistics
 		admin.GET("/stats", adminGetStats)
+
+		// Ticket management
+		admin.GET("/tickets", adminGetTickets)
+		admin.PUT("/tickets/:id", adminUpdateTicket)
+		admin.DELETE("/tickets/:id", adminDeleteTicket)
 	}
 
 	r.Run(":3000")
@@ -390,6 +414,7 @@ func registerHandler(c *gin.Context) {
 			"id":       user.ID,
 			"username": user.Username,
 			"email":    user.Email,
+			"role":     user.Role,
 		},
 		"api_key": user.APIKey,
 	}))
@@ -422,6 +447,7 @@ func loginHandler(c *gin.Context) {
 			"id":       user.ID,
 			"username": user.Username,
 			"email":    user.Email,
+			"role":     user.Role,
 		},
 		"api_key": user.APIKey,
 	}))
