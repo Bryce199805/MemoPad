@@ -9,7 +9,6 @@ use tauri::{
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
             // Get the main window
             let window = app.get_webview_window("main").unwrap();
