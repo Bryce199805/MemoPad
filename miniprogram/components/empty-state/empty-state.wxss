@@ -1,26 +1,24 @@
 .empty-state {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 48rpx 40rpx;
+  gap: 16rpx;
+  padding: 32rpx 24rpx;
 }
 
 .empty-icon {
-  font-size: 64rpx;
-  margin-bottom: 16rpx;
+  font-size: 40rpx;
+  flex-shrink: 0;
 }
 
 .empty-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .empty-desc {
-  font-size: 24rpx;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.5;
+  display: none;
 }
