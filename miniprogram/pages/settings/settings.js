@@ -148,6 +148,10 @@ Page({
     wx.setStorageSync('memo_base_url', url)
   },
 
+  onGoAdmin() {
+    wx.navigateTo({ url: '/pages/admin/admin' })
+  },
+
   onShareAppMessage() {
     return {
       title: 'MemoPad',

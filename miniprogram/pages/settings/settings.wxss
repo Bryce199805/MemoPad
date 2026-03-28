@@ -264,6 +264,31 @@
   word-break: break-all;
 }
 
+/* Admin Link */
+.admin-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.admin-link:active {
+  opacity: 0.7;
+}
+
+.admin-link-text {
+  font-size: 28rpx;
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.arrow {
+  font-size: 28rpx;
+  color: var(--accent-primary);
+}
+
 /* Danger Zone */
 .danger-zone {
   border: 1px solid rgba(239, 68, 68, 0.2);

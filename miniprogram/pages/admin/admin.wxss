@@ -1,0 +1,155 @@
+/* Admin Page */
+.admin-page {
+  min-height: 100vh;
+  padding: 32rpx;
+  padding-top: 48rpx;
+}
+
+/* Loading Skeleton */
+.loading-skeleton {
+  padding-top: 48rpx;
+}
+
+.skeleton-header {
+  height: 80rpx;
+  width: 200rpx;
+  background: var(--bg-tertiary);
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+  animation: skeleton-pulse 1.5s infinite;
+}
+
+.skeleton-item {
+  height: 140rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+  margin-bottom: 16rpx;
+  animation: skeleton-pulse 1.5s infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Header */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.admin-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-count {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+/* User List */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.user-card {
+  padding: 24rpx !important;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-letter {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 4rpx;
+}
+
+.user-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-email {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-stats {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
+
+/* Actions */
+.user-actions {
+  display: flex;
+  gap: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.action-btn {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  background: var(--bg-tertiary);
+}
+
+.action-btn:active {
+  opacity: 0.7;
+}
+
+.action-btn--primary {
+  color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.action-btn--danger {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Empty */
+.empty-full {
+  padding: 60rpx 0;
+}

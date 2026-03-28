@@ -1,0 +1,47 @@
+<view class="admin-page">
+  <!-- Loading -->
+  <view class="loading-skeleton" wx:if="{{loading}}">
+    <view class="skeleton-header"></view>
+    <view class="skeleton-item" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"></view>
+  </view>
+
+  <block wx:else>
+    <!-- Header -->
+    <view class="admin-header">
+      <text class="admin-title">User Management</text>
+      <text class="admin-count">{{users.length}} users</text>
+    </view>
+
+    <!-- User List -->
+    <view class="user-list">
+      <view class="user-card glass-card" wx:for="{{users}}" wx:key="id">
+        <view class="user-row">
+          <view class="user-avatar">
+            <text class="avatar-letter">{{item.username[0].toUpperCase()}}</text>
+          </view>
+          <view class="user-info">
+            <view class="user-name-row">
+              <text class="user-name">{{item.username}}</text>
+              <badge wx:if="{{item.role === 'admin'}}" text="Admin" variant="warning"></badge>
+              <badge wx:if="{{item.disabled}}" text="Disabled" variant="danger"></badge>
+            </view>
+            <text class="user-email">{{item.email || 'No email'}}</text>
+            <text class="user-stats">{{item.todo_count}} tasks · {{item.countdown_count}} countdowns</text>
+          </view>
+        </view>
+        <view class="user-actions">
+          <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">Enable</text>
+          <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">Disable</text>
+          <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">Delete</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty -->
+    <view class="empty-full" wx:if="{{users.length === 0}}">
+      <empty-state icon="👥" title="No users" description="No users found"></empty-state>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </block>
+</view>

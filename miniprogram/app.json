@@ -4,7 +4,8 @@
     "pages/todos/todos",
     "pages/countdowns/countdowns",
     "pages/settings/settings",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/admin/admin"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0a0a0a",
