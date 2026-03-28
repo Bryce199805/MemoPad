@@ -87,9 +87,11 @@
               <text wx:if="{{selectedIds.indexOf(item.id) !== -1}}" class="countdown-check-icon">✓</text>
             </view>
           </view>
-          <countdown-card countdown="{{item}}"
-            bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
-          </countdown-card>
+          <view class="countdown-card-wrap">
+            <countdown-card countdown="{{item}}"
+              bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+            </countdown-card>
+          </view>
         </view>
       </view>
     </view>
@@ -107,9 +109,11 @@
               <text wx:if="{{selectedIds.indexOf(item.id) !== -1}}" class="countdown-check-icon">✓</text>
             </view>
           </view>
-          <countdown-card countdown="{{item}}"
-            bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
-          </countdown-card>
+          <view class="countdown-card-wrap">
+            <countdown-card countdown="{{item}}"
+              bind:edit="onCountdownEdit" bind:delete="onCountdownDelete" bind:pin="onCountdownPin">
+            </countdown-card>
+          </view>
         </view>
       </view>
     </view>

@@ -45,7 +45,7 @@
           </select>
           <Button
             v-if="ticket.status !== 'resolved'"
-            variant="success"
+            variant="primary"
             size="sm"
             @click="resolveTicket(ticket)"
           >

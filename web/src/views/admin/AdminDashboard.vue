@@ -8,28 +8,49 @@
     <!-- Stats Overview -->
     <div class="stats-grid">
       <router-link to="/admin/users" class="stat-card">
-        <div class="stat-icon users"></div>
+        <div class="stat-icon users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.total || 0 }}</span>
           <span class="stat-label">Total Users</span>
         </div>
       </router-link>
       <router-link to="/admin/users" class="stat-card">
-        <div class="stat-icon active"></div>
+        <div class="stat-icon active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.active || 0 }}</span>
           <span class="stat-label">Active Users</span>
         </div>
       </router-link>
       <router-link to="/admin/tickets" class="stat-card">
-        <div class="stat-icon tickets"></div>
+        <div class="stat-icon tickets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">{{ openTicketCount }}</span>
           <span class="stat-label">Open Tickets</span>
         </div>
       </router-link>
       <div class="stat-card">
-        <div class="stat-icon recent"></div>
+        <div class="stat-icon recent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.recent || 0 }}</span>
           <span class="stat-label">New This Week</span>
@@ -192,6 +213,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--text-primary);
 }
 
 .stat-icon.users { background: rgba(20, 184, 166, 0.2); }
