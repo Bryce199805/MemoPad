@@ -102,6 +102,7 @@
               <input
                 v-model="form.target_date"
                 type="datetime-local"
+                :min="minDateTime"
                 required
               />
             </div>
@@ -138,6 +139,19 @@ const { countdowns } = storeToRefs(countdownStore)
 const showModal = ref(false)
 const editingCountdown = ref(null)
 const form = ref({ title: '', target_date: '', priority: 'medium' })
+
+// Minimum datetime for picker (now)
+const minDateTime = computed(() => {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  return now.toISOString().slice(0, 16)
+})
+
+function formatDateTimeLocal(dateStr) {
+  const date = new Date(dateStr)
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+  return date.toISOString().slice(0, 16)
+}
 
 const sortedCountdowns = computed(() => {
   return [...countdowns.value].sort((a, b) => {
@@ -197,7 +211,7 @@ function openModal(cd = null) {
   if (cd) {
     form.value = {
       title: cd.title,
-      target_date: cd.target_date.slice(0, 16),
+      target_date: formatDateTimeLocal(cd.target_date),
       priority: cd.priority
     }
   } else {
@@ -212,10 +226,20 @@ function closeModal() {
 }
 
 async function saveCountdown() {
+  if (!form.value.title.trim() || !form.value.target_date) {
+    return
+  }
+  
+  const data = {
+    title: form.value.title.trim(),
+    target_date: new Date(form.value.target_date).toISOString(),
+    priority: form.value.priority
+  }
+  
   if (editingCountdown.value) {
-    await countdownStore.updateCountdown(editingCountdown.value.id, form.value)
+    await countdownStore.updateCountdown(editingCountdown.value.id, data)
   } else {
-    await countdownStore.createCountdown(form.value)
+    await countdownStore.createCountdown(data)
   }
   closeModal()
 }

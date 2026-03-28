@@ -16,7 +16,7 @@
         <div class="todo-meta">
           <Badge :variant="priorityVariant">{{ priorityLabel }}</Badge>
           
-          <Badge v-if="todo.category" variant="info">
+          <Badge v-if="todo.category" variant="custom" :style="{ backgroundColor: todo.category.color + '20', color: todo.category.color }">
             {{ todo.category.name }}
           </Badge>
 

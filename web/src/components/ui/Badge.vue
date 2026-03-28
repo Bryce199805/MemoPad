@@ -1,16 +1,32 @@
 <template>
-  <span :class="['badge', `badge-${variant}`]">
+  <span :class="['badge', `badge-${variant}`, sizeClass]" :style="customStyle">
     <slot />
   </span>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   variant: {
     type: String,
-    default: 'default',
-    validator: v => ['default', 'primary', 'success', 'warning', 'danger', 'info'].includes(v)
+    default: 'default'
+  },
+  size: {
+    type: String,
+    default: 'md',
+    validator: v => ['sm', 'md', 'lg'].includes(v)
   }
+})
+
+const sizeClass = computed(() => `badge-${props.size}`)
+
+const customStyle = computed(() => {
+  // For custom variant, we don't add any class styles
+  if (props.variant === 'custom') {
+    return {}
+  }
+  return {}
 })
 </script>
 
@@ -19,9 +35,23 @@ defineProps({
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  font-size: 12px;
   font-weight: 600;
   border-radius: 999px;
+}
+
+.badge-sm {
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.badge-md {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.badge-lg {
+  padding: 6px 14px;
+  font-size: 13px;
 }
 
 .badge-default {
@@ -52,5 +82,9 @@ defineProps({
 .badge-info {
   background: rgba(59, 130, 246, 0.15);
   color: var(--info);
+}
+
+.badge-custom {
+  /* Custom styles applied via style prop */
 }
 </style>

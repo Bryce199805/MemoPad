@@ -107,13 +107,35 @@
 
               <div class="form-group">
                 <label>Category</label>
-                <select v-model="form.category_id">
-                  <option :value="null">No Category</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                    {{ cat.name }}
-                  </option>
-                </select>
+                <div class="category-select-wrapper">
+                  <select v-model="form.category_id">
+                    <option :value="null">No Category</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                      {{ cat.name }}
+                    </option>
+                  </select>
+                  <button type="button" class="add-category-btn" @click="showAddCategory = true" title="Add new category">
+                    +
+                  </button>
+                </div>
               </div>
+            </div>
+
+            <!-- Add Category Inline -->
+            <div v-if="showAddCategory" class="inline-category-form">
+              <input 
+                v-model="newCategoryName" 
+                type="text" 
+                placeholder="Category name"
+                class="category-input"
+              />
+              <input 
+                v-model="newCategoryColor" 
+                type="color" 
+                class="color-picker"
+              />
+              <button type="button" class="save-category-btn" @click="createCategory">Save</button>
+              <button type="button" class="cancel-category-btn" @click="showAddCategory = false">✕</button>
             </div>
 
             <div class="form-group">
@@ -125,6 +147,7 @@
                 v-if="enableDueDate"
                 v-model="form.due_date"
                 type="datetime-local"
+                :min="minDateTime"
               />
             </div>
           </form>
@@ -139,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTodoStore } from '../stores/todo'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
@@ -157,11 +180,21 @@ const filterDone = ref('')
 const showModal = ref(false)
 const editingTodo = ref(null)
 const enableDueDate = ref(false)
+const showAddCategory = ref(false)
+const newCategoryName = ref('')
+const newCategoryColor = ref('#6366f1')
 const form = ref({
   content: '',
   priority: 'medium',
   category_id: null,
   due_date: ''
+})
+
+// Minimum datetime for picker (now)
+const minDateTime = computed(() => {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  return now.toISOString().slice(0, 16)
 })
 
 const filteredTodos = computed(() => {
@@ -180,13 +213,17 @@ const doneCount = computed(() => todos.value.filter(t => t.done).length)
 
 function openModal(todo = null) {
   editingTodo.value = todo
+  showAddCategory.value = false
+  newCategoryName.value = ''
+  newCategoryColor.value = '#6366f1'
+  
   if (todo) {
     enableDueDate.value = !!todo.due_date
     form.value = {
       content: todo.content,
       priority: todo.priority,
       category_id: todo.category_id,
-      due_date: todo.due_date ? todo.due_date.slice(0, 16) : ''
+      due_date: todo.due_date ? formatDateTimeLocal(todo.due_date) : ''
     }
   } else {
     enableDueDate.value = false
@@ -195,15 +232,41 @@ function openModal(todo = null) {
   showModal.value = true
 }
 
+function formatDateTimeLocal(dateStr) {
+  const date = new Date(dateStr)
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+  return date.toISOString().slice(0, 16)
+}
+
 function closeModal() {
   showModal.value = false
   editingTodo.value = null
+  showAddCategory.value = false
+}
+
+async function createCategory() {
+  if (!newCategoryName.value.trim()) return
+  
+  await categoryStore.createCategory({
+    name: newCategoryName.value.trim(),
+    color: newCategoryColor.value
+  })
+  
+  // Select the new category
+  const newCat = categories.value[categories.value.length - 1]
+  if (newCat) {
+    form.value.category_id = newCat.id
+  }
+  
+  showAddCategory.value = false
+  newCategoryName.value = ''
+  newCategoryColor.value = '#6366f1'
 }
 
 async function saveTodo() {
   const data = {
     ...form.value,
-    due_date: enableDueDate.value ? form.value.due_date : null
+    due_date: enableDueDate.value && form.value.due_date ? new Date(form.value.due_date).toISOString() : null
   }
 
   if (editingTodo.value) {
@@ -430,6 +493,80 @@ onMounted(() => {
   width: 18px;
   height: 18px;
   accent-color: var(--accent-primary);
+}
+
+/* Category Select with Add Button */
+.category-select-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.category-select-wrapper select {
+  flex: 1;
+}
+
+.add-category-btn {
+  width: 42px;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.add-category-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Inline Category Form */
+.inline-category-form {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  align-items: center;
+}
+
+.category-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.color-picker {
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.save-category-btn {
+  padding: 8px 16px;
+  background: var(--success);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cancel-category-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.cancel-category-btn:hover {
+  color: var(--text-primary);
 }
 
 /* Responsive */
