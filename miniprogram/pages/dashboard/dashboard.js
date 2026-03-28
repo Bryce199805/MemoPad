@@ -159,12 +159,9 @@ Page({
 
   onTodoPin(e) {
     const id = e.detail.id
-    const todo = this.data.todos.find(t => t.id === id)
-    if (todo) {
-      api.patch('/api/todos/' + id, { pinned: !todo.pinned })
-        .then(() => this.fetchAll())
-        .catch(() => wx.showToast({ title: 'Failed', icon: 'none' }))
-    }
+    api.patch('/api/todos/' + id + '/pin')
+      .then(() => this.fetchAll())
+      .catch(() => wx.showToast({ title: 'Failed', icon: 'none' }))
   },
 
   onViewAllTodos() {

@@ -247,6 +247,10 @@ Page({
       wx.showToast({ title: 'Please enter a title', icon: 'none' })
       return
     }
+    if (!form.targetDate) {
+      wx.showToast({ title: 'Please select a date', icon: 'none' })
+      return
+    }
 
     const tz = new Date().getTimezoneOffset()
     const tzStr = tz <= 0 ? '+' + String(Math.floor(-tz/60)).padStart(2,'0') + ':' + String((-tz)%60).padStart(2,'0') : '-' + String(Math.floor(tz/60)).padStart(2,'0') + ':' + String(tz%60).padStart(2,'0')

@@ -1,1 +1,1 @@
-<text class="badge badge-{{variant}}" style="{{customColor ? 'background:' + customColor + '20;color:' + customColor : ''}}">{{text}}</text>
+<text class="badge badge-{{variant}}" style="{{customColor && customColor.length > 0 ? 'background:' + customColor + '20;color:' + customColor : ''}}">{{text}}</text>

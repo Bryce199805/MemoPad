@@ -22,7 +22,15 @@ module.exports = {
     var target = getDate(dateStr).getTime();
     var now = getDate().getTime();
     var diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-    return diff >= 0 ? diff : 0;
+    return diff;
+  },
+  getDaysDisplay: function(dateStr) {
+    var diff = this.calcDaysLeft(dateStr);
+    if (diff >= 0) {
+      return { num: diff, label: '天' };
+    } else {
+      return { num: -diff, label: '天前' };
+    }
   }
 };
 </wxs>
@@ -36,8 +44,8 @@ module.exports = {
   </view>
 
   <view class="countdown-body">
-    <text class="countdown-days">{{utils.calcDaysLeft(countdown.target_date)}}</text>
-    <text class="countdown-days-label">天</text>
+    <text class="countdown-days">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? utils.calcDaysLeft(countdown.target_date) : -utils.calcDaysLeft(countdown.target_date)}}</text>
+    <text class="countdown-days-label">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? '天' : '天前'}}</text>
   </view>
 
   <text class="countdown-date">{{utils.formatDate(countdown.target_date)}}</text>

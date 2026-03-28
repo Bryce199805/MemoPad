@@ -287,7 +287,7 @@ Page({
         category: todo.category || '',
         hasDueDate: !!todo.due_date,
         dueDate: todo.due_date ? todo.due_date.split('T')[0] : today,
-        dueTime: todo.due_date ? todo.due_date.split('T')[1].substring(0, 5) || '23:59' : '23:59'
+        dueTime: todo.due_date && todo.due_date.split('T')[1] ? todo.due_date.split('T')[1].substring(0, 5) : '23:59'
       }
     })
   },
