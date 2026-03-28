@@ -6,7 +6,7 @@
     <!-- Logo -->
     <view class="logo-area">
       <view class="logo-icon">
-        <text class="logo-check">&#10003;</text>
+        <text class="logo-check">✓</text>
       </view>
       <text class="app-name">MemoPad</text>
       <text class="app-tagline">Capture your thoughts</text>
