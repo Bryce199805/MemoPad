@@ -44,12 +44,16 @@ Page({
         api.get('/api/todos'),
         api.get('/api/countdowns')
       ])
-      const stats = statsRes.data || statsRes
+      const stats = (statsRes.data || statsRes) || {}
       const todos = (todosRes.data || todosRes) || []
       const countdowns = (countdownsRes.data || countdownsRes) || []
       this.processData(stats, todos, countdowns)
     } catch (err) {
       console.error('Dashboard fetch error:', err)
+      const msg = err && err.message
+      if (msg && msg.indexOf('Server URL') !== -1) {
+        wx.showModal({ title: 'Error', content: 'Server URL not configured. Please go to Settings to set it.', showCancel: false })
+      }
     } finally {
       this.setData({ loading: false })
     }
@@ -87,8 +91,8 @@ Page({
     const total = allTasks.length || 1
     const completionRate = Math.round((completedTasks.length / total) * 100)
 
-    const priorityBars = (stats.todos && stats.todos.by_priority) || []
-    const categories = (stats.categories && stats.categories.list) || []
+    const priorityBars = (stats && stats.todos && stats.todos.by_priority) || []
+    const categories = (stats && stats.categories && stats.categories.list) || []
 
     this.setData({
       stats,
