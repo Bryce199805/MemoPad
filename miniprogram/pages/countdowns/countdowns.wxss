@@ -385,18 +385,20 @@
 /* Countdown Row with Checkbox */
 .countdown-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 16rpx;
 }
 
 .countdown-checkbox-wrap {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .countdown-checkbox {
   width: 40rpx;
   height: 40rpx;
-  border: 2rpx solid var(--border-color);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 8rpx;
   display: flex;
   align-items: center;
@@ -404,8 +406,8 @@
 }
 
 .countdown-checkbox--checked {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: #6366f1;
+  border-color: #6366f1;
 }
 
 .countdown-check-icon {
