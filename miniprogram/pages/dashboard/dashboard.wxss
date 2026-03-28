@@ -101,7 +101,7 @@
   gap: 20rpx;
 }
 
-.stat-grid--scroll > * {
+.stat-grid--scroll .stat-card {
   min-width: 300rpx;
 }
 

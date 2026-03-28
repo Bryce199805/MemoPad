@@ -7,6 +7,7 @@ function request(options) {
       url: app.globalData.baseUrl + options.url,
       method: options.method || 'GET',
       data: options.data || {},
+      timeout: 15000,
       header: {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey
