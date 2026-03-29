@@ -1,3 +1,10 @@
+/* Component host element — must stretch to fill parent flex container */
+:host {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
 .todo-item {
   display: flex;
   align-items: center;

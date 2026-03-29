@@ -5,18 +5,36 @@ module.exports = {
     return map[priority] || 'info';
   },
   getCategoryName: function(categoryId, categories) {
-    var id = (categoryId && typeof categoryId === 'object') ? categoryId.id : categoryId;
+    // If already a full object, use its name directly
+    if (categoryId && typeof categoryId === 'object' && categoryId.name) {
+      return categoryId.name;
+    }
+    var id = categoryId;
     for (var i = 0; i < categories.length; i++) {
       if (categories[i].id === id) return categories[i].name;
     }
     return '';
   },
   getCategoryColor: function(categoryId, categories) {
-    var id = (categoryId && typeof categoryId === 'object') ? categoryId.id : categoryId;
+    // If already a full object, use its color directly
+    if (categoryId && typeof categoryId === 'object' && categoryId.color) {
+      return categoryId.color;
+    }
+    var id = categoryId;
     for (var i = 0; i < categories.length; i++) {
       if (categories[i].id === id) return categories[i].color;
     }
     return '';
+  },
+  hasCategoryName: function(categoryId, categories) {
+    if (categoryId && typeof categoryId === 'object' && categoryId.name) {
+      return true;
+    }
+    if (!categoryId) return false;
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].id === categoryId) return true;
+    }
+    return false;
   }
 };
 </wxs>
@@ -34,7 +52,7 @@ module.exports = {
       <view wx:if="{{todo.priority}}" class="priority-badge-wrap">
         <badge text="{{todo.priority === 'high' ? 'High' : todo.priority === 'medium' ? 'Medium' : 'Low'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
       </view>
-      <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
+      <badge wx:if="{{utils.hasCategoryName(todo.category, categories)}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
     </view>
   </view>
 
