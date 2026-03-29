@@ -364,6 +364,7 @@
 
 /* Sections */
 .section {
+  margin-top: 24rpx;
   margin-bottom: 32rpx;
 }
 

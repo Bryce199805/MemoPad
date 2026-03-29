@@ -112,7 +112,7 @@
 /* Filters Bar */
 .filters-bar {
   padding: 24rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: 32rpx;
 }
 
 .search-box {
@@ -149,7 +149,6 @@
 
 .filter-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 16rpx;
 }
@@ -164,7 +163,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .filter-chip {
@@ -241,6 +240,14 @@
 /* Sections */
 .section {
   margin-bottom: 24rpx;
+}
+
+.section:first-of-type {
+  margin-top: 8rpx;
+}
+
+.section--pinned {
+  margin-top: 0;
 }
 
 .section-header {

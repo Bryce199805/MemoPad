@@ -107,7 +107,7 @@ module.exports = {
     <!-- Task Lists -->
     <block>
       <!-- Pinned Section -->
-      <view class="section" wx:if="{{pinned.length > 0}}">
+      <view class="section section--pinned" wx:if="{{pinned.length > 0}}">
         <view class="section-header">
           <text class="section-icon">📌</text>
           <text class="section-title-text">Pinned</text>
