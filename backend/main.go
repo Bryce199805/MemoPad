@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -78,16 +79,26 @@ func (m *WSManager) Run() {
 			log.Printf("WebSocket client disconnected. Total: %d", len(m.clients))
 
 		case message := <-m.broadcast:
+			var deadClients []*WSClient
 			m.clientsMu.RLock()
 			for client := range m.clients {
 				select {
 				case client.Send <- message:
 				default:
-					close(client.Send)
-					delete(m.clients, client)
+					deadClients = append(deadClients, client)
 				}
 			}
 			m.clientsMu.RUnlock()
+			if len(deadClients) > 0 {
+				m.clientsMu.Lock()
+				for _, client := range deadClients {
+					if _, ok := m.clients[client]; ok {
+						delete(m.clients, client)
+						close(client.Send)
+					}
+				}
+				m.clientsMu.Unlock()
+			}
 		}
 	}
 }
