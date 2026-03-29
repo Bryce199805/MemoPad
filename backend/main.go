@@ -1457,39 +1457,32 @@ func checkAdminHandler(c *gin.Context) {
 // Admin handlers
 
 func adminGetUsers(c *gin.Context) {
-	var users []User
-	db.Select("id, username, email, role, disabled, created_at, updated_at").Order("created_at DESC").Find(&users)
-
-	// Add stats for each user
 	type UserWithStats struct {
-		ID        uint      `json:"id"`
-		Username  string    `json:"username"`
-		Email     string    `json:"email"`
-		Role      string    `json:"role"`
-		Disabled  bool      `json:"disabled"`
-		TodoCount int64     `json:"todo_count"`
-		CountdownCount int64 `json:"countdown_count"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		ID             uint      `json:"id"`
+		Username       string    `json:"username"`
+		Email          string    `json:"email"`
+		Role           string    `json:"role"`
+		Disabled       bool      `json:"disabled"`
+		TodoCount      int64     `json:"todo_count"`
+		CountdownCount int64     `json:"countdown_count"`
+		CreatedAt      time.Time `json:"created_at"`
+		UpdatedAt      time.Time `json:"updated_at"`
 	}
 
 	var result []UserWithStats
-	for _, u := range users {
-		var todoCount, countdownCount int64
-		db.Model(&Todo{}).Where("user_id = ?", u.ID).Count(&todoCount)
-		db.Model(&Countdown{}).Where("user_id = ?", u.ID).Count(&countdownCount)
-		result = append(result, UserWithStats{
-			ID:             u.ID,
-			Username:       u.Username,
-			Email:          u.Email,
-			Role:           u.Role,
-			Disabled:       u.Disabled,
-			TodoCount:      todoCount,
-			CountdownCount: countdownCount,
-			CreatedAt:      u.CreatedAt,
-			UpdatedAt:      u.UpdatedAt,
-		})
-	}
+	db.Raw(`
+		SELECT
+			u.id, u.username, u.email, u.role, u.disabled,
+			u.created_at, u.updated_at,
+			COUNT(DISTINCT t.id)  AS todo_count,
+			COUNT(DISTINCT cd.id) AS countdown_count
+		FROM users u
+		LEFT JOIN todos      t  ON t.user_id  = u.id AND t.deleted_at  IS NULL
+		LEFT JOIN countdowns cd ON cd.user_id = u.id AND cd.deleted_at IS NULL
+		WHERE u.deleted_at IS NULL
+		GROUP BY u.id
+		ORDER BY u.created_at DESC
+	`).Scan(&result)
 
 	c.JSON(http.StatusOK, successResponse(result))
 }
