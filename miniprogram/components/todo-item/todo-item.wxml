@@ -34,7 +34,7 @@ module.exports = {
 
   <view class="todo-right">
     <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
-      <badge wx:if="{{todo.priority}}" text="{{todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
+      <badge wx:if="{{todo.priority}}" text="{{todo.priority === 'high' ? 'High' : todo.priority === 'medium' ? 'Medium' : 'Low'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
       <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
     </view>
 
@@ -48,13 +48,13 @@ module.exports = {
 
       <view class="todo-action-menu {{showActions ? 'todo-action-menu--show' : ''}}" wx:if="{{showActions}}">
         <view class="todo-action-item" bind:tap="onPin">
-          <text>{{todo.pinned ? '取消置顶' : '置顶'}}</text>
+          <text>{{todo.pinned ? 'Unpin' : 'Pin'}}</text>
         </view>
         <view class="todo-action-item" bind:tap="onEdit">
-          <text>编辑</text>
+          <text>Edit</text>
         </view>
         <view class="todo-action-item todo-action-item--danger" bind:tap="onDelete">
-          <text>删除</text>
+          <text>Delete</text>
         </view>
       </view>
     </view>

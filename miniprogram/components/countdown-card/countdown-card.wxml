@@ -5,7 +5,7 @@ module.exports = {
     return map[priority] || 'info';
   },
   getPriorityLabel: function(priority) {
-    var map = { high: '高', medium: '中', low: '低' };
+    var map = { high: 'High', medium: 'Medium', low: 'Low' };
     return map[priority] || '';
   },
   getPriorityColor: function(priority) {
@@ -15,7 +15,8 @@ module.exports = {
   formatDate: function(dateStr) {
     if (!dateStr) return '';
     var date = getDate(dateStr);
-    return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
   },
   calcDaysLeft: function(dateStr) {
     if (!dateStr) return 0;
@@ -27,9 +28,9 @@ module.exports = {
   getDaysDisplay: function(dateStr) {
     var diff = this.calcDaysLeft(dateStr);
     if (diff >= 0) {
-      return { num: diff, label: '天' };
+      return { num: diff, label: 'd' };
     } else {
-      return { num: -diff, label: '天前' };
+      return { num: -diff, label: 'd ago' };
     }
   }
 };
@@ -45,20 +46,20 @@ module.exports = {
 
   <view class="countdown-body">
     <text class="countdown-days">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? utils.calcDaysLeft(countdown.target_date) : -utils.calcDaysLeft(countdown.target_date)}}</text>
-    <text class="countdown-days-label">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? '天' : '天前'}}</text>
+    <text class="countdown-days-label">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? 'd' : 'd ago'}}</text>
   </view>
 
   <text class="countdown-date">{{utils.formatDate(countdown.target_date)}}</text>
 
   <view class="countdown-footer">
     <view class="countdown-action" bind:tap="onPin">
-      <text>{{countdown.pinned ? '取消置顶' : '置顶'}}</text>
+      <text>{{countdown.pinned ? 'Unpin' : 'Pin'}}</text>
     </view>
     <view class="countdown-action" bind:tap="onEdit">
-      <text>编辑</text>
+      <text>Edit</text>
     </view>
     <view class="countdown-action countdown-action--danger" bind:tap="onDelete">
-      <text>删除</text>
+      <text>Delete</text>
     </view>
   </view>
 </view>

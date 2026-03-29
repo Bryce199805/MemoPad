@@ -11,10 +11,10 @@
 
     <view class="modal-footer" wx:if="{{!hideFooter}}">
       <view class="modal-btn modal-btn--cancel" bind:tap="onClose">
-        <text>取消</text>
+        <text>Cancel</text>
       </view>
       <view class="modal-btn modal-btn--confirm" bind:tap="onConfirm">
-        <text>确定</text>
+        <text>Confirm</text>
       </view>
     </view>
   </view>
