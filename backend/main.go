@@ -1063,10 +1063,12 @@ func updateCountdown(c *gin.Context) {
 	}
 
 	db.Model(&countdown).Updates(updates)
-	
+	// Re-fetch to get true DB state (GORM partial-update may not reflect all changes)
+	db.First(&countdown, countdown.ID)
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "countdown_updated", countdown)
-	
+
 	c.JSON(http.StatusOK, successResponse(countdown))
 }
 
