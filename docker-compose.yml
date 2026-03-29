@@ -11,6 +11,9 @@ services:
       # Uncomment and set admin credentials if needed
       # - ADMIN_USERNAME=admin
       # - ADMIN_PASSWORD=your_password
+      # Set ALLOWED_ORIGINS to your domain(s) for CORS whitelisting in production.
+      # Comma-separated. If unset, all cross-origin requests will be blocked.
+      # Example: - ALLOWED_ORIGINS=https://your-domain.com
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s
