@@ -85,7 +85,7 @@ module.exports = {
     </view>
 
     <!-- Task Progress -->
-    <view class="glass-card" style="margin-bottom: 20rpx;">
+    <view class="glass-card">
       <view class="card-header">
         <text class="card-header-title">Task Progress</text>
       </view>
