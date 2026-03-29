@@ -200,6 +200,19 @@ Page({
     this.applyFilter()
   },
 
+  // Close all other todo action menus when one opens
+  onTodoMenuOpen(e) {
+    const openedId = e.detail.id
+    const comps = this.selectAllComponents('.todo-item-comp')
+    if (comps) {
+      comps.forEach(comp => {
+        if (comp.data.todo && comp.data.todo.id !== openedId) {
+          comp.closeMenu()
+        }
+      })
+    }
+  },
+
   onToggleSelectMode() {
     this.setData({
       selectMode: !this.data.selectMode,

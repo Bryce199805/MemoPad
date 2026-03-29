@@ -20,6 +20,7 @@ Component({
     },
 
     onPin() {
+      this.setData({ showActions: false });
       this.triggerEvent('pin', { id: this.data.todo.id });
     },
 
@@ -34,7 +35,17 @@ Component({
     },
 
     onToggleActions() {
-      this.setData({ showActions: !this.data.showActions });
+      const willShow = !this.data.showActions;
+      this.setData({ showActions: willShow });
+      // Notify parent to close other open menus
+      if (willShow) {
+        this.triggerEvent('menuopen', { id: this.data.todo.id });
+      }
+    },
+
+    // Called by parent page to close this menu externally
+    closeMenu() {
+      this.setData({ showActions: false });
     }
   }
 });
