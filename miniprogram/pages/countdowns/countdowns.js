@@ -32,17 +32,19 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onLoad() {
-    // Subscribe to WebSocket events
-    ws.on('countdown_created', this.handleCountdownCreated.bind(this))
-    ws.on('countdown_updated', this.handleCountdownUpdated.bind(this))
-    ws.on('countdown_deleted', this.handleCountdownDeleted.bind(this))
+    // Store bound references so ws.off() can find the exact same function
+    this._onCountdownCreated = this.handleCountdownCreated.bind(this)
+    this._onCountdownUpdated = this.handleCountdownUpdated.bind(this)
+    this._onCountdownDeleted = this.handleCountdownDeleted.bind(this)
+    ws.on('countdown_created', this._onCountdownCreated)
+    ws.on('countdown_updated', this._onCountdownUpdated)
+    ws.on('countdown_deleted', this._onCountdownDeleted)
   },
 
   onUnload() {
-    // Unsubscribe from WebSocket events
-    ws.off('countdown_created', this.handleCountdownCreated.bind(this))
-    ws.off('countdown_updated', this.handleCountdownUpdated.bind(this))
-    ws.off('countdown_deleted', this.handleCountdownDeleted.bind(this))
+    ws.off('countdown_created', this._onCountdownCreated)
+    ws.off('countdown_updated', this._onCountdownUpdated)
+    ws.off('countdown_deleted', this._onCountdownDeleted)
   },
 
   onShow() {
@@ -59,21 +61,22 @@ Page({
 
   // WebSocket event handlers
   handleCountdownCreated(countdown) {
-    const countdowns = this.data.countdowns
-    const exists = countdowns.find(c => c.id === countdown.id)
+    const exists = this.data.countdowns.find(c => c.id === countdown.id)
     if (!exists) {
-      countdowns.push(countdown)
+      const countdowns = [...this.data.countdowns, countdown]  // new array
       this.setData({ countdowns })
+      this.computeStats()
       this.applyFilter()
     }
   },
 
   handleCountdownUpdated(countdown) {
-    const countdowns = this.data.countdowns
-    const idx = countdowns.findIndex(c => c.id === countdown.id)
+    const idx = this.data.countdowns.findIndex(c => c.id === countdown.id)
     if (idx !== -1) {
+      const countdowns = [...this.data.countdowns]  // shallow copy
       countdowns[idx] = countdown
       this.setData({ countdowns })
+      this.computeStats()
       this.applyFilter()
     }
   },
@@ -81,6 +84,7 @@ Page({
   handleCountdownDeleted(data) {
     const countdowns = this.data.countdowns.filter(c => c.id !== data.id && c.id !== Number(data.id))
     this.setData({ countdowns })
+    this.computeStats()
     this.applyFilter()
   },
 
