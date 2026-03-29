@@ -844,21 +844,22 @@ func regenerateApiKeyHandler(c *gin.Context) {
 // deleteOwnAccount allows users to delete their own account (not for admins)
 func deleteOwnAccount(c *gin.Context) {
 	user := c.MustGet("user").(User)
-	
+
 	// Prevent admin from deleting their own account
 	if user.Role == "admin" {
 		c.JSON(http.StatusForbidden, errorResponse("Admin cannot delete their own account", "FORBIDDEN"))
 		return
 	}
 
-	// Delete user's data first
-	db.Where("user_id = ?", user.ID).Delete(&Todo{})
-	db.Where("user_id = ?", user.ID).Delete(&Countdown{})
-	db.Where("user_id = ?", user.ID).Delete(&Category{})
-	db.Where("user_id = ?", user.ID).Delete(&Ticket{})
-
-	// Delete user
-	if err := db.Delete(&User{}, user.ID).Error; err != nil {
+	// Delete user's data and account in a single transaction
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		for _, model := range []interface{}{&Todo{}, &Countdown{}, &Category{}, &Ticket{}} {
+			if err := tx.Where("user_id = ?", user.ID).Delete(model).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Delete(&User{}, user.ID).Error
+	}); err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete account", "INTERNAL_ERROR"))
 		return
 	}
@@ -1492,7 +1493,12 @@ func adminDisableUser(c *gin.Context) {
 	currentUser := c.MustGet("user").(User)
 
 	// Prevent disabling self
-	if fmt.Sprintf("%d", currentUser.ID) == id {
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid user ID", "VALIDATION_ERROR"))
+		return
+	}
+	if uint(parsedID) == currentUser.ID {
 		c.JSON(http.StatusBadRequest, errorResponse("Cannot disable yourself", "INVALID_OPERATION"))
 		return
 	}
@@ -1534,7 +1540,12 @@ func adminDeleteUser(c *gin.Context) {
 	currentUser := c.MustGet("user").(User)
 
 	// Prevent deleting self
-	if fmt.Sprintf("%d", currentUser.ID) == id {
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid user ID", "VALIDATION_ERROR"))
+		return
+	}
+	if uint(parsedID) == currentUser.ID {
 		c.JSON(http.StatusBadRequest, errorResponse("Cannot delete yourself", "INVALID_OPERATION"))
 		return
 	}
@@ -1550,16 +1561,24 @@ func adminDeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Delete user's data first
-	db.Where("user_id = ?", id).Delete(&Todo{})
-	db.Where("user_id = ?", id).Delete(&Countdown{})
-	db.Where("user_id = ?", id).Delete(&Category{})
-	db.Where("user_id = ?", id).Delete(&Ticket{})
-
-	// Delete user
-	result := db.Delete(&User{}, id)
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+	// Delete user's data and account in a single transaction
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		for _, model := range []interface{}{&Todo{}, &Countdown{}, &Category{}, &Ticket{}} {
+			if err := tx.Where("user_id = ?", id).Delete(model).Error; err != nil {
+				return err
+			}
+		}
+		result := tx.Delete(&User{}, id)
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("user not found")
+		}
+		return result.Error
+	}); err != nil {
+		if err.Error() == "user not found" {
+			c.JSON(http.StatusNotFound, errorResponse("User not found", "NOT_FOUND"))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete user", "INTERNAL_ERROR"))
+		}
 		return
 	}
 
