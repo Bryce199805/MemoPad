@@ -1,6 +1,7 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
+const ws = require('../../utils/websocket')
 
 Page({
   data: {
@@ -19,6 +20,24 @@ Page({
     priorityBars: [],
     completionRate: 0,
     expandedCard: ''
+  },
+
+  onLoad() {
+    // Subscribe to WS events so dashboard updates in real time
+    this._onChange = () => this.fetchAll()
+    const events = [
+      'todo_created', 'todo_updated', 'todo_deleted',
+      'countdown_created', 'countdown_updated', 'countdown_deleted'
+    ]
+    events.forEach(e => ws.on(e, this._onChange))
+  },
+
+  onUnload() {
+    const events = [
+      'todo_created', 'todo_updated', 'todo_deleted',
+      'countdown_created', 'countdown_updated', 'countdown_deleted'
+    ]
+    events.forEach(e => ws.off(e, this._onChange))
   },
 
   onShow() {
@@ -111,7 +130,10 @@ Page({
   },
 
   onStatTap(e) {
-    const label = e.detail.label || ''
+    // Support both: stat-card component event (e.detail.label)
+    // and direct bind:tap on element (e.currentTarget.dataset.label)
+    const label = (e.detail && e.detail.label) ||
+                  (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.label) || ''
     if (this.data.expandedCard === label) {
       this.setData({ expandedCard: '' })
     } else {
