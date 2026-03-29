@@ -9,7 +9,7 @@ Page({
     expandedCard: '',
     users: [],
     tickets: [],
-    ticketFilter: '',
+    ticketFilter: 0,
     filteredTickets: [],
     stats: {
       totalUsers: 0,
@@ -25,6 +25,9 @@ Page({
     currentTicket: null,
     replyText: ''
   },
+
+  // Index 0 = "All" (no filter), rest map to ticket status values
+  ticketStatusOptions: ['', 'open', 'in_progress', 'resolved', 'closed'],
 
   onShow() {
     const user = auth.getUser()
@@ -48,28 +51,36 @@ Page({
   async fetchAll() {
     this.setData({ loading: true })
     try {
-      const [usersRes, ticketsRes] = await Promise.all([
+      const [usersRes, ticketsRes, configRes] = await Promise.all([
         api.get('/api/admin/users'),
-        api.get('/api/admin/tickets')
+        api.get('/api/admin/tickets'),
+        api.get('/api/admin/config')
       ])
-      
+
       // Safely extract arrays
       let users = usersRes
       if (usersRes && usersRes.data) users = usersRes.data
       if (!Array.isArray(users)) users = []
-      
+
       let tickets = ticketsRes
       if (ticketsRes && ticketsRes.data) tickets = ticketsRes.data
       if (!Array.isArray(tickets)) tickets = []
-      
+
       const stats = {
         totalUsers: users.length,
         activeUsers: users.filter(u => !u.disabled).length,
         openTickets: tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
         totalTickets: tickets.length
       }
-      
-      this.setData({ users, tickets, filteredTickets: tickets, stats })
+
+      // Parse config from server
+      let config = { registration_enabled: true }
+      if (configRes && typeof configRes === 'object') {
+        const raw = (configRes.data !== undefined) ? configRes.data : configRes
+        if (raw && typeof raw === 'object') config = raw
+      }
+
+      this.setData({ users, tickets, filteredTickets: tickets, stats, config })
     } catch (err) {
       console.error('Fetch admin data error:', err)
     } finally {
@@ -99,13 +110,14 @@ Page({
 
   // Ticket filter
   onTicketFilterChange(e) {
-    const filter = e.detail.value
+    // e.detail.value is the picker index (number), not the status string
+    const idx = Number(e.detail.value)
+    const filter = this.ticketStatusOptions[idx] || ''
     const { tickets } = this.data
-    let filteredTickets = tickets
-    if (filter) {
-      filteredTickets = tickets.filter(t => t.status === filter)
-    }
-    this.setData({ ticketFilter: filter, filteredTickets })
+    const filteredTickets = filter
+      ? tickets.filter(t => t.status === filter)
+      : tickets
+    this.setData({ ticketFilter: idx, filteredTickets })
   },
 
   // Users
