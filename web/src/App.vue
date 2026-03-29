@@ -54,6 +54,10 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
   if (isAuthenticated) {
     initWebSocket()
   } else {
+    // Clean up all WS subscriptions before disconnecting
+    todoStore.unsubscribeFromUpdates()
+    countdownStore.unsubscribeFromUpdates()
+    categoryStore.unsubscribeFromUpdates()
     wsService.disconnect()
   }
 })
