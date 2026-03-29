@@ -21,14 +21,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// WebSocket upgrader
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for WebSocket
-	},
-}
+// WebSocket upgrader — initialized in main() after gin.SetMode() so origin checking is correct
+var upgrader websocket.Upgrader
 
 // WSMessage represents a WebSocket message
 type WSMessage struct {
@@ -50,6 +44,19 @@ type WSManager struct {
 	register   chan *WSClient
 	unregister chan *WSClient
 	broadcast  chan WSMessage
+}
+
+// CountUserConnections returns the number of active WS connections for a given user
+func (m *WSManager) CountUserConnections(userID uint) int {
+	m.clientsMu.RLock()
+	defer m.clientsMu.RUnlock()
+	count := 0
+	for client := range m.clients {
+		if client.UserID == userID {
+			count++
+		}
+	}
+	return count
 }
 
 var wsManager = &WSManager{
@@ -251,8 +258,16 @@ func rateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 			return
 		}
 
-		// Check if blocked
+		// Check if blocked — also check in real-time if the block period has expired
 		if info.blocked {
+			if now.Sub(info.blockedAt) > 5*time.Minute {
+				// Block expired: reset and allow
+				info.blocked = false
+				info.count = 1
+				info.firstSeen = now
+				c.Next()
+				return
+			}
 			c.JSON(http.StatusTooManyRequests, Response{
 				Success:   false,
 				Error:     "Too many requests. Please try again later.",
@@ -297,6 +312,11 @@ func loginRateLimitMiddleware() gin.HandlerFunc {
 // registerRateLimitMiddleware - limits for registration
 func registerRateLimitMiddleware() gin.HandlerFunc {
 	return rateLimitMiddleware(5, time.Hour) // 5 registrations per hour per IP
+}
+
+// apiRateLimitMiddleware - general API rate limit (60 req/min per IP)
+func apiRateLimitMiddleware() gin.HandlerFunc {
+	return rateLimitMiddleware(60, time.Minute)
 }
 
 // Response represents standard API response
@@ -401,6 +421,11 @@ type CountdownStats struct {
 	Pinned  int `json:"pinned"`
 }
 
+// BatchIDsInput is used for batch operations
+type BatchIDsInput struct {
+	IDs []uint `json:"ids" binding:"required,min=1,max=100"`
+}
+
 var db *gorm.DB
 
 func main() {
@@ -427,6 +452,18 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+	// Configure SQLite for production use
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("Failed to get underlying sql.DB:", err)
+	}
+	sqlDB.SetMaxOpenConns(1) // SQLite supports only one concurrent writer
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(0)             // Never expire connections
+	sqlDB.Exec("PRAGMA journal_mode=WAL")   // WAL mode: better concurrent reads
+	sqlDB.Exec("PRAGMA busy_timeout=5000")  // Wait up to 5s on locked DB instead of failing
+	sqlDB.Exec("PRAGMA foreign_keys=ON")    // Enforce FK constraints (off by default in SQLite)
+
 	// Auto migrate
 	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{}, &Ticket{})
 
@@ -442,8 +479,25 @@ func main() {
 	// Start WebSocket manager
 	go wsManager.Run()
 
+	// Initialize WebSocket upgrader with origin checking
+	allowedOrigins := getAllowedOrigins()
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			if allowedOrigins == nil {
+				return true // Development: allow all origins
+			}
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return true // Non-browser clients don't send Origin
+			}
+			return allowedOrigins[origin]
+		},
+	}
+
 	fmt.Println("========================================")
-	fmt.Println("       MemoPad API Server v2.2")
+	fmt.Println("       MemoPad API Server v2.3")
 	fmt.Println("========================================")
 	fmt.Printf("Database: %s\n", dbPath)
 	fmt.Println("Register via /api/auth/register")
@@ -453,10 +507,23 @@ func main() {
 	fmt.Println("========================================\n")
 
 	r := gin.Default()
+	setupMiddleware(r)
+	setupRoutes(r)
 
-	// CORS middleware
+	r.Run(":3000")
+}
+
+// ==================== Middleware Setup ====================
+
+func setupMiddleware(r *gin.Engine) {
 	r.Use(corsMiddleware())
+	r.Use(securityHeadersMiddleware())
+	r.Use(bodySizeLimitMiddleware(1 << 20)) // 1MB body size limit
+}
 
+// ==================== Route Setup ====================
+
+func setupRoutes(r *gin.Engine) {
 	// Health check (no auth)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, Response{Success: true, Data: map[string]string{"status": "ok"}})
@@ -471,14 +538,15 @@ func main() {
 		auth.POST("/register", registerRateLimitMiddleware(), registerHandler)
 		auth.POST("/login", loginRateLimitMiddleware(), loginHandler)
 		auth.GET("/verify", authMiddleware(), verifyHandler)
-		auth.GET("/check-admin", checkAdminHandler) // 检查是否已配置管理员
+		auth.GET("/check-admin", checkAdminHandler)
 	}
 
 	// API routes (auth required)
 	api := r.Group("/api")
 	api.Use(authMiddleware())
+	api.Use(apiRateLimitMiddleware())
 	{
-		// Todos
+		// Todos — single operations
 		api.GET("/todos", getTodos)
 		api.POST("/todos", createTodo)
 		api.PUT("/todos/:id", updateTodo)
@@ -486,11 +554,19 @@ func main() {
 		api.PATCH("/todos/:id/toggle", toggleTodo)
 		api.PATCH("/todos/:id/pin", pinTodo)
 
-		// Countdowns
+		// Todos — batch operations (static routes registered before :id params)
+		api.DELETE("/todos/batch", batchDeleteTodos)
+		api.PATCH("/todos/batch/toggle", batchToggleTodos)
+		api.PATCH("/todos/batch/done", batchMarkDoneTodos)
+
+		// Countdowns — single operations
 		api.GET("/countdowns", getCountdowns)
 		api.POST("/countdowns", createCountdown)
 		api.PUT("/countdowns/:id", updateCountdown)
 		api.DELETE("/countdowns/:id", deleteCountdown)
+
+		// Countdowns — batch operations
+		api.DELETE("/countdowns/batch", batchDeleteCountdowns)
 
 		// Categories
 		api.GET("/categories", getCategories)
@@ -501,7 +577,7 @@ func main() {
 		// Stats
 		api.GET("/stats", getStats)
 
-		// Tickets (工单)
+		// Tickets
 		api.GET("/tickets", getTickets)
 		api.POST("/tickets", createTicket)
 		api.GET("/tickets/:id", getTicket)
@@ -536,20 +612,44 @@ func main() {
 		admin.PUT("/tickets/:id", adminUpdateTicket)
 		admin.DELETE("/tickets/:id", adminDeleteTicket)
 	}
-
-	r.Run(":3000")
 }
 
-// CORS middleware
+// getAllowedOrigins returns the set of allowed CORS origins.
+// In development mode returns nil (all origins allowed).
+// In release mode reads from ALLOWED_ORIGINS env var (comma-separated).
+// If ALLOWED_ORIGINS is unset in release mode, returns an empty map (fail-closed).
+func getAllowedOrigins() map[string]bool {
+	if gin.Mode() != gin.ReleaseMode {
+		return nil // nil means allow all in dev
+	}
+	raw := os.Getenv("ALLOWED_ORIGINS")
+	if raw == "" {
+		return map[string]bool{} // empty = no origins allowed (fail-closed)
+	}
+	origins := make(map[string]bool)
+	for _, o := range strings.Split(raw, ",") {
+		o = strings.TrimSpace(o)
+		if o != "" {
+			origins[o] = true
+		}
+	}
+	return origins
+}
+
+// corsMiddleware handles CORS headers with proper origin whitelisting in production
 func corsMiddleware() gin.HandlerFunc {
+	allowedOrigins := getAllowedOrigins()
+
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 
-		// In development, allow all origins
-		if gin.Mode() != gin.ReleaseMode {
+		if allowedOrigins == nil {
+			// Development mode: allow all
 			c.Header("Access-Control-Allow-Origin", "*")
-		} else if origin != "" {
+		} else if origin != "" && allowedOrigins[origin] {
+			// Release mode: only whitelisted origins
 			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin") // Prevent incorrect cache reuse across origins
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
@@ -560,6 +660,30 @@ func corsMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
+		c.Next()
+	}
+}
+
+// securityHeadersMiddleware adds security-related HTTP response headers
+func securityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		if strings.HasPrefix(c.Request.URL.Path, "/api") {
+			c.Header("Cache-Control", "no-store")
+		}
+		c.Next()
+	}
+}
+
+// bodySizeLimitMiddleware rejects request bodies larger than maxBytes
+func bodySizeLimitMiddleware(maxBytes int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.ContentLength > maxBytes {
+			c.JSON(http.StatusRequestEntityTooLarge, errorResponse("Request body too large", "PAYLOAD_TOO_LARGE"))
+			c.Abort()
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
 		c.Next()
 	}
 }
@@ -591,6 +715,17 @@ func wsHandler(c *gin.Context) {
 			Success:   false,
 			Error:     "Account has been disabled",
 			ErrorCode: "ACCOUNT_DISABLED",
+		})
+		return
+	}
+
+	// Limit connections per user to prevent resource exhaustion
+	const maxConnectionsPerUser = 5
+	if wsManager.CountUserConnections(user.ID) >= maxConnectionsPerUser {
+		c.JSON(http.StatusTooManyRequests, Response{
+			Success:   false,
+			Error:     "Too many active connections",
+			ErrorCode: "TOO_MANY_CONNECTIONS",
 		})
 		return
 	}
@@ -913,10 +1048,19 @@ func updateTodo(c *gin.Context) {
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
+	}
+
+	// Whitelist allowed fields to prevent mass-assignment (e.g. user_id, id overwrite)
+	allowed := map[string]bool{"content": true, "priority": true, "pinned": true, "done": true, "category_id": true}
+	updates := make(map[string]interface{})
+	for k, v := range input {
+		if allowed[k] {
+			updates[k] = v
+		}
 	}
 
 	if content, ok := updates["content"].(string); ok {
@@ -937,10 +1081,10 @@ func updateTodo(c *gin.Context) {
 
 	db.Model(&todo).Updates(updates)
 	db.Preload("Category").First(&todo, id)
-	
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "todo_updated", todo)
-	
+
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -971,11 +1115,12 @@ func toggleTodo(c *gin.Context) {
 	}
 
 	todo.Done = !todo.Done
-	db.Save(&todo)
-	
+	// Use targeted update to avoid overwriting all columns (db.Save would update everything)
+	db.Model(&todo).Update("done", todo.Done)
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "todo_updated", todo)
-	
+
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -990,11 +1135,12 @@ func pinTodo(c *gin.Context) {
 	}
 
 	todo.Pinned = !todo.Pinned
-	db.Save(&todo)
-	
+	// Use targeted update to avoid overwriting all columns (db.Save would update everything)
+	db.Model(&todo).Update("pinned", todo.Pinned)
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "todo_updated", todo)
-	
+
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -1048,10 +1194,19 @@ func updateCountdown(c *gin.Context) {
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
+	}
+
+	// Whitelist allowed fields to prevent mass-assignment
+	allowed := map[string]bool{"title": true, "target_date": true, "priority": true, "pinned": true}
+	updates := make(map[string]interface{})
+	for k, v := range input {
+		if allowed[k] {
+			updates[k] = v
+		}
 	}
 
 	if title, ok := updates["title"].(string); ok {
@@ -1140,10 +1295,19 @@ func updateCategory(c *gin.Context) {
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
+	}
+
+	// Whitelist allowed fields to prevent mass-assignment
+	allowed := map[string]bool{"name": true, "color": true}
+	updates := make(map[string]interface{})
+	for k, v := range input {
+		if allowed[k] {
+			updates[k] = v
+		}
 	}
 
 	if name, ok := updates["name"].(string); ok {
@@ -1161,10 +1325,10 @@ func updateCategory(c *gin.Context) {
 	}
 
 	db.Model(&category).Updates(updates)
-	
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "category_updated", category)
-	
+
 	c.JSON(http.StatusOK, successResponse(category))
 }
 
@@ -1172,18 +1336,32 @@ func deleteCategory(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 	id := c.Param("id")
 
-	// Unlink todos from this category
-	db.Model(&Todo{}).Where("category_id = ? AND user_id = ?", id, userID).Update("category_id", nil)
-
-	result := db.Where("id = ? AND user_id = ?", id, userID).Delete(&Category{})
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, errorResponse("Category not found", "NOT_FOUND"))
+	// Wrap unlink + delete in a transaction for atomicity
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		// Unlink todos from this category
+		if err := tx.Model(&Todo{}).Where("category_id = ? AND user_id = ?", id, userID).Update("category_id", nil).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id = ? AND user_id = ?", id, userID).Delete(&Category{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("not found")
+		}
+		return nil
+	}); err != nil {
+		if err.Error() == "not found" {
+			c.JSON(http.StatusNotFound, errorResponse("Category not found", "NOT_FOUND"))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete category", "INTERNAL_ERROR"))
+		}
 		return
 	}
-	
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "category_deleted", map[string]interface{}{"id": id})
-	
+
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Category deleted"}))
 }
 
@@ -1246,49 +1424,67 @@ func createTicket(c *gin.Context) {
 func getStats(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
-	var totalTodos, doneTodos int64
-	var highPriority, mediumPriority, lowPriority int64
-	var pinnedTodos, pinnedCountdowns int64
-	var totalCountdowns int64
+	// Aggregate all todo stats in a single query (replaces 6 separate COUNTs)
+	var todoAgg struct {
+		Total    int64
+		DoneCount int64
+		PinnedCount int64
+		HighCount   int64
+		MediumCount int64
+		LowCount    int64
+	}
+	db.Raw(`
+		SELECT
+			COUNT(*) AS total,
+			SUM(CASE WHEN done=1 THEN 1 ELSE 0 END) AS done_count,
+			SUM(CASE WHEN pinned=1 THEN 1 ELSE 0 END) AS pinned_count,
+			SUM(CASE WHEN priority='high'   AND done=0 THEN 1 ELSE 0 END) AS high_count,
+			SUM(CASE WHEN priority='medium' AND done=0 THEN 1 ELSE 0 END) AS medium_count,
+			SUM(CASE WHEN priority='low'    AND done=0 THEN 1 ELSE 0 END) AS low_count
+		FROM todos WHERE user_id = ?
+	`, userID).Scan(&todoAgg)
 
-	db.Model(&Todo{}).Where("user_id = ?", userID).Count(&totalTodos)
-	db.Model(&Todo{}).Where("user_id = ? AND done = ?", userID, true).Count(&doneTodos)
-	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "high", false).Count(&highPriority)
-	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "medium", false).Count(&mediumPriority)
-	db.Model(&Todo{}).Where("user_id = ? AND priority = ? AND done = ?", userID, "low", false).Count(&lowPriority)
-	db.Model(&Todo{}).Where("user_id = ? AND pinned = ?", userID, true).Count(&pinnedTodos)
-	db.Model(&Countdown{}).Where("user_id = ? AND pinned = ?", userID, true).Count(&pinnedCountdowns)
-	db.Model(&Countdown{}).Where("user_id = ?", userID).Count(&totalCountdowns)
-
+	// Aggregate all countdown stats in a single query (replaces 4 separate COUNTs)
 	now := time.Now()
 	sevenDaysLater := now.AddDate(0, 0, 7)
-	var dueSoon, overdue int64
-	db.Model(&Countdown{}).Where("user_id = ? AND target_date >= ? AND target_date <= ?", userID, now, sevenDaysLater).Count(&dueSoon)
-	db.Model(&Countdown{}).Where("user_id = ? AND target_date < ?", userID, now).Count(&overdue)
+	var cdAgg struct {
+		Total       int64
+		PinnedCount int64
+		DueSoon     int64
+		Overdue     int64
+	}
+	db.Raw(`
+		SELECT
+			COUNT(*) AS total,
+			SUM(CASE WHEN pinned=1 THEN 1 ELSE 0 END) AS pinned_count,
+			SUM(CASE WHEN target_date >= ? AND target_date <= ? THEN 1 ELSE 0 END) AS due_soon,
+			SUM(CASE WHEN target_date < ? THEN 1 ELSE 0 END) AS overdue
+		FROM countdowns WHERE user_id = ?
+	`, now, sevenDaysLater, now, userID).Scan(&cdAgg)
 
 	completionRate := 0.0
-	if totalTodos > 0 {
-		completionRate = float64(doneTodos) / float64(totalTodos) * 100
+	if todoAgg.Total > 0 {
+		completionRate = float64(todoAgg.DoneCount) / float64(todoAgg.Total) * 100
 	}
 
 	stats := Stats{
 		Todos: TodoStats{
-			Total:          int(totalTodos),
-			Done:           int(doneTodos),
-			Pending:        int(totalTodos - doneTodos),
+			Total:          int(todoAgg.Total),
+			Done:           int(todoAgg.DoneCount),
+			Pending:        int(todoAgg.Total - todoAgg.DoneCount),
 			CompletionRate: completionRate,
 			ByPriority: map[string]int{
-				"high":   int(highPriority),
-				"medium": int(mediumPriority),
-				"low":    int(lowPriority),
+				"high":   int(todoAgg.HighCount),
+				"medium": int(todoAgg.MediumCount),
+				"low":    int(todoAgg.LowCount),
 			},
-			Pinned: int(pinnedTodos),
+			Pinned: int(todoAgg.PinnedCount),
 		},
 		Countdowns: CountdownStats{
-			Total:   int(totalCountdowns),
-			DueSoon: int(dueSoon),
-			Overdue: int(overdue),
-			Pinned:  int(pinnedCountdowns),
+			Total:   int(cdAgg.Total),
+			DueSoon: int(cdAgg.DueSoon),
+			Overdue: int(cdAgg.Overdue),
+			Pinned:  int(cdAgg.PinnedCount),
 		},
 	}
 
@@ -1354,10 +1550,19 @@ func adminUpdateTicket(c *gin.Context) {
 		return
 	}
 
-	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
+	}
+
+	// Whitelist allowed fields to prevent mass-assignment
+	allowed := map[string]bool{"status": true, "priority": true, "reply": true}
+	updates := make(map[string]interface{})
+	for k, v := range input {
+		if allowed[k] {
+			updates[k] = v
+		}
 	}
 
 	// Validate status
@@ -1637,32 +1842,146 @@ func adminUpdateConfig(c *gin.Context) {
 }
 
 func adminGetStats(c *gin.Context) {
-	var totalUsers, activeUsers, disabledUsers int64
-	var totalTodos, totalCategories, totalCountdowns int64
-
-	db.Model(&User{}).Count(&totalUsers)
-	db.Model(&User{}).Where("disabled = ?", false).Count(&activeUsers)
-	db.Model(&User{}).Where("disabled = ?", true).Count(&disabledUsers)
-	db.Model(&Todo{}).Count(&totalTodos)
-	db.Model(&Category{}).Count(&totalCategories)
-	db.Model(&Countdown{}).Count(&totalCountdowns)
-
-	// Recent registrations (last 7 days)
-	var recentUsers int64
+	// Aggregate all user stats in a single query (replaces 4 separate COUNTs)
+	var userAgg struct {
+		Total    int64
+		Active   int64
+		Disabled int64
+		Recent   int64
+	}
 	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
-	db.Model(&User{}).Where("created_at > ?", sevenDaysAgo).Count(&recentUsers)
+	db.Raw(`
+		SELECT
+			COUNT(*) AS total,
+			SUM(CASE WHEN disabled=0 THEN 1 ELSE 0 END) AS active,
+			SUM(CASE WHEN disabled=1 THEN 1 ELSE 0 END) AS disabled,
+			SUM(CASE WHEN created_at > ? THEN 1 ELSE 0 END) AS recent
+		FROM users
+	`, sevenDaysAgo).Scan(&userAgg)
+
+	// Aggregate all data stats in a single query (replaces 3 separate COUNTs)
+	var dataAgg struct {
+		Todos      int64
+		Countdowns int64
+		Categories int64
+	}
+	db.Raw(`
+		SELECT
+			(SELECT COUNT(*) FROM todos)      AS todos,
+			(SELECT COUNT(*) FROM countdowns) AS countdowns,
+			(SELECT COUNT(*) FROM categories) AS categories
+	`).Scan(&dataAgg)
 
 	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
 		"users": map[string]int64{
-			"total":    totalUsers,
-			"active":   activeUsers,
-			"disabled": disabledUsers,
-			"recent":   recentUsers,
+			"total":    userAgg.Total,
+			"active":   userAgg.Active,
+			"disabled": userAgg.Disabled,
+			"recent":   userAgg.Recent,
 		},
 		"data": map[string]int64{
-			"todos":      totalTodos,
-			"countdowns": totalCountdowns,
-			"categories": totalCategories,
+			"todos":      dataAgg.Todos,
+			"countdowns": dataAgg.Countdowns,
+			"categories": dataAgg.Categories,
 		},
 	}))
+}
+
+// ==================== Batch Operations ====================
+
+// batchDeleteTodos deletes multiple todos in a single transaction
+func batchDeleteTodos(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var input BatchIDsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: ids array required (max 100)", "VALIDATION_ERROR"))
+		return
+	}
+
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		return tx.Where("id IN ? AND user_id = ?", input.IDs, userID).Delete(&Todo{}).Error
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete todos", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Send a single WebSocket notification for all deleted IDs
+	wsManager.BroadcastToUser(userID, "todos_batch_deleted", map[string]interface{}{"ids": input.IDs})
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{"message": "Todos deleted", "count": len(input.IDs)}))
+}
+
+// batchToggleTodos toggles the done state of multiple todos
+func batchToggleTodos(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var input BatchIDsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: ids array required (max 100)", "VALIDATION_ERROR"))
+		return
+	}
+
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		// Use SQL NOT operator to atomically toggle done without a read-modify-write round-trip
+		return tx.Model(&Todo{}).
+			Where("id IN ? AND user_id = ?", input.IDs, userID).
+			Update("done", gorm.Expr("NOT done")).Error
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to toggle todos", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Send a single WebSocket notification
+	wsManager.BroadcastToUser(userID, "todos_batch_updated", map[string]interface{}{"ids": input.IDs})
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{"message": "Todos toggled", "count": len(input.IDs)}))
+}
+
+// batchMarkDoneTodos marks multiple todos as done (used by clearCompleted flow)
+func batchMarkDoneTodos(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var input BatchIDsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: ids array required (max 100)", "VALIDATION_ERROR"))
+		return
+	}
+
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		return tx.Model(&Todo{}).
+			Where("id IN ? AND user_id = ?", input.IDs, userID).
+			Update("done", true).Error
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to mark todos as done", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Send a single WebSocket notification
+	wsManager.BroadcastToUser(userID, "todos_batch_updated", map[string]interface{}{"ids": input.IDs})
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{"message": "Todos marked as done", "count": len(input.IDs)}))
+}
+
+// batchDeleteCountdowns deletes multiple countdowns in a single transaction
+func batchDeleteCountdowns(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var input BatchIDsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body: ids array required (max 100)", "VALIDATION_ERROR"))
+		return
+	}
+
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		return tx.Where("id IN ? AND user_id = ?", input.IDs, userID).Delete(&Countdown{}).Error
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to delete countdowns", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Send a single WebSocket notification for all deleted IDs
+	wsManager.BroadcastToUser(userID, "countdowns_batch_deleted", map[string]interface{}{"ids": input.IDs})
+
+	c.JSON(http.StatusOK, successResponse(map[string]interface{}{"message": "Countdowns deleted", "count": len(input.IDs)}))
 }
