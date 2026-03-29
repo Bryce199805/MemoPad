@@ -249,30 +249,28 @@ function clearSelection() {
 
 async function batchDelete() {
   if (!confirm(`Delete ${selectedIds.value.size} tasks?`)) return
-  
-  for (const id of selectedIds.value) {
-    await todoStore.deleteTodo(id)
-  }
+  await todoStore.batchDeleteTodos([...selectedIds.value])
   clearSelection()
 }
 
 async function batchComplete() {
-  for (const id of selectedIds.value) {
+  const pendingIds = [...selectedIds.value].filter(id => {
     const todo = todos.value.find(t => t.id === id)
-    if (todo && !todo.done) {
-      await todoStore.toggleTodo(id)
-    }
+    return todo && !todo.done
+  })
+  if (pendingIds.length === 0) {
+    clearSelection()
+    return
   }
+  await todoStore.batchToggleTodos(pendingIds)
   clearSelection()
 }
 
 async function clearCompleted() {
-  const completed = todos.value.filter(t => t.done)
-  if (!confirm(`Delete ${completed.length} completed tasks?`)) return
-  
-  for (const todo of completed) {
-    await todoStore.deleteTodo(todo.id)
-  }
+  const completedIds = todos.value.filter(t => t.done).map(t => t.id)
+  if (completedIds.length === 0) return
+  if (!confirm(`Delete ${completedIds.length} completed tasks?`)) return
+  await todoStore.batchDeleteTodos(completedIds)
 }
 
 function openModal(todo = null) {
