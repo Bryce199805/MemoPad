@@ -1,4 +1,5 @@
 const auth = require('../../utils/auth')
+const ws = require('../../utils/websocket')
 
 Page({
   data: {
@@ -20,6 +21,8 @@ Page({
 
   checkAndRedirect() {
     if (auth.isLoggedIn()) {
+      // Connect WebSocket
+      ws.connect()
       const user = auth.getUser()
       if (user && user.role === 'admin') {
         wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
@@ -86,6 +89,8 @@ Page({
       }
 
       if (res.success) {
+        // Connect WebSocket after successful login
+        ws.connect()
         const user = res.data && res.data.user
         if (user && user.role === 'admin') {
           wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })

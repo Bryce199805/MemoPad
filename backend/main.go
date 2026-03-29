@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,9 +15,161 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+// WebSocket upgrader
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for WebSocket
+	},
+}
+
+// WSMessage represents a WebSocket message
+type WSMessage struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data,omitempty"`
+}
+
+// WSClient represents a connected WebSocket client
+type WSClient struct {
+	UserID uint
+	Conn   *websocket.Conn
+	Send   chan WSMessage
+}
+
+// WSManager manages WebSocket connections
+type WSManager struct {
+	clients    map[*WSClient]bool
+	clientsMu  sync.RWMutex
+	register   chan *WSClient
+	unregister chan *WSClient
+	broadcast  chan WSMessage
+}
+
+var wsManager = &WSManager{
+	clients:    make(map[*WSClient]bool),
+	register:   make(chan *WSClient),
+	unregister: make(chan *WSClient),
+	broadcast:  make(chan WSMessage, 100),
+}
+
+// Run starts the WebSocket manager
+func (m *WSManager) Run() {
+	for {
+		select {
+		case client := <-m.register:
+			m.clientsMu.Lock()
+			m.clients[client] = true
+			m.clientsMu.Unlock()
+			log.Printf("WebSocket client connected. Total: %d", len(m.clients))
+
+		case client := <-m.unregister:
+			m.clientsMu.Lock()
+			if _, ok := m.clients[client]; ok {
+				delete(m.clients, client)
+				close(client.Send)
+			}
+			m.clientsMu.Unlock()
+			log.Printf("WebSocket client disconnected. Total: %d", len(m.clients))
+
+		case message := <-m.broadcast:
+			m.clientsMu.RLock()
+			for client := range m.clients {
+				select {
+				case client.Send <- message:
+				default:
+					close(client.Send)
+					delete(m.clients, client)
+				}
+			}
+			m.clientsMu.RUnlock()
+		}
+	}
+}
+
+// BroadcastToUser sends a message to all connections of a specific user
+func (m *WSManager) BroadcastToUser(userID uint, msgType string, data interface{}) {
+	message := WSMessage{Type: msgType, Data: data}
+	m.clientsMu.RLock()
+	for client := range m.clients {
+		if client.UserID == userID {
+			select {
+			case client.Send <- message:
+			default:
+				// Channel full, skip
+			}
+		}
+	}
+	m.clientsMu.RUnlock()
+}
+
+// BroadcastAll sends a message to all connected clients
+func (m *WSManager) BroadcastAll(msgType string, data interface{}) {
+	message := WSMessage{Type: msgType, Data: data}
+	select {
+	case m.broadcast <- message:
+	default:
+		// Channel full, skip
+	}
+}
+
+// writePump pumps messages from the hub to the websocket connection
+func (c *WSClient) writePump() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer func() {
+		ticker.Stop()
+		c.Conn.Close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-c.Send:
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if !ok {
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			data, err := json.Marshal(message)
+			if err != nil {
+				return
+			}
+			if err := c.Conn.WriteMessage(websocket.TextMessage, data); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+// readPump pumps messages from the websocket connection to the hub
+func (c *WSClient) readPump() {
+	defer func() {
+		wsManager.unregister <- c
+		c.Conn.Close()
+	}()
+
+	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	c.Conn.SetPongHandler(func(string) error {
+		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	for {
+		_, _, err := c.Conn.ReadMessage()
+		if err != nil {
+			break
+		}
+	}
+}
 
 // RateLimiter - simple in-memory rate limiter
 type RateLimiter struct {
@@ -275,12 +428,16 @@ func main() {
 	// Start rate limit cleanup goroutine
 	startRateLimitCleanup()
 
+	// Start WebSocket manager
+	go wsManager.Run()
+
 	fmt.Println("========================================")
-	fmt.Println("       MemoPad API Server v2.1")
+	fmt.Println("       MemoPad API Server v2.2")
 	fmt.Println("========================================")
 	fmt.Printf("Database: %s\n", dbPath)
 	fmt.Println("Register via /api/auth/register")
 	fmt.Println("Login via /api/auth/login")
+	fmt.Println("WebSocket: /ws")
 	fmt.Println("Admin: /api/admin/*")
 	fmt.Println("========================================\n")
 
@@ -293,6 +450,9 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, Response{Success: true, Data: map[string]string{"status": "ok"}})
 	})
+
+	// WebSocket endpoint
+	r.GET("/ws", wsHandler)
 
 	// Auth routes (no auth required)
 	auth := r.Group("/api/auth")
@@ -391,6 +551,62 @@ func corsMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+// WebSocket handler
+func wsHandler(c *gin.Context) {
+	apiKey := c.Query("api_key")
+	if apiKey == "" {
+		c.JSON(http.StatusUnauthorized, Response{
+			Success:   false,
+			Error:     "API key required",
+			ErrorCode: "AUTH_REQUIRED",
+		})
+		return
+	}
+
+	var user User
+	if err := db.Where("api_key = ?", apiKey).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, Response{
+			Success:   false,
+			Error:     "Invalid API key",
+			ErrorCode: "INVALID_API_KEY",
+		})
+		return
+	}
+
+	if user.Disabled {
+		c.JSON(http.StatusForbidden, Response{
+			Success:   false,
+			Error:     "Account has been disabled",
+			ErrorCode: "ACCOUNT_DISABLED",
+		})
+		return
+	}
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade error: %v", err)
+		return
+	}
+
+	client := &WSClient{
+		UserID: user.ID,
+		Conn:   conn,
+		Send:   make(chan WSMessage, 256),
+	}
+
+	wsManager.register <- client
+
+	// Send connection confirmation
+	client.Send <- WSMessage{Type: "connected", Data: map[string]interface{}{
+		"user_id": user.ID,
+		"message": "WebSocket connected successfully",
+	}}
+
+	// Start read and write pumps
+	go client.writePump()
+	go client.readPump()
 }
 
 // Auth middleware
@@ -663,6 +879,10 @@ func createTodo(c *gin.Context) {
 	todo.UserID = userID
 	db.Create(&todo)
 	db.Preload("Category").First(&todo, todo.ID)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "todo_created", todo)
+	
 	c.JSON(http.StatusCreated, successResponse(todo))
 }
 
@@ -700,6 +920,10 @@ func updateTodo(c *gin.Context) {
 
 	db.Model(&todo).Updates(updates)
 	db.Preload("Category").First(&todo, id)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "todo_updated", todo)
+	
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -712,6 +936,10 @@ func deleteTodo(c *gin.Context) {
 		c.JSON(http.StatusNotFound, errorResponse("Todo not found", "NOT_FOUND"))
 		return
 	}
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "todo_deleted", map[string]interface{}{"id": id})
+	
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Todo deleted"}))
 }
 
@@ -727,6 +955,10 @@ func toggleTodo(c *gin.Context) {
 
 	todo.Done = !todo.Done
 	db.Save(&todo)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "todo_updated", todo)
+	
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -742,6 +974,10 @@ func pinTodo(c *gin.Context) {
 
 	todo.Pinned = !todo.Pinned
 	db.Save(&todo)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "todo_updated", todo)
+	
 	c.JSON(http.StatusOK, successResponse(todo))
 }
 
@@ -778,6 +1014,10 @@ func createCountdown(c *gin.Context) {
 
 	countdown.UserID = userID
 	db.Create(&countdown)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "countdown_created", countdown)
+	
 	c.JSON(http.StatusCreated, successResponse(countdown))
 }
 
@@ -807,6 +1047,10 @@ func updateCountdown(c *gin.Context) {
 	}
 
 	db.Model(&countdown).Updates(updates)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "countdown_updated", countdown)
+	
 	c.JSON(http.StatusOK, successResponse(countdown))
 }
 
@@ -819,6 +1063,10 @@ func deleteCountdown(c *gin.Context) {
 		c.JSON(http.StatusNotFound, errorResponse("Countdown not found", "NOT_FOUND"))
 		return
 	}
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "countdown_deleted", map[string]interface{}{"id": id})
+	
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Countdown deleted"}))
 }
 
@@ -856,6 +1104,10 @@ func createCategory(c *gin.Context) {
 
 	category.UserID = userID
 	db.Create(&category)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "category_created", category)
+	
 	c.JSON(http.StatusCreated, successResponse(category))
 }
 
@@ -890,6 +1142,10 @@ func updateCategory(c *gin.Context) {
 	}
 
 	db.Model(&category).Updates(updates)
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "category_updated", category)
+	
 	c.JSON(http.StatusOK, successResponse(category))
 }
 
@@ -905,6 +1161,10 @@ func deleteCategory(c *gin.Context) {
 		c.JSON(http.StatusNotFound, errorResponse("Category not found", "NOT_FOUND"))
 		return
 	}
+	
+	// Broadcast to user's other connections
+	wsManager.BroadcastToUser(userID, "category_deleted", map[string]interface{}{"id": id})
+	
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Category deleted"}))
 }
 

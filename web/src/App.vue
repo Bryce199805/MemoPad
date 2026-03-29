@@ -18,12 +18,19 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { useTodoStore } from './stores/todo'
+import { useCountdownStore } from './stores/countdown'
+import { useCategoryStore } from './stores/category'
+import wsService from './api/websocket'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const todoStore = useTodoStore()
+const countdownStore = useCountdownStore()
+const categoryStore = useCategoryStore()
 
 // Handle auth invalidation from API interceptor
 const handleAuthInvalid = () => {
@@ -31,12 +38,38 @@ const handleAuthInvalid = () => {
   router.push('/login')
 }
 
+// Initialize WebSocket connection when authenticated
+const initWebSocket = () => {
+  const apiKey = localStorage.getItem('memo_api_key')
+  if (apiKey && authStore.isAuthenticated) {
+    wsService.connect(apiKey)
+    todoStore.subscribeToUpdates()
+    countdownStore.subscribeToUpdates()
+    categoryStore.subscribeToUpdates()
+  }
+}
+
+// Watch for authentication changes
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    initWebSocket()
+  } else {
+    wsService.disconnect()
+  }
+})
+
 onMounted(() => {
   window.addEventListener('auth:invalid', handleAuthInvalid)
+  
+  // Initialize WebSocket if already authenticated
+  if (authStore.isAuthenticated) {
+    initWebSocket()
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('auth:invalid', handleAuthInvalid)
+  wsService.disconnect()
 })
 </script>
 

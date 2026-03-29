@@ -27,9 +27,26 @@ App({
       api.get('/api/auth/verify').then(res => {
         if (res.success && res.data && res.data.user) {
           wx.setStorageSync('memo_user', JSON.stringify(res.data.user))
+          // Connect WebSocket after verification
+          const ws = require('./utils/websocket')
+          ws.connect()
         }
       }).catch(() => {})
     }
   },
+
+  onShow() {
+    // Reconnect WebSocket if authenticated
+    const ws = require('./utils/websocket')
+    if (wx.getStorageSync('memo_api_key') && !ws.getConnectionStatus()) {
+      ws.connect()
+    }
+  },
+
+  onHide() {
+    // Disconnect WebSocket when app goes to background
+    const ws = require('./utils/websocket')
+    ws.disconnect()
+  }
 
 })

@@ -1,5 +1,6 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const ws = require('../../utils/websocket')
 
 Page({
   data: {
@@ -37,6 +38,26 @@ Page({
 
   priorityOptions: ['high', 'medium', 'low'],
 
+  onLoad() {
+    // Subscribe to WebSocket events
+    ws.on('todo_created', this.handleTodoCreated.bind(this))
+    ws.on('todo_updated', this.handleTodoUpdated.bind(this))
+    ws.on('todo_deleted', this.handleTodoDeleted.bind(this))
+    ws.on('category_created', this.handleCategoryCreated.bind(this))
+    ws.on('category_updated', this.handleCategoryUpdated.bind(this))
+    ws.on('category_deleted', this.handleCategoryDeleted.bind(this))
+  },
+
+  onUnload() {
+    // Unsubscribe from WebSocket events
+    ws.off('todo_created', this.handleTodoCreated.bind(this))
+    ws.off('todo_updated', this.handleTodoUpdated.bind(this))
+    ws.off('todo_deleted', this.handleTodoDeleted.bind(this))
+    ws.off('category_created', this.handleCategoryCreated.bind(this))
+    ws.off('category_updated', this.handleCategoryUpdated.bind(this))
+    ws.off('category_deleted', this.handleCategoryDeleted.bind(this))
+  },
+
   onShow() {
     if (!auth.isLoggedIn()) {
       wx.redirectTo({ url: '/pages/login/login' })
@@ -47,6 +68,61 @@ Page({
 
   onPullDownRefresh() {
     this.fetchData().then(() => wx.stopPullDownRefresh())
+  },
+
+  // WebSocket event handlers
+  handleTodoCreated(todo) {
+    const todos = this.data.todos
+    const exists = todos.find(t => t.id === todo.id)
+    if (!exists) {
+      todos.unshift(todo)
+      this.setData({ todos })
+      this.applyFilter()
+    }
+  },
+
+  handleTodoUpdated(todo) {
+    const todos = this.data.todos
+    const idx = todos.findIndex(t => t.id === todo.id)
+    if (idx !== -1) {
+      todos[idx] = todo
+      this.setData({ todos })
+      this.applyFilter()
+    }
+  },
+
+  handleTodoDeleted(data) {
+    const todos = this.data.todos.filter(t => t.id !== data.id && t.id !== Number(data.id))
+    this.setData({ todos })
+    this.applyFilter()
+  },
+
+  handleCategoryCreated(category) {
+    const categories = this.data.categories
+    const exists = categories.find(c => c.id === category.id)
+    if (!exists) {
+      categories.push(category)
+      const categoryNames = categories.map(c => c.name)
+      const formCategoryOptions = ['None', ...categoryNames]
+      this.setData({ categories, categoryNames, formCategoryOptions })
+    }
+  },
+
+  handleCategoryUpdated(category) {
+    const categories = this.data.categories
+    const idx = categories.findIndex(c => c.id === category.id)
+    if (idx !== -1) {
+      categories[idx] = category
+      const categoryNames = categories.map(c => c.name)
+      this.setData({ categories, categoryNames })
+    }
+  },
+
+  handleCategoryDeleted(data) {
+    const categories = this.data.categories.filter(c => c.id !== data.id && c.id !== Number(data.id))
+    const categoryNames = categories.map(c => c.name)
+    const formCategoryOptions = ['None', ...categoryNames]
+    this.setData({ categories, categoryNames, formCategoryOptions })
   },
 
   async fetchData(silent) {

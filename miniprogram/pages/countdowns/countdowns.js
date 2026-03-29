@@ -1,6 +1,7 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
+const ws = require('../../utils/websocket')
 
 Page({
   data: {
@@ -30,6 +31,20 @@ Page({
 
   priorityOptions: ['high', 'medium', 'low'],
 
+  onLoad() {
+    // Subscribe to WebSocket events
+    ws.on('countdown_created', this.handleCountdownCreated.bind(this))
+    ws.on('countdown_updated', this.handleCountdownUpdated.bind(this))
+    ws.on('countdown_deleted', this.handleCountdownDeleted.bind(this))
+  },
+
+  onUnload() {
+    // Unsubscribe from WebSocket events
+    ws.off('countdown_created', this.handleCountdownCreated.bind(this))
+    ws.off('countdown_updated', this.handleCountdownUpdated.bind(this))
+    ws.off('countdown_deleted', this.handleCountdownDeleted.bind(this))
+  },
+
   onShow() {
     if (!auth.isLoggedIn()) {
       wx.redirectTo({ url: '/pages/login/login' })
@@ -40,6 +55,33 @@ Page({
 
   onPullDownRefresh() {
     this.fetchData().then(() => wx.stopPullDownRefresh())
+  },
+
+  // WebSocket event handlers
+  handleCountdownCreated(countdown) {
+    const countdowns = this.data.countdowns
+    const exists = countdowns.find(c => c.id === countdown.id)
+    if (!exists) {
+      countdowns.push(countdown)
+      this.setData({ countdowns })
+      this.applyFilter()
+    }
+  },
+
+  handleCountdownUpdated(countdown) {
+    const countdowns = this.data.countdowns
+    const idx = countdowns.findIndex(c => c.id === countdown.id)
+    if (idx !== -1) {
+      countdowns[idx] = countdown
+      this.setData({ countdowns })
+      this.applyFilter()
+    }
+  },
+
+  handleCountdownDeleted(data) {
+    const countdowns = this.data.countdowns.filter(c => c.id !== data.id && c.id !== Number(data.id))
+    this.setData({ countdowns })
+    this.applyFilter()
   },
 
   async fetchData(silent) {
