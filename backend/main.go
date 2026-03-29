@@ -793,6 +793,11 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 
+	if user.Disabled {
+		c.JSON(http.StatusForbidden, errorResponse("Account is disabled", "ACCOUNT_DISABLED"))
+		return
+	}
+
 	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
 		"user": map[string]interface{}{
 			"id":       user.ID,
