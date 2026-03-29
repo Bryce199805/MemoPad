@@ -6,21 +6,23 @@ let socketTask = null
 let reconnectTimer = null
 let reconnectAttempts = 0
 const maxReconnectAttempts = 5
-const reconnectDelay = 3000
 const listeners = new Map()
 let isConnected = false
+let intentionalDisconnect = false
 
 function getWsUrl() {
   const baseUrl = api.getBaseUrl()
   if (!baseUrl) return ''
-  
+
   // Convert http/https to ws/wss
-  let wsUrl = baseUrl.replace(/^http:\/\//, 'ws://').replace(/^https:\/\//, 'wss://')
+  const wsUrl = baseUrl.replace(/^http:\/\//, 'ws://').replace(/^https:\/\//, 'wss://')
   const apiKey = api.getApiKey()
   return `${wsUrl}/ws?api_key=${encodeURIComponent(apiKey)}`
 }
 
 function connect() {
+  intentionalDisconnect = false
+
   if (socketTask && isConnected) {
     return
   }
@@ -63,7 +65,11 @@ function connect() {
       console.log('WebSocket: Disconnected')
       isConnected = false
       emit('disconnected', { connected: false })
-      scheduleReconnect()
+      // Only attempt reconnect if the disconnect was not intentional (e.g. logout)
+      if (!intentionalDisconnect) {
+        scheduleReconnect()
+      }
+      intentionalDisconnect = false
     })
 
     socketTask.onError((err) => {
@@ -80,22 +86,26 @@ function scheduleReconnect() {
     clearTimeout(reconnectTimer)
   }
 
-  if (reconnectAttempts < maxReconnectAttempts) {
-    reconnectAttempts++
-    console.log(`WebSocket: Reconnecting in ${reconnectDelay}ms (attempt ${reconnectAttempts})`)
-    reconnectTimer = setTimeout(() => {
-      connect()
-    }, reconnectDelay)
-  }
+  if (reconnectAttempts >= maxReconnectAttempts) return
+
+  reconnectAttempts++
+  // Exponential backoff: 1s, 2s, 4s, 8s, 16s (capped at 30s) + up to 1s jitter
+  const base = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 30000)
+  const delay = base + Math.random() * 1000
+  console.log(`WebSocket: Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttempts}/${maxReconnectAttempts})`)
+  reconnectTimer = setTimeout(() => {
+    connect()
+  }, delay)
 }
 
 function disconnect() {
+  intentionalDisconnect = true
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
   }
   if (socketTask) {
-    wx.closeSocket()
+    socketTask.close()  // use SocketTask.close() instead of deprecated wx.closeSocket()
     socketTask = null
   }
   isConnected = false
