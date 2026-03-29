@@ -47,9 +47,6 @@
 .todo-content {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
 }
 
 .todo-text {
@@ -64,26 +61,26 @@
   color: var(--text-muted);
 }
 
+/* Right section */
+.todo-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .todo-meta {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12rpx;
 }
 
 /* Actions */
 .todo-actions {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8rpx;
   position: relative;
-}
-
-.todo-due-date {
-  font-size: 22rpx;
-  color: var(--info);
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .todo-pin-btn {

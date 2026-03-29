@@ -341,6 +341,12 @@
   min-width: 0;
 }
 
+/* Pinned List */
+.pinned-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .countdown-mini-dot {
   width: 12rpx;
   height: 12rpx;

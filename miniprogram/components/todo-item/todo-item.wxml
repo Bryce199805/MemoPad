@@ -30,30 +30,32 @@ module.exports = {
 
   <view class="todo-content">
     <text class="todo-text {{todo.done ? 'todo-text--done' : ''}}">{{todo.content}}</text>
+  </view>
 
+  <view class="todo-right">
     <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
       <badge wx:if="{{todo.priority}}" text="{{todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
       <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
     </view>
-  </view>
 
-  <view class="todo-actions">
-    <view wx:if="{{todo.pinned}}" class="todo-action-btn todo-pin-btn" bind:tap="onPin">
-      <text class="pin-icon pin-icon--active">📌</text>
-    </view>
-    <view class="todo-more-btn" bind:tap="onToggleActions">
-      <text class="more-icon">···</text>
-    </view>
+    <view class="todo-actions">
+      <view wx:if="{{todo.pinned}}" class="todo-pin-btn" bind:tap="onPin">
+        <text class="pin-icon pin-icon--active">📌</text>
+      </view>
+      <view class="todo-more-btn" bind:tap="onToggleActions">
+        <text class="more-icon">···</text>
+      </view>
 
-    <view class="todo-action-menu {{showActions ? 'todo-action-menu--show' : ''}}" wx:if="{{showActions}}">
-      <view class="todo-action-item" bind:tap="onPin">
-        <text>{{todo.pinned ? '取消置顶' : '置顶'}}</text>
-      </view>
-      <view class="todo-action-item" bind:tap="onEdit">
-        <text>编辑</text>
-      </view>
-      <view class="todo-action-item todo-action-item--danger" bind:tap="onDelete">
-        <text>删除</text>
+      <view class="todo-action-menu {{showActions ? 'todo-action-menu--show' : ''}}" wx:if="{{showActions}}">
+        <view class="todo-action-item" bind:tap="onPin">
+          <text>{{todo.pinned ? '取消置顶' : '置顶'}}</text>
+        </view>
+        <view class="todo-action-item" bind:tap="onEdit">
+          <text>编辑</text>
+        </view>
+        <view class="todo-action-item todo-action-item--danger" bind:tap="onDelete">
+          <text>删除</text>
+        </view>
       </view>
     </view>
   </view>

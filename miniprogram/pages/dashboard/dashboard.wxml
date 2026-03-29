@@ -153,13 +153,12 @@ module.exports = {
     </view>
 
     <!-- Pinned Tasks -->
-    <view class="section" wx:if="{{pinnedTodos.length > 0}}">
-      <view class="section-header">
-        <text class="section-icon">📌</text>
-        <text class="section-title">Pinned Tasks</text>
+    <view class="glass-card" wx:if="{{pinnedTodos.length > 0}}">
+      <view class="card-header">
+        <text class="card-header-title">📌 Pinned Tasks</text>
         <badge text="{{pinnedTodos.length}}" variant="info"></badge>
       </view>
-      <view class="glass-card glass-card--compact">
+      <view class="pinned-list">
         <todo-item wx:for="{{pinnedTodos}}" wx:key="id"
           todo="{{item}}"
           categories="{{categories}}"
