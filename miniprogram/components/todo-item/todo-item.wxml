@@ -30,14 +30,15 @@ module.exports = {
 
   <view class="todo-content">
     <text class="todo-text {{todo.done ? 'todo-text--done' : ''}}">{{todo.content}}</text>
+    <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
+      <view wx:if="{{todo.priority}}" class="priority-badge-wrap">
+        <badge text="{{todo.priority === 'high' ? 'High' : todo.priority === 'medium' ? 'Medium' : 'Low'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
+      </view>
+      <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
+    </view>
   </view>
 
   <view class="todo-right">
-    <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
-      <badge wx:if="{{todo.priority}}" text="{{todo.priority === 'high' ? 'High' : todo.priority === 'medium' ? 'Medium' : 'Low'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
-      <badge wx:if="{{todo.category}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
-    </view>
-
     <view class="todo-actions">
       <view wx:if="{{todo.pinned}}" class="todo-pin-btn" bind:tap="onPin">
         <text class="pin-icon pin-icon--active">📌</text>

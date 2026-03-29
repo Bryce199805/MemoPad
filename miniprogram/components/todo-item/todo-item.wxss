@@ -1,6 +1,6 @@
 .todo-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 20rpx;
   padding: 24rpx 0;
   border-bottom: 1px solid var(--border-subtle);
@@ -18,7 +18,6 @@
 /* Checkbox */
 .todo-left {
   flex-shrink: 0;
-  padding: 8rpx 0;
 }
 
 .todo-checkbox {
@@ -47,6 +46,9 @@
 .todo-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
 }
 
 .todo-text {
@@ -64,15 +66,18 @@
 /* Right section */
 .todo-right {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
+  align-self: center;
 }
 
 .todo-meta {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 12rpx;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.priority-badge-wrap {
+  min-width: 112rpx;
+  display: flex;
 }
 
 /* Actions */
@@ -97,7 +102,6 @@
 
 .todo-more-btn {
   padding: 8rpx 12rpx;
-  margin-top: 4rpx;
 }
 
 .more-icon {
