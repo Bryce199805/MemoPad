@@ -37,10 +37,10 @@ module.exports = {
 
     <!-- Stat Cards 2x2 Grid -->
     <view class="stat-grid">
-      <stat-card label="Total" value="{{allTasks.length}}" active="{{expandedCard === 'Total'}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="Completed" value="{{completedTasks.length}}" active="{{expandedCard === 'Completed'}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="Pending" value="{{pendingTasks.length}}" active="{{expandedCard === 'Pending'}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="Due Soon" value="{{upcomingCountdowns.length}}" active="{{expandedCard === 'Due Soon'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card label="Total" value="{{allTasks.length}}" icon="📝" active="{{expandedCard === 'Total'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card label="Completed" value="{{completedTasks.length}}" icon="✅" active="{{expandedCard === 'Completed'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card label="Pending" value="{{pendingTasks.length}}" icon="⏳" active="{{expandedCard === 'Pending'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card label="Due Soon" value="{{upcomingCountdowns.length}}" icon="⚠️" active="{{expandedCard === 'Due Soon'}}" bind:stattap="onStatTap"></stat-card>
     </view>
 
     <!-- Expanded Preview -->

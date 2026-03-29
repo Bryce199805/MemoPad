@@ -11,6 +11,10 @@ Component({
     active: {
       type: Boolean,
       value: false
+    },
+    icon: {
+      type: String,
+      value: '📋'
     }
   },
   methods: {

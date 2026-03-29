@@ -1,5 +1,5 @@
 <view class="stat-card {{active ? 'stat-card--active' : ''}}" bind:tap="onTap">
-  <view class="stat-icon">📋</view>
+  <view class="stat-icon">{{icon}}</view>
   <view class="stat-content">
     <text class="stat-label">{{label}}</text>
     <text class="stat-value">{{value}}</text>
