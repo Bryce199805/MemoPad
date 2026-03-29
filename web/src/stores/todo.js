@@ -52,6 +52,20 @@ export const useTodoStore = defineStore('todo', {
       this.handleTodoUpdated(updatedTodo)
       return updatedTodo
     },
+    // Batch operations — single request replaces N sequential requests
+    async batchDeleteTodos(ids) {
+      await api.delete('/api/todos/batch', { data: { ids } })
+      this.handleTodosBatchDeleted({ ids })
+    },
+    async batchToggleTodos(ids) {
+      await api.patch('/api/todos/batch/toggle', { ids })
+      // Re-fetch for accurate state after toggle (server determines final done value)
+      await this.fetchTodos()
+    },
+    async batchMarkDoneTodos(ids) {
+      await api.patch('/api/todos/batch/done', { ids })
+      this.handleTodosBatchUpdated({ ids })
+    },
     // WebSocket event handlers
     handleTodoCreated(todo) {
       const exists = this.todos.find(t => t.id === todo.id)
@@ -68,13 +82,24 @@ export const useTodoStore = defineStore('todo', {
     handleTodoDeleted(data) {
       this.todos = this.todos.filter(t => t.id !== Number(data.id) && t.id !== data.id)
     },
+    handleTodosBatchDeleted(data) {
+      const deletedIds = new Set(data.ids.map(Number))
+      this.todos = this.todos.filter(t => !deletedIds.has(t.id))
+    },
+    handleTodosBatchUpdated(data) {
+      // Mark affected todos as done in-place without a re-fetch
+      const updatedIds = new Set(data.ids.map(Number))
+      this.todos = this.todos.map(t => updatedIds.has(t.id) ? { ...t, done: true } : t)
+    },
     subscribeToUpdates() {
       // Guard against double-subscription (e.g. login → logout → login)
       if (this._wsHandlers) return
       const handlers = {
-        todo_created: (todo) => this.handleTodoCreated(todo),
-        todo_updated: (todo) => this.handleTodoUpdated(todo),
-        todo_deleted: (data) => this.handleTodoDeleted(data)
+        todo_created:        (todo) => this.handleTodoCreated(todo),
+        todo_updated:        (todo) => this.handleTodoUpdated(todo),
+        todo_deleted:        (data) => this.handleTodoDeleted(data),
+        todos_batch_deleted: (data) => this.handleTodosBatchDeleted(data),
+        todos_batch_updated: (data) => this.handleTodosBatchUpdated(data)
       }
       this._wsHandlers = handlers
       for (const [event, fn] of Object.entries(handlers)) {
