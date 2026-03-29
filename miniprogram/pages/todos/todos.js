@@ -39,23 +39,28 @@ Page({
   priorityOptions: ['high', 'medium', 'low'],
 
   onLoad() {
-    // Subscribe to WebSocket events
-    ws.on('todo_created', this.handleTodoCreated.bind(this))
-    ws.on('todo_updated', this.handleTodoUpdated.bind(this))
-    ws.on('todo_deleted', this.handleTodoDeleted.bind(this))
-    ws.on('category_created', this.handleCategoryCreated.bind(this))
-    ws.on('category_updated', this.handleCategoryUpdated.bind(this))
-    ws.on('category_deleted', this.handleCategoryDeleted.bind(this))
+    // Store bound references so ws.off() can find the exact same function
+    this._onTodoCreated    = this.handleTodoCreated.bind(this)
+    this._onTodoUpdated    = this.handleTodoUpdated.bind(this)
+    this._onTodoDeleted    = this.handleTodoDeleted.bind(this)
+    this._onCatCreated     = this.handleCategoryCreated.bind(this)
+    this._onCatUpdated     = this.handleCategoryUpdated.bind(this)
+    this._onCatDeleted     = this.handleCategoryDeleted.bind(this)
+    ws.on('todo_created',     this._onTodoCreated)
+    ws.on('todo_updated',     this._onTodoUpdated)
+    ws.on('todo_deleted',     this._onTodoDeleted)
+    ws.on('category_created', this._onCatCreated)
+    ws.on('category_updated', this._onCatUpdated)
+    ws.on('category_deleted', this._onCatDeleted)
   },
 
   onUnload() {
-    // Unsubscribe from WebSocket events
-    ws.off('todo_created', this.handleTodoCreated.bind(this))
-    ws.off('todo_updated', this.handleTodoUpdated.bind(this))
-    ws.off('todo_deleted', this.handleTodoDeleted.bind(this))
-    ws.off('category_created', this.handleCategoryCreated.bind(this))
-    ws.off('category_updated', this.handleCategoryUpdated.bind(this))
-    ws.off('category_deleted', this.handleCategoryDeleted.bind(this))
+    ws.off('todo_created',     this._onTodoCreated)
+    ws.off('todo_updated',     this._onTodoUpdated)
+    ws.off('todo_deleted',     this._onTodoDeleted)
+    ws.off('category_created', this._onCatCreated)
+    ws.off('category_updated', this._onCatUpdated)
+    ws.off('category_deleted', this._onCatDeleted)
   },
 
   onShow() {
@@ -72,19 +77,18 @@ Page({
 
   // WebSocket event handlers
   handleTodoCreated(todo) {
-    const todos = this.data.todos
-    const exists = todos.find(t => t.id === todo.id)
+    const exists = this.data.todos.find(t => t.id === todo.id)
     if (!exists) {
-      todos.unshift(todo)
+      const todos = [todo, ...this.data.todos]  // new array, don't mutate in place
       this.setData({ todos })
       this.applyFilter()
     }
   },
 
   handleTodoUpdated(todo) {
-    const todos = this.data.todos
-    const idx = todos.findIndex(t => t.id === todo.id)
+    const idx = this.data.todos.findIndex(t => t.id === todo.id)
     if (idx !== -1) {
+      const todos = [...this.data.todos]  // shallow copy
       todos[idx] = todo
       this.setData({ todos })
       this.applyFilter()
@@ -98,30 +102,29 @@ Page({
   },
 
   handleCategoryCreated(category) {
-    const categories = this.data.categories
-    const exists = categories.find(c => c.id === category.id)
+    const exists = this.data.categories.find(c => c.id === category.id)
     if (!exists) {
-      categories.push(category)
-      const categoryNames = categories.map(c => c.name)
-      const formCategoryOptions = ['None', ...categoryNames]
+      const categories = [...this.data.categories, category]
+      const categoryNames = ['All', ...categories.map(c => c.name)]
+      const formCategoryOptions = ['None', ...categories.map(c => c.name)]
       this.setData({ categories, categoryNames, formCategoryOptions })
     }
   },
 
   handleCategoryUpdated(category) {
-    const categories = this.data.categories
-    const idx = categories.findIndex(c => c.id === category.id)
+    const idx = this.data.categories.findIndex(c => c.id === category.id)
     if (idx !== -1) {
+      const categories = [...this.data.categories]
       categories[idx] = category
-      const categoryNames = categories.map(c => c.name)
+      const categoryNames = ['All', ...categories.map(c => c.name)]
       this.setData({ categories, categoryNames })
     }
   },
 
   handleCategoryDeleted(data) {
     const categories = this.data.categories.filter(c => c.id !== data.id && c.id !== Number(data.id))
-    const categoryNames = categories.map(c => c.name)
-    const formCategoryOptions = ['None', ...categoryNames]
+    const categoryNames = ['All', ...categories.map(c => c.name)]
+    const formCategoryOptions = ['None', ...categories.map(c => c.name)]
     this.setData({ categories, categoryNames, formCategoryOptions })
   },
 
@@ -134,8 +137,8 @@ Page({
       ])
       const todos = (todosRes.data || todosRes) || []
       const categories = (catsRes.data || catsRes) || []
-      const categoryNames = categories.map(c => c.name)
-      const formCategoryOptions = ['None', ...categoryNames]
+      const categoryNames = ['All', ...categories.map(c => c.name)]
+      const formCategoryOptions = ['None', ...categories.map(c => c.name)]
       this.setData({ todos, categories, categoryNames, formCategoryOptions })
       this.applyFilter()
     } catch (err) {
