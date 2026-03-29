@@ -149,13 +149,22 @@
 
 .filter-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+  justify-content: space-between;
   align-items: center;
+  gap: 16rpx;
 }
 
-.filter-spacer {
-  flex: 1;
+.filter-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.filter-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  justify-content: flex-end;
 }
 
 .filter-chip {

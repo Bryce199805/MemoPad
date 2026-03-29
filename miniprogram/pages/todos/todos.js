@@ -27,7 +27,7 @@ Page({
     formPriorityIdx: 1,
     formCategoryIdx: 0,
     formPriorityLabel: 'Medium',
-    formCategoryName: 'None',
+    formCategoryOptions: ['None'],
     form: {
       content: '',
       priority: 'medium',
@@ -59,7 +59,8 @@ Page({
       const todos = (todosRes.data || todosRes) || []
       const categories = (catsRes.data || catsRes) || []
       const categoryNames = categories.map(c => c.name)
-      this.setData({ todos, categories, categoryNames })
+      const formCategoryOptions = ['None', ...categoryNames]
+      this.setData({ todos, categories, categoryNames, formCategoryOptions })
       this.applyFilter()
     } catch (err) {
       console.error('Fetch todos error:', err)
@@ -243,7 +244,6 @@ Page({
       formPriorityIdx: 1,
       formCategoryIdx: 0,
       formPriorityLabel: 'Medium',
-      formCategoryName: 'None',
       form: {
         content: '',
         priority: 'medium',
@@ -257,12 +257,12 @@ Page({
     const todo = this.data.todos.find(t => t.id === id)
     if (!todo) return
     const priorityIdx = this.priorityOptions.indexOf(todo.priority || 'medium')
+    // category idx: 0 is "None", 1+ is actual category index + 1
     let catIdx = 0
-    let catName = 'None'
     var editCatId = (todo.category && typeof todo.category === 'object') ? todo.category.id : todo.category;
     if (editCatId) {
       const ci = this.data.categories.findIndex(c => c.id === editCatId)
-      if (ci !== -1) { catIdx = ci; catName = this.data.categories[ci].name }
+      if (ci !== -1) { catIdx = ci + 1 }
     }
     const priorityLabel = ['High', 'Medium', 'Low'][priorityIdx]
     this.setData({
@@ -272,11 +272,10 @@ Page({
       formPriorityIdx: priorityIdx,
       formCategoryIdx: catIdx,
       formPriorityLabel: priorityLabel,
-      formCategoryName: catName,
       form: {
         content: todo.content || '',
         priority: todo.priority || 'medium',
-        category: todo.category || ''
+        category: editCatId || ''
       }
     })
   },
@@ -337,12 +336,19 @@ Page({
 
   onFormCategoryChange(e) {
     const idx = Number(e.detail.value)
-    const cat = this.data.categories[idx]
-    this.setData({
-      'form.category': cat ? cat.id : '',
-      formCategoryIdx: idx,
-      formCategoryName: cat ? cat.name : 'None'
-    })
+    // idx 0 is "None", idx > 0 is actual category (idx - 1 in categories array)
+    if (idx === 0) {
+      this.setData({
+        'form.category': '',
+        formCategoryIdx: 0
+      })
+    } else {
+      const cat = this.data.categories[idx - 1]
+      this.setData({
+        'form.category': cat ? cat.id : '',
+        formCategoryIdx: idx
+      })
+    }
   },
 
   async onFormSave() {

@@ -61,32 +61,34 @@ module.exports = {
       </view>
 
       <view class="filter-row">
-        <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
-          <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
-            <text>{{priorityLabels[filterPriority]}}</text>
-            <text class="chip-arrow">▾</text>
+        <view class="filter-left">
+          <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
+            <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
+              <text>{{priorityLabels[filterPriority]}}</text>
+              <text class="chip-arrow">▾</text>
+            </view>
+          </picker>
+
+          <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
+            <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
+              <text>{{statusLabels[filterStatus]}}</text>
+              <text class="chip-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="filter-right">
+          <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
+            <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
+              <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
+              <text class="chip-arrow">▾</text>
+            </view>
+          </picker>
+
+          <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
+            <text>{{selectMode ? '✕' : '☑'}}</text>
+            <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
           </view>
-        </picker>
-
-        <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
-          <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
-            <text>{{statusLabels[filterStatus]}}</text>
-            <text class="chip-arrow">▾</text>
-          </view>
-        </picker>
-
-        <view class="filter-spacer"></view>
-
-        <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
-          <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
-            <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
-            <text class="chip-arrow">▾</text>
-          </view>
-        </picker>
-
-        <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
-          <text>{{selectMode ? '✕' : '☑'}}</text>
-          <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
         </view>
       </view>
     </view>
@@ -214,11 +216,11 @@ module.exports = {
         </view>
 
         <view class="form-group" wx:if="{{categoryNames.length > 0}}">
-          <text class="form-label">Category</text>
-          <picker mode="selector" range="{{categoryNames}}" value="{{formCategoryIdx}}" bindchange="onFormCategoryChange">
+          <text class="form-label">Category (Optional)</text>
+          <picker mode="selector" range="{{formCategoryOptions}}" value="{{formCategoryIdx}}" bindchange="onFormCategoryChange">
             <view class="form-picker">
               <view class="form-picker-left">
-                <text class="form-picker-text">{{formCategoryName}}</text>
+                <text class="form-picker-text">{{formCategoryOptions[formCategoryIdx]}}</text>
               </view>
               <text class="chip-arrow">▾</text>
             </view>

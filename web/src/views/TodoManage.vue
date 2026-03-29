@@ -159,7 +159,7 @@
               </div>
 
               <div class="form-group">
-                <label>Category</label>
+                <label>Category (Optional)</label>
                 <div class="category-select-wrapper">
                   <select v-model="form.category_id">
                     <option :value="null">No Category</option>
@@ -167,9 +167,6 @@
                       {{ cat.name }}
                     </option>
                   </select>
-                  <button type="button" class="add-category-btn" @click="showAddCategory = true" title="Add new category">
-                    +
-                  </button>
                 </div>
               </div>
             </div>
@@ -589,99 +586,12 @@ onMounted(() => {
   gap: 16px;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.checkbox-label input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent-primary);
-}
-
-/* Category Select with Add Button */
-.category-select-wrapper {
-  display: flex;
-  gap: 8px;
-}
-
-.category-select-wrapper select {
-  flex: 1;
-}
-
-.add-category-btn {
-  width: 42px;
-  background: var(--accent-gradient);
-  border-radius: var(--radius-md);
-  color: white;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.add-category-btn:hover {
-  filter: brightness(1.1);
-}
-
-/* Inline Category Form */
-.inline-category-form {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  align-items: center;
-}
-
-.category-input {
-  flex: 1;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-.color-picker {
-  width: 36px;
-  height: 36px;
-  padding: 2px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.save-category-btn {
-  padding: 8px 16px;
-  background: var(--success);
-  border-radius: var(--radius-sm);
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.cancel-category-btn {
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 16px;
-}
-
-.cancel-category-btn:hover {
-  color: var(--text-primary);
-}
-
 /* Responsive */
 @media (max-width: 640px) {
   .filters {
     flex-direction: column;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
