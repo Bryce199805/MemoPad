@@ -59,6 +59,10 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
     countdownStore.unsubscribeFromUpdates()
     categoryStore.unsubscribeFromUpdates()
     wsService.disconnect()
+    // Clear stale data so a different user logging in doesn't see old data
+    todoStore.$reset()
+    countdownStore.$reset()
+    categoryStore.$reset()
   }
 })
 
