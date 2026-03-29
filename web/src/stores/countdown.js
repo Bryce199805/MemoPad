@@ -6,7 +6,8 @@ export const useCountdownStore = defineStore('countdown', {
   state: () => ({
     countdowns: [],
     loading: false,
-    error: null
+    error: null,
+    _wsHandlers: null
   }),
   actions: {
     async fetchCountdowns() {
@@ -25,18 +26,19 @@ export const useCountdownStore = defineStore('countdown', {
     async createCountdown(countdown) {
       const res = await api.post('/api/countdowns', countdown)
       const newCountdown = res.data.data || res.data
-      // Don't add to local state - WebSocket will broadcast the update
+      // Apply optimistically from HTTP response; WS message is idempotent confirmation
+      this.handleCountdownCreated(newCountdown)
       return newCountdown
     },
     async updateCountdown(id, updates) {
       const res = await api.put(`/api/countdowns/${id}`, updates)
       const updatedCountdown = res.data.data || res.data
-      // Don't update local state - WebSocket will broadcast the update
+      this.handleCountdownUpdated(updatedCountdown)
       return updatedCountdown
     },
     async deleteCountdown(id) {
       await api.delete(`/api/countdowns/${id}`)
-      // Don't remove from local state - WebSocket will broadcast the update
+      this.handleCountdownDeleted({ id })
     },
     // WebSocket event handlers
     handleCountdownCreated(countdown) {
@@ -55,9 +57,24 @@ export const useCountdownStore = defineStore('countdown', {
       this.countdowns = this.countdowns.filter(c => c.id !== Number(data.id) && c.id !== data.id)
     },
     subscribeToUpdates() {
-      wsService.on('countdown_created', (countdown) => this.handleCountdownCreated(countdown))
-      wsService.on('countdown_updated', (countdown) => this.handleCountdownUpdated(countdown))
-      wsService.on('countdown_deleted', (data) => this.handleCountdownDeleted(data))
+      // Guard against double-subscription (e.g. login → logout → login)
+      if (this._wsHandlers) return
+      const handlers = {
+        countdown_created: (countdown) => this.handleCountdownCreated(countdown),
+        countdown_updated: (countdown) => this.handleCountdownUpdated(countdown),
+        countdown_deleted: (data) => this.handleCountdownDeleted(data)
+      }
+      this._wsHandlers = handlers
+      for (const [event, fn] of Object.entries(handlers)) {
+        wsService.on(event, fn)
+      }
+    },
+    unsubscribeFromUpdates() {
+      if (!this._wsHandlers) return
+      for (const [event, fn] of Object.entries(this._wsHandlers)) {
+        wsService.off(event, fn)
+      }
+      this._wsHandlers = null
     }
   }
 })

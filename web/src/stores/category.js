@@ -6,7 +6,8 @@ export const useCategoryStore = defineStore('category', {
   state: () => ({
     categories: [],
     loading: false,
-    error: null
+    error: null,
+    _wsHandlers: null
   }),
   actions: {
     async fetchCategories() {
@@ -25,18 +26,19 @@ export const useCategoryStore = defineStore('category', {
     async createCategory(category) {
       const res = await api.post('/api/categories', category)
       const newCategory = res.data.data || res.data
-      // Don't add to local state - WebSocket will broadcast the update
+      // Apply optimistically from HTTP response; WS message is idempotent confirmation
+      this.handleCategoryCreated(newCategory)
       return newCategory
     },
     async updateCategory(id, updates) {
       const res = await api.put(`/api/categories/${id}`, updates)
       const updatedCategory = res.data.data || res.data
-      // Don't update local state - WebSocket will broadcast the update
+      this.handleCategoryUpdated(updatedCategory)
       return updatedCategory
     },
     async deleteCategory(id) {
       await api.delete(`/api/categories/${id}`)
-      // Don't remove from local state - WebSocket will broadcast the update
+      this.handleCategoryDeleted({ id })
     },
     // WebSocket event handlers
     handleCategoryCreated(category) {
@@ -55,9 +57,24 @@ export const useCategoryStore = defineStore('category', {
       this.categories = this.categories.filter(c => c.id !== Number(data.id) && c.id !== data.id)
     },
     subscribeToUpdates() {
-      wsService.on('category_created', (category) => this.handleCategoryCreated(category))
-      wsService.on('category_updated', (category) => this.handleCategoryUpdated(category))
-      wsService.on('category_deleted', (data) => this.handleCategoryDeleted(data))
+      // Guard against double-subscription (e.g. login → logout → login)
+      if (this._wsHandlers) return
+      const handlers = {
+        category_created: (category) => this.handleCategoryCreated(category),
+        category_updated: (category) => this.handleCategoryUpdated(category),
+        category_deleted: (data) => this.handleCategoryDeleted(data)
+      }
+      this._wsHandlers = handlers
+      for (const [event, fn] of Object.entries(handlers)) {
+        wsService.on(event, fn)
+      }
+    },
+    unsubscribeFromUpdates() {
+      if (!this._wsHandlers) return
+      for (const [event, fn] of Object.entries(this._wsHandlers)) {
+        wsService.off(event, fn)
+      }
+      this._wsHandlers = null
     }
   }
 })
