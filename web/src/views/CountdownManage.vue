@@ -285,10 +285,7 @@ function clearSelection() {
 
 async function batchDelete() {
   if (!confirm(`Delete ${selectedIds.value.size} countdowns?`)) return
-  
-  for (const id of selectedIds.value) {
-    await countdownStore.deleteCountdown(id)
-  }
+  await countdownStore.batchDeleteCountdowns([...selectedIds.value])
   clearSelection()
 }
 
