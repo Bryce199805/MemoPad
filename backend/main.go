@@ -1012,29 +1012,41 @@ func getTodos(c *gin.Context) {
 
 func createTodo(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
-	var todo Todo
-	if err := c.ShouldBindJSON(&todo); err != nil {
+
+	// Use strict input struct to prevent ID injection (IDOR)
+	var input struct {
+		Content    string `json:"content"`
+		Priority   string `json:"priority"`
+		CategoryID *uint  `json:"category_id"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	todo.Content = sanitizeString(todo.Content)
-	if todo.Content == "" {
+	content := sanitizeString(input.Content)
+	if content == "" {
 		c.JSON(http.StatusBadRequest, errorResponse("Content is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	if !validatePriority(todo.Priority) {
-		todo.Priority = "medium"
+	priority := input.Priority
+	if !validatePriority(priority) {
+		priority = "medium"
 	}
 
-	todo.UserID = userID
+	todo := Todo{
+		UserID:     userID,
+		Content:    content,
+		Priority:   priority,
+		CategoryID: input.CategoryID,
+	}
 	db.Create(&todo)
 	db.Preload("Category").First(&todo, todo.ID)
-	
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "todo_created", todo)
-	
+
 	c.JSON(http.StatusCreated, successResponse(todo))
 }
 
@@ -1154,33 +1166,45 @@ func getCountdowns(c *gin.Context) {
 
 func createCountdown(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
-	var countdown Countdown
-	if err := c.ShouldBindJSON(&countdown); err != nil {
+
+	// Use strict input struct to prevent ID injection (IDOR)
+	var input struct {
+		Title      string    `json:"title"`
+		TargetDate time.Time `json:"target_date"`
+		Priority   string    `json:"priority"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	countdown.Title = sanitizeString(countdown.Title)
-	if countdown.Title == "" {
+	title := sanitizeString(input.Title)
+	if title == "" {
 		c.JSON(http.StatusBadRequest, errorResponse("Title is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	if countdown.TargetDate.IsZero() {
+	if input.TargetDate.IsZero() {
 		c.JSON(http.StatusBadRequest, errorResponse("Target date is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	if !validatePriority(countdown.Priority) {
-		countdown.Priority = "medium"
+	priority := input.Priority
+	if !validatePriority(priority) {
+		priority = "medium"
 	}
 
-	countdown.UserID = userID
+	countdown := Countdown{
+		UserID:     userID,
+		Title:      title,
+		TargetDate: input.TargetDate,
+		Priority:   priority,
+	}
 	db.Create(&countdown)
-	
+
 	// Broadcast to user's other connections
 	wsManager.BroadcastToUser(userID, "countdown_created", countdown)
-	
+
 	c.JSON(http.StatusCreated, successResponse(countdown))
 }
 
@@ -1254,29 +1278,39 @@ func getCategories(c *gin.Context) {
 
 func createCategory(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
-	var category Category
-	if err := c.ShouldBindJSON(&category); err != nil {
+
+	// Use strict input struct to prevent ID injection (IDOR)
+	var input struct {
+		Name  string `json:"name"`
+		Color string `json:"color"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid request body", "VALIDATION_ERROR"))
 		return
 	}
 
-	category.Name = sanitizeString(category.Name)
-	if category.Name == "" {
+	name := sanitizeString(input.Name)
+	if name == "" {
 		c.JSON(http.StatusBadRequest, errorResponse("Name is required", "VALIDATION_ERROR"))
 		return
 	}
 
-	if category.Color == "" {
-		category.Color = "#6366f1"
+	color := input.Color
+	if color == "" {
+		color = "#6366f1"
 	}
 
 	var existing Category
-	if db.Where("user_id = ? AND name = ?", userID, category.Name).First(&existing).Error == nil {
+	if db.Where("user_id = ? AND name = ?", userID, name).First(&existing).Error == nil {
 		c.JSON(http.StatusConflict, errorResponse("Category with this name already exists", "DUPLICATE"))
 		return
 	}
 
-	category.UserID = userID
+	category := Category{
+		UserID: userID,
+		Name:   name,
+		Color:  color,
+	}
 	db.Create(&category)
 	
 	// Broadcast to user's other connections
