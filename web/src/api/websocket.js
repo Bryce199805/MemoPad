@@ -6,12 +6,16 @@ class WebSocketService {
     this.reconnectTimer = null
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
-    this.reconnectDelay = 3000
     this.listeners = new Map()
     this.isConnected = false
+    this._intentionalDisconnect = false
+    this._apiKey = null
   }
 
   connect(apiKey) {
+    this._intentionalDisconnect = false
+    this._apiKey = apiKey
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       return
     }
@@ -43,7 +47,10 @@ class WebSocketService {
         console.log('WebSocket disconnected')
         this.isConnected = false
         this.emit('disconnected', { connected: false })
-        this.scheduleReconnect(apiKey)
+        // Only reconnect if the disconnect was not intentional (e.g. logout)
+        if (!this._intentionalDisconnect) {
+          this.scheduleReconnect()
+        }
       }
 
       this.ws.onerror = (error) => {
@@ -51,25 +58,29 @@ class WebSocketService {
       }
     } catch (err) {
       console.error('WebSocket connection error:', err)
-      this.scheduleReconnect(apiKey)
+      this.scheduleReconnect()
     }
   }
 
-  scheduleReconnect(apiKey) {
+  scheduleReconnect() {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
     }
 
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++
-      console.log(`WebSocket reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`)
-      this.reconnectTimer = setTimeout(() => {
-        this.connect(apiKey)
-      }, this.reconnectDelay)
-    }
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) return
+
+    this.reconnectAttempts++
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s (capped at 30s) + up to 1s jitter
+    const base = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
+    const delay = base + Math.random() * 1000
+    console.log(`WebSocket reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+    this.reconnectTimer = setTimeout(() => {
+      if (this._apiKey) this.connect(this._apiKey)
+    }, delay)
   }
 
   disconnect() {
+    this._intentionalDisconnect = true
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
