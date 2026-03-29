@@ -40,6 +40,11 @@ export const useCountdownStore = defineStore('countdown', {
       await api.delete(`/api/countdowns/${id}`)
       this.handleCountdownDeleted({ id })
     },
+    // Batch operations — single request replaces N sequential requests
+    async batchDeleteCountdowns(ids) {
+      await api.delete('/api/countdowns/batch', { data: { ids } })
+      this.handleCountdownsBatchDeleted({ ids })
+    },
     // WebSocket event handlers
     handleCountdownCreated(countdown) {
       const exists = this.countdowns.find(c => c.id === countdown.id)
@@ -56,13 +61,18 @@ export const useCountdownStore = defineStore('countdown', {
     handleCountdownDeleted(data) {
       this.countdowns = this.countdowns.filter(c => c.id !== Number(data.id) && c.id !== data.id)
     },
+    handleCountdownsBatchDeleted(data) {
+      const deletedIds = new Set(data.ids.map(Number))
+      this.countdowns = this.countdowns.filter(c => !deletedIds.has(c.id))
+    },
     subscribeToUpdates() {
       // Guard against double-subscription (e.g. login → logout → login)
       if (this._wsHandlers) return
       const handlers = {
-        countdown_created: (countdown) => this.handleCountdownCreated(countdown),
-        countdown_updated: (countdown) => this.handleCountdownUpdated(countdown),
-        countdown_deleted: (data) => this.handleCountdownDeleted(data)
+        countdown_created:        (countdown) => this.handleCountdownCreated(countdown),
+        countdown_updated:        (countdown) => this.handleCountdownUpdated(countdown),
+        countdown_deleted:        (data)      => this.handleCountdownDeleted(data),
+        countdowns_batch_deleted: (data)      => this.handleCountdownsBatchDeleted(data)
       }
       this._wsHandlers = handlers
       for (const [event, fn] of Object.entries(handlers)) {
