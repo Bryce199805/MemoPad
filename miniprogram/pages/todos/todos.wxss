@@ -151,6 +151,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
+  align-items: center;
+}
+
+.filter-spacer {
+  flex: 1;
 }
 
 .filter-chip {

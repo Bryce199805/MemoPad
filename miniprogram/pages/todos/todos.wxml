@@ -75,6 +75,8 @@ module.exports = {
           </view>
         </picker>
 
+        <view class="filter-spacer"></view>
+
         <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
           <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
             <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
@@ -221,29 +223,6 @@ module.exports = {
               <text class="chip-arrow">▾</text>
             </view>
           </picker>
-        </view>
-
-        <view class="form-group">
-          <view class="form-row-label" bind:tap="onToggleHasDueDate">
-            <text class="form-label" style="margin-bottom: 0;">Due Date</text>
-            <view class="toggle-switch {{form.hasDueDate ? 'toggle-switch--on' : ''}}">
-              <view class="toggle-knob"></view>
-            </view>
-          </view>
-          <view class="date-time-row" wx:if="{{form.hasDueDate}}">
-            <picker mode="date" value="{{form.dueDate}}" bindchange="onFormDateChange">
-              <view class="form-picker form-picker--half">
-                <text class="form-picker-text">{{form.dueDate || 'Select date'}}</text>
-                <text class="chip-arrow">▾</text>
-              </view>
-            </picker>
-            <picker mode="time" value="{{form.dueTime}}" bindchange="onFormTimeChange">
-              <view class="form-picker form-picker--half">
-                <text class="form-picker-text">{{form.dueTime || 'Select time'}}</text>
-                <text class="chip-arrow">▾</text>
-              </view>
-            </picker>
-          </view>
         </view>
       </view>
     </modal>

@@ -173,36 +173,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Add Category Inline -->
-            <div v-if="showAddCategory" class="inline-category-form">
-              <input 
-                v-model="newCategoryName" 
-                type="text" 
-                placeholder="Category name"
-                class="category-input"
-              />
-              <input 
-                v-model="newCategoryColor" 
-                type="color" 
-                class="color-picker"
-              />
-              <button type="button" class="save-category-btn" @click="createCategory">Save</button>
-              <button type="button" class="cancel-category-btn" @click="showAddCategory = false">✕</button>
-            </div>
-
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" v-model="enableDueDate" />
-                <span>Set due date</span>
-              </label>
-              <input
-                v-if="enableDueDate"
-                v-model="form.due_date"
-                type="datetime-local"
-                :min="minDateTime"
-              />
-            </div>
           </form>
           <div class="modal-footer">
             <Button variant="secondary" @click="closeModal">Cancel</Button>
@@ -233,40 +203,13 @@ const filterStatus = ref('')
 const filterCategory = ref('')
 const showModal = ref(false)
 const editingTodo = ref(null)
-const enableDueDate = ref(false)
-const showAddCategory = ref(false)
-const newCategoryName = ref('')
 const selectMode = ref(false)
 const selectedIds = ref(new Set())
-
-// Color palette for categories
-const categoryColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
-
-// Generate random color different from existing categories
-function generateRandomColor() {
-  const usedColors = categories.value.map(c => c.color)
-  const available = categoryColors.filter(c => !usedColors.includes(c))
-  if (available.length > 0) {
-    return available[Math.floor(Math.random() * available.length)]
-  }
-  return categoryColors[Math.floor(Math.random() * categoryColors.length)]
-}
-
-// Initialize after function definition
-const newCategoryColor = ref('#6366f1')
 
 const form = ref({
   content: '',
   priority: 'medium',
-  category_id: null,
-  due_date: ''
-})
-
-// Minimum datetime for picker (now)
-const minDateTime = computed(() => {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
+  category_id: null
 })
 
 const filteredTodos = computed(() => {
@@ -337,21 +280,15 @@ async function clearCompleted() {
 
 function openModal(todo = null) {
   editingTodo.value = todo
-  showAddCategory.value = false
-  newCategoryName.value = ''
-  newCategoryColor.value = generateRandomColor()
   
   if (todo) {
-    enableDueDate.value = !!todo.due_date
     form.value = {
       content: todo.content,
       priority: todo.priority,
-      category_id: todo.category_id,
-      due_date: todo.due_date ? formatDateTimeLocal(todo.due_date) : ''
+      category_id: todo.category_id
     }
   } else {
-    enableDueDate.value = false
-    form.value = { content: '', priority: 'medium', category_id: null, due_date: '' }
+    form.value = { content: '', priority: 'medium', category_id: null }
   }
   showModal.value = true
 }
@@ -365,7 +302,6 @@ function formatDateTimeLocal(dateStr) {
 function closeModal() {
   showModal.value = false
   editingTodo.value = null
-  showAddCategory.value = false
 }
 
 async function createCategory() {
@@ -398,8 +334,9 @@ async function createCategory() {
 
 async function saveTodo() {
   const data = {
-    ...form.value,
-    due_date: enableDueDate.value && form.value.due_date ? new Date(form.value.due_date).toISOString() : null
+    content: form.value.content,
+    priority: form.value.priority,
+    category_id: form.value.category_id
   }
 
   if (editingTodo.value) {

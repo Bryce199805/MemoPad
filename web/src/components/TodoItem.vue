@@ -36,10 +36,6 @@
           <Badge v-if="todo.category" variant="custom" :style="{ backgroundColor: todo.category.color + '20', color: todo.category.color }">
             {{ todo.category.name }}
           </Badge>
-
-          <Badge v-if="todo.due_date" :variant="dueDateVariant">
-            {{ dueDateText }}
-          </Badge>
         </div>
       </div>
     </div>
@@ -90,39 +86,6 @@ const priorityVariant = computed(() => {
 const priorityLabel = computed(() => {
   const map = { high: 'High', medium: 'Medium', low: 'Low' }
   return map[props.todo.priority] || 'Medium'
-})
-
-const dueDateVariant = computed(() => {
-  if (!props.todo.due_date || props.todo.done) return 'default'
-  
-  const now = new Date()
-  const due = new Date(props.todo.due_date)
-  now.setHours(0, 0, 0, 0)
-  due.setHours(0, 0, 0, 0)
-  
-  const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
-  
-  if (diff < 0) return 'danger'
-  if (diff === 0) return 'warning'
-  if (diff <= 3) return 'warning'
-  return 'info'
-})
-
-const dueDateText = computed(() => {
-  if (!props.todo.due_date) return ''
-  
-  const now = new Date()
-  const due = new Date(props.todo.due_date)
-  now.setHours(0, 0, 0, 0)
-  due.setHours(0, 0, 0, 0)
-  
-  const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
-  
-  if (diff < 0) return `${Math.abs(diff)}d overdue`
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Tomorrow'
-  if (diff <= 7) return `${diff} days`
-  return due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 })
 </script>
 

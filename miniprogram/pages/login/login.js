@@ -11,19 +11,16 @@ Page({
   },
 
   onLoad() {
-    const user = auth.getUser()
-    if (auth.isLoggedIn()) {
-      if (user && user.role === 'admin') {
-        wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
-      } else {
-        wx.switchTab({ url: '/pages/dashboard/dashboard' })
-      }
-    }
+    this.checkAndRedirect()
   },
 
   onShow() {
-    const user = auth.getUser()
+    this.checkAndRedirect()
+  },
+
+  checkAndRedirect() {
     if (auth.isLoggedIn()) {
+      const user = auth.getUser()
       if (user && user.role === 'admin') {
         wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
       } else {
@@ -40,6 +37,10 @@ Page({
       password: '',
       email: ''
     })
+  },
+
+  clearError() {
+    this.setData({ error: '' })
   },
 
   onUsernameInput(e) {

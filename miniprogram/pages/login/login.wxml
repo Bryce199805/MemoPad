@@ -25,6 +25,12 @@
 
     <!-- Form -->
     <view class="form">
+      <!-- Error display - moved to top -->
+      <view class="error-box" wx:if="{{error}}">
+        <text class="error-text">{{error}}</text>
+        <text class="error-close" bind:tap="clearError">✕</text>
+      </view>
+
       <view class="form-group">
         <text class="form-label">Username</text>
         <input
@@ -59,11 +65,6 @@
           value="{{email}}"
           bindinput="onEmailInput"
         />
-      </view>
-
-      <!-- Error display -->
-      <view class="error-box" wx:if="{{error}}">
-        <text class="error-text">{{error}}</text>
       </view>
 
       <!-- Submit button -->

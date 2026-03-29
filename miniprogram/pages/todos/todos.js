@@ -1,6 +1,5 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
-const util = require('../../utils/util')
 
 Page({
   data: {
@@ -32,10 +31,7 @@ Page({
     form: {
       content: '',
       priority: 'medium',
-      category: '',
-      hasDueDate: false,
-      dueDate: '',
-      dueTime: '23:59'
+      category: ''
     }
   },
 
@@ -251,10 +247,7 @@ Page({
       form: {
         content: '',
         priority: 'medium',
-        category: '',
-        hasDueDate: false,
-        dueDate: '',
-        dueTime: '23:59'
+        category: ''
       }
     })
   },
@@ -263,7 +256,6 @@ Page({
     const id = e.detail.id
     const todo = this.data.todos.find(t => t.id === id)
     if (!todo) return
-    const today = util.formatDate(new Date().toISOString())
     const priorityIdx = this.priorityOptions.indexOf(todo.priority || 'medium')
     let catIdx = 0
     let catName = 'None'
@@ -284,10 +276,7 @@ Page({
       form: {
         content: todo.content || '',
         priority: todo.priority || 'medium',
-        category: todo.category || '',
-        hasDueDate: !!todo.due_date,
-        dueDate: todo.due_date ? todo.due_date.split('T')[0] : today,
-        dueTime: todo.due_date && todo.due_date.split('T')[1] ? todo.due_date.split('T')[1].substring(0, 5) : '23:59'
+        category: todo.category || ''
       }
     })
   },
@@ -356,24 +345,6 @@ Page({
     })
   },
 
-  onToggleHasDueDate() {
-    if (!this.data.form.hasDueDate) {
-      const today = new Date()
-      const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
-      this.setData({ 'form.hasDueDate': true, 'form.dueDate': dateStr })
-    } else {
-      this.setData({ 'form.hasDueDate': false })
-    }
-  },
-
-  onFormDateChange(e) {
-    this.setData({ 'form.dueDate': e.detail.value })
-  },
-
-  onFormTimeChange(e) {
-    this.setData({ 'form.dueTime': e.detail.value })
-  },
-
   async onFormSave() {
     const { form, editingId } = this.data
     if (!form.content.trim()) {
@@ -381,12 +352,9 @@ Page({
       return
     }
 
-    const tz = new Date().getTimezoneOffset()
-    const tzStr = tz <= 0 ? '+' + String(Math.floor(-tz/60)).padStart(2,'0') + ':' + String((-tz)%60).padStart(2,'0') : '-' + String(Math.floor(tz/60)).padStart(2,'0') + ':' + String(tz%60).padStart(2,'0')
     const data = {
       content: form.content.trim(),
-      priority: form.priority,
-      due_date: form.hasDueDate && form.dueDate ? form.dueDate + 'T' + form.dueTime + ':00' + tzStr : null
+      priority: form.priority
     }
     if (form.category) {
       data.category_id = form.category
