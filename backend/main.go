@@ -1471,19 +1471,26 @@ func adminGetUsers(c *gin.Context) {
 	}
 
 	var result []UserWithStats
-	db.Raw(`
+	if err := db.Raw(`
 		SELECT
 			u.id, u.username, u.email, u.role, u.disabled,
 			u.created_at, u.updated_at,
 			COUNT(DISTINCT t.id)  AS todo_count,
 			COUNT(DISTINCT cd.id) AS countdown_count
 		FROM users u
-		LEFT JOIN todos      t  ON t.user_id  = u.id AND t.deleted_at  IS NULL
-		LEFT JOIN countdowns cd ON cd.user_id = u.id AND cd.deleted_at IS NULL
-		WHERE u.deleted_at IS NULL
+		LEFT JOIN todos      t  ON t.user_id  = u.id
+		LEFT JOIN countdowns cd ON cd.user_id = u.id
 		GROUP BY u.id
 		ORDER BY u.created_at DESC
-	`).Scan(&result)
+	`).Scan(&result).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to fetch users", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Ensure JSON encodes as [] rather than null when no users exist
+	if result == nil {
+		result = []UserWithStats{}
+	}
 
 	c.JSON(http.StatusOK, successResponse(result))
 }
