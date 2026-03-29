@@ -18,5 +18,8 @@
 }
 
 .empty-desc {
-  display: none;
+  font-size: 22rpx;
+  color: var(--text-tertiary, #9ca3af);
+  margin-top: 6rpx;
+  text-align: center;
 }
