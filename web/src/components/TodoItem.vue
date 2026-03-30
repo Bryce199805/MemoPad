@@ -41,18 +41,18 @@
     </div>
 
     <div v-if="!selectable" class="todo-actions">
-      <button 
+      <button
         class="action-btn"
         :class="{ active: todo.pinned }"
         @click.stop="$emit('pin', todo.id)"
-        title="Pin"
+        :title="$t('todo.pin')"
       >
         📌
       </button>
-      <button class="action-btn" @click.stop="$emit('edit', todo)" title="Edit">
+      <button class="action-btn" @click.stop="$emit('edit', todo)" :title="$t('common.edit')">
         ✏️
       </button>
-      <button class="action-btn danger" @click.stop="$emit('delete', todo.id)" title="Delete">
+      <button class="action-btn danger" @click.stop="$emit('delete', todo.id)" :title="$t('common.delete')">
         🗑️
       </button>
     </div>
@@ -61,7 +61,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Badge from './ui/Badge.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   todo: { type: Object, required: true },
@@ -84,8 +87,8 @@ const priorityVariant = computed(() => {
 })
 
 const priorityLabel = computed(() => {
-  const map = { high: 'High', medium: 'Medium', low: 'Low' }
-  return map[props.todo.priority] || 'Medium'
+  const map = { high: t('todo.high'), medium: t('todo.medium'), low: t('todo.low') }
+  return map[props.todo.priority] || t('todo.medium')
 })
 </script>
 

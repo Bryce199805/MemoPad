@@ -1,39 +1,39 @@
 <template>
   <div class="feedback-page">
     <div class="page-header">
-      <h1>Feedback</h1>
-      <p class="subtitle">Submit bug reports or feature requests</p>
+      <h1>{{ $t('feedback.title') }}</h1>
+      <p class="subtitle">{{ $t('feedback.subtitle') }}</p>
     </div>
 
     <!-- Submit Form -->
     <Card class="section-card">
-      <template #header>Submit a Ticket</template>
+      <template #header>{{ $t('feedback.submitTicket') }}</template>
       <form @submit.prevent="submitTicket" class="ticket-form">
         <div class="form-group">
-          <label>Title</label>
+          <label>{{ $t('feedback.titleField') }}</label>
           <input
             v-model="form.title"
             type="text"
-            placeholder="Brief description of the issue"
+            :placeholder="$t('feedback.titlePlaceholder')"
             required
             maxlength="200"
           />
         </div>
 
         <div class="form-group">
-          <label>Priority</label>
+          <label>{{ $t('feedback.priority') }}</label>
           <select v-model="form.priority">
-            <option value="low">Low - Minor issue or suggestion</option>
-            <option value="medium">Medium - Normal bug or feature request</option>
-            <option value="high">High - Critical issue affecting usage</option>
+            <option value="low">{{ $t('feedback.priorityLow') }}</option>
+            <option value="medium">{{ $t('feedback.priorityMedium') }}</option>
+            <option value="high">{{ $t('feedback.priorityHigh') }}</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Description</label>
+          <label>{{ $t('feedback.description') }}</label>
           <textarea
             v-model="form.description"
-            placeholder="Please describe the issue in detail, including steps to reproduce if applicable..."
+            :placeholder="$t('feedback.descPlaceholder')"
             rows="5"
             maxlength="2000"
           ></textarea>
@@ -41,7 +41,7 @@
 
         <div class="form-actions">
           <Button type="submit" variant="primary" :disabled="!form.title.trim() || submitting">
-            {{ submitting ? 'Submitting...' : 'Submit Ticket' }}
+            {{ submitting ? $t('feedback.submitting') : $t('feedback.submit') }}
           </Button>
         </div>
       </form>
@@ -49,7 +49,7 @@
 
     <!-- My Tickets -->
     <Card class="section-card">
-      <template #header>My Tickets</template>
+      <template #header>{{ $t('feedback.myTickets') }}</template>
       <div class="tickets-list">
         <div v-for="ticket in tickets" :key="ticket.id" class="ticket-item" @click="showTicketDetail(ticket)">
           <div class="ticket-header">
@@ -61,13 +61,13 @@
             <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
           </div>
           <div v-if="ticket.reply" class="ticket-reply-preview">
-            <strong>Admin Reply:</strong> {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
+            <strong>{{ $t('feedback.adminReply') }}</strong> {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
           </div>
         </div>
         <div v-if="tickets.length === 0 && !loading" class="empty-text">
-          No tickets submitted yet
+          {{ $t('feedback.noTickets') }}
         </div>
-        <div v-if="loading" class="loading-text">Loading...</div>
+          <div v-if="loading" class="loading-text">{{ $t('common.loading') }}</div>
       </div>
     </Card>
 
@@ -76,39 +76,39 @@
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal glass-card">
           <div class="modal-header">
-            <h2>Ticket Details</h2>
+            <h2>{{ $t('feedback.ticketDetails') }}</h2>
             <button class="close-btn" @click="closeModal">✕</button>
           </div>
           <div class="modal-body" v-if="selectedTicket">
             <div class="detail-row">
-              <label>Title</label>
+              <label>{{ $t('feedback.titleField') }}</label>
               <p>{{ selectedTicket.title }}</p>
             </div>
             <div class="detail-row">
-              <label>Status</label>
+              <label>{{ $t('common.status') }}</label>
               <span :class="['ticket-status', selectedTicket.status]">{{ formatStatus(selectedTicket.status) }}</span>
             </div>
             <div class="detail-row">
-              <label>Priority</label>
+              <label>{{ $t('feedback.priority') }}</label>
               <span class="ticket-priority" :class="selectedTicket.priority">{{ selectedTicket.priority }}</span>
             </div>
             <div class="detail-row">
-              <label>Description</label>
-              <p class="description-text">{{ selectedTicket.description || 'No description provided' }}</p>
+              <label>{{ $t('feedback.description') }}</label>
+              <p class="description-text">{{ selectedTicket.description || $t('feedback.noDescription') }}</p>
             </div>
             <div class="detail-row">
-              <label>Submitted</label>
+              <label>{{ $t('feedback.submitted') }}</label>
               <p>{{ formatDate(selectedTicket.created_at) }}</p>
             </div>
             <div v-if="selectedTicket.reply" class="detail-row reply-row">
-              <label>Admin Reply</label>
+              <label>{{ $t('feedback.adminReplyLabel') }}</label>
               <div class="reply-box">
                 {{ selectedTicket.reply }}
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <Button variant="secondary" @click="closeModal">Close</Button>
+            <Button variant="secondary" @click="closeModal">{{ $t('common.close') }}</Button>
           </div>
         </div>
       </div>
@@ -118,9 +118,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import api from '../api/client'
+
+const { t } = useI18n()
 
 const form = ref({
   title: '',
@@ -155,7 +158,7 @@ async function submitTicket() {
     form.value = { title: '', description: '', priority: 'medium' }
     await fetchTickets()
   } catch (err) {
-    alert(err.response?.data?.error || 'Failed to submit ticket')
+    alert(err.response?.data?.error || t('feedback.failedToSubmit'))
   } finally {
     submitting.value = false
   }
@@ -173,10 +176,10 @@ function closeModal() {
 
 function formatStatus(status) {
   const statusMap = {
-    'open': 'Open',
-    'in_progress': 'In Progress',
-    'resolved': 'Resolved',
-    'closed': 'Closed'
+    'open': t('feedback.statusOpen'),
+    'in_progress': t('feedback.statusInProgress'),
+    'resolved': t('feedback.statusResolved'),
+    'closed': t('feedback.statusClosed')
   }
   return statusMap[status] || status
 }

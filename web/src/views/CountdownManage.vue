@@ -2,22 +2,22 @@
   <div class="countdowns-page">
     <div class="page-header">
       <div class="header-content">
-        <h1>Countdowns</h1>
-        <p class="subtitle">Track your important dates</p>
+        <h1>{{ $t('countdown.title') }}</h1>
+        <p class="subtitle">{{ $t('countdown.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <Button v-if="selectedIds.size > 0" variant="danger" @click="batchDelete">
-          Delete ({{ selectedIds.size }})
+          {{ $t('countdown.batchDelete', { n: selectedIds.size }) }}
         </Button>
         <Button v-if="selectedIds.size > 0" variant="secondary" @click="clearSelection">
-          Cancel
+          {{ $t('common.cancel') }}
         </Button>
         <Button @click="openModal()" variant="primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Add Countdown
+          {{ $t('countdown.add') }}
         </Button>
       </div>
     </div>
@@ -26,15 +26,15 @@
     <div class="stats-row">
       <div class="stat-item glass-card">
         <span class="stat-value">{{ upcomingCount }}</span>
-        <span class="stat-label">Upcoming</span>
+        <span class="stat-label">{{ $t('countdown.upcoming') }}</span>
       </div>
       <div class="stat-item glass-card">
         <span class="stat-value warning">{{ dueSoonCount }}</span>
-        <span class="stat-label">Due Soon</span>
+        <span class="stat-label">{{ $t('countdown.dueSoon') }}</span>
       </div>
       <div class="stat-item glass-card">
         <span class="stat-value danger">{{ overdueCount }}</span>
-        <span class="stat-label">Overdue</span>
+        <span class="stat-label">{{ $t('countdown.overdue') }}</span>
       </div>
     </div>
 
@@ -45,14 +45,14 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input v-model="search" type="text" placeholder="Search countdowns..." />
+        <input v-model="search" type="text" :placeholder="$t('countdown.searchPlaceholder')" />
       </div>
       <Button 
         :variant="selectMode ? 'primary' : 'secondary'" 
         size="sm" 
         @click="toggleSelectMode"
       >
-        {{ selectMode ? 'Done' : 'Select' }}
+        {{ selectMode ? $t('countdown.done') : $t('countdown.select') }}
       </Button>
     </div>
 
@@ -90,7 +90,7 @@
             <span class="days" :class="daysClass(cd.target_date)">
               {{ Math.abs(daysLeft(cd.target_date)) }}
             </span>
-            <span class="days-label">{{ daysLeft(cd.target_date) >= 0 ? 'days left' : 'days ago' }}</span>
+            <span class="days-label">{{ daysLeft(cd.target_date) >= 0 ? $t('countdown.daysLeft') : $t('countdown.daysAgo') }}</span>
           </div>
           
           <p class="countdown-date">{{ formatDate(cd.target_date) }}</p>
@@ -102,7 +102,7 @@
             :class="{ active: cd.pinned }"
             @click.stop="pinCountdown(cd)"
           >
-            📌 {{ cd.pinned ? 'Pinned' : 'Pin' }}
+            📌 {{ cd.pinned ? $t('countdown.pinned') : $t('countdown.pin') }}
           </button>
           <div class="action-group">
             <button class="action-btn" @click.stop="openModal(cd)">✏️</button>
@@ -115,8 +115,8 @@
     <!-- Empty State -->
     <div v-if="filteredCountdowns.length === 0 && !countdownStore.loading" class="empty-state">
       <div class="empty-icon">⏰</div>
-      <h3>{{ search ? 'No matching countdowns' : 'No countdowns yet' }}</h3>
-      <p>{{ search ? 'Try a different search term' : 'Add a countdown to track important dates' }}</p>
+      <h3>{{ search ? $t('countdown.noMatch') : $t('countdown.noCountdowns') }}</h3>
+      <p>{{ search ? $t('countdown.noMatchHint') : $t('countdown.noCountdownsHint') }}</p>
     </div>
 
     <!-- Modal -->
@@ -124,21 +124,21 @@
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal glass-card">
           <div class="modal-header">
-            <h2>{{ editingCountdown ? 'Edit Countdown' : 'New Countdown' }}</h2>
+            <h2>{{ editingCountdown ? $t('countdown.edit') : $t('countdown.new') }}</h2>
           </div>
           <form @submit.prevent="saveCountdown" class="modal-body">
             <div class="form-group">
-              <label>Title</label>
+              <label>{{ $t('countdown.name') }}</label>
               <input
                 v-model="form.title"
                 type="text"
                 required
-                placeholder="What are you counting down to?"
+                :placeholder="$t('countdown.titlePlaceholder')"
               />
             </div>
 
             <div class="form-group">
-              <label>Target Date</label>
+              <label>{{ $t('countdown.targetDate') }}</label>
               <input
                 v-model="form.target_date"
                 type="datetime-local"
@@ -148,17 +148,17 @@
             </div>
 
             <div class="form-group">
-              <label>Priority</label>
+              <label>{{ $t('todo.priority') }}</label>
               <select v-model="form.priority">
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="high">{{ $t('todo.high') }}</option>
+                <option value="medium">{{ $t('todo.medium') }}</option>
+                <option value="low">{{ $t('todo.low') }}</option>
               </select>
             </div>
           </form>
           <div class="modal-footer">
-            <Button variant="secondary" @click="closeModal">Cancel</Button>
-            <Button variant="primary" @click="saveCountdown">Save</Button>
+            <Button variant="secondary" @click="closeModal">{{ $t('common.cancel') }}</Button>
+            <Button variant="primary" @click="saveCountdown">{{ $t('common.save') }}</Button>
           </div>
         </div>
       </div>
@@ -168,11 +168,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCountdownStore } from '../stores/countdown'
 import { storeToRefs } from 'pinia'
 import Button from '../components/ui/Button.vue'
 import Badge from '../components/ui/Badge.vue'
 
+const { t, locale } = useI18n()
 const countdownStore = useCountdownStore()
 const { countdowns } = storeToRefs(countdownStore)
 
@@ -224,9 +226,9 @@ function daysLeft(date) {
 }
 
 function formatDate(date) {
-  return new Date(date).toLocaleDateString('en-US', { 
+  return new Date(date).toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US', {
     weekday: 'short',
-    month: 'short', 
+    month: 'short',
     day: 'numeric',
     year: 'numeric'
   })
@@ -254,7 +256,7 @@ function priorityVariant(p) {
 }
 
 function priorityText(p) {
-  return { high: 'High', medium: 'Medium', low: 'Low' }[p] || 'Medium'
+  return { high: t('common.high'), medium: t('common.medium'), low: t('common.low') }[p] || t('common.medium')
 }
 
 function toggleSelectMode() {
@@ -284,7 +286,7 @@ function clearSelection() {
 }
 
 async function batchDelete() {
-  if (!confirm(`Delete ${selectedIds.value.size} countdowns?`)) return
+  if (!confirm(t('countdown.confirmBatchDelete', { n: selectedIds.value.size }))) return
   await countdownStore.batchDeleteCountdowns([...selectedIds.value])
   clearSelection()
 }
@@ -332,7 +334,7 @@ async function pinCountdown(cd) {
 }
 
 async function deleteCountdown(id) {
-  if (confirm('Delete this countdown?')) {
+  if (confirm(t('countdown.confirmDelete'))) {
     await countdownStore.deleteCountdown(id)
   }
 }

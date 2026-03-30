@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="dashboard-header">
       <div>
-        <h1>Dashboard</h1>
-        <p class="subtitle">Welcome back, {{ authStore.user?.username }} &middot; {{ todayDate }}</p>
+        <h1>{{ $t('dashboard.title') }}</h1>
+        <p class="subtitle">{{ $t('dashboard.welcomeBack', { username: authStore.user?.username }) }} &middot; {{ todayDate }}</p>
       </div>
     </div>
 
@@ -37,7 +37,7 @@
       <div v-if="expanded" class="preview-panel glass-card">
         <div class="preview-header">
           <h3>{{ expandedLabel }}</h3>
-          <router-link :to="expandedLink" class="view-all">View all &rarr;</router-link>
+          <router-link :to="expandedLink" class="view-all">{{ $t('dashboard.viewAll') }}</router-link>
         </div>
         <div class="preview-list">
           <template v-if="expanded === 'due'">
@@ -56,7 +56,6 @@
             </div>
           </template>
           <p v-if="expandedList.length === 0" class="empty-hint">{{ expandedEmptyText }}</p>
-        </div>
       </div>
     </Transition>
 
@@ -68,7 +67,7 @@
         <Card class="progress-card">
           <template #header>
             <div class="card-title-row">
-              <span>Task Progress</span>
+              <span>{{ $t('dashboard.taskProgress') }}</span>
               <span class="progress-pct">{{ completionRate }}%</span>
             </div>
           </template>
@@ -77,11 +76,11 @@
               <div class="progress-fill" :style="{ width: completionRate + '%' }"></div>
             </div>
             <div class="progress-meta">
-              <span>{{ stats.todos?.done || 0 }} of {{ stats.todos?.total || 0 }} completed</span>
+              <span>{{ $t('dashboard.progressText', { done: stats.todos?.done || 0, total: stats.todos?.total || 0 }) }}</span>
             </div>
           </div>
           <div class="priority-section">
-            <h4>By Priority</h4>
+            <h4>{{ $t('dashboard.byPriority') }}</h4>
             <div class="bar-row" v-for="p in priorityBars" :key="p.key">
               <span class="bar-label">{{ p.label }}</span>
               <div class="bar-track"><div class="bar-fill" :style="{ width: p.pct + '%', background: p.color }"></div></div>
@@ -94,8 +93,8 @@
         <Card v-if="pinnedTodos.length > 0" class="pinned-card">
           <template #header>
             <div class="card-title-row">
-              <span>Pinned</span>
-              <router-link to="/todos" class="view-all">View all &rarr;</router-link>
+              <span>{{ $t('dashboard.pinned') }}</span>
+              <router-link to="/todos" class="view-all">{{ $t('dashboard.viewAll') }}</router-link>
             </div>
           </template>
           <div class="pinned-list">
@@ -115,11 +114,11 @@
         <Card class="countdown-card">
           <template #header>
             <div class="card-title-row">
-              <span>Upcoming Countdowns</span>
-              <router-link to="/countdowns" class="view-all">View all &rarr;</router-link>
+              <span>{{ $t('dashboard.upcomingCountdowns') }}</span>
+              <router-link to="/countdowns" class="view-all">{{ $t('dashboard.viewAll') }}</router-link>
             </div>
           </template>
-          <div v-if="upcomingCountdowns.length === 0" class="empty-hint">No upcoming deadlines</div>
+          <div v-if="upcomingCountdowns.length === 0" class="empty-hint">{{ $t('dashboard.noDeadlines') }}</div>
           <div v-else class="cd-list">
             <div v-for="cd in upcomingCountdowns.slice(0, 5)" :key="cd.id" class="cd-row">
               <div class="cd-info">
@@ -128,7 +127,7 @@
               </div>
               <div class="cd-days" :class="daysClass(cd.target_date)">
                 <span class="cd-num">{{ Math.abs(daysLeft(cd.target_date)) }}</span>
-                <span class="cd-unit">{{ daysLeft(cd.target_date) >= 0 ? 'days' : 'ago' }}</span>
+                <span class="cd-unit">{{ daysLeft(cd.target_date) >= 0 ? $t('dashboard.days') : $t('dashboard.ago') }}</span>
               </div>
             </div>
           </div>
@@ -138,7 +137,7 @@
         <Card v-if="overdueTodos.length > 0" class="alert-card">
           <template #header>
             <div class="card-title-row">
-              <span>Overdue Tasks</span>
+              <span>{{ $t('dashboard.overdueTasks') }}</span>
               <span class="alert-badge">{{ overdueTodos.length }}</span>
             </div>
           </template>
@@ -154,7 +153,7 @@
         <Card v-if="completedTasks.length > 0" class="recent-card">
           <template #header>
             <div class="card-title-row">
-              <span>Recently Completed</span>
+              <span>{{ $t('dashboard.recentlyCompleted') }}</span>
             </div>
           </template>
           <div class="completed-list">
@@ -172,13 +171,14 @@
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading...</p>
+      <p>{{ $t('dashboard.loading') }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useTodoStore } from '../stores/todo'
 import { useCountdownStore } from '../stores/countdown'
@@ -186,6 +186,7 @@ import { storeToRefs } from 'pinia'
 import api from '../api/client'
 import Card from '../components/ui/Card.vue'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const todoStore = useTodoStore()
 const countdownStore = useCountdownStore()
@@ -197,19 +198,24 @@ const loading = ref(true)
 const expanded = ref(null)
 
 const todayDate = computed(() =>
-  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  new Date().toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 )
 
 const statCards = computed(() => [
-  { key: 'total', label: 'Total', value: stats.value.todos?.total || 0, color: 'rgba(99, 102, 241, 0.15)' },
-  { key: 'done', label: 'Completed', value: stats.value.todos?.done || 0, color: 'rgba(34, 197, 94, 0.15)' },
-  { key: 'pending', label: 'Pending', value: stats.value.todos?.pending || 0, color: 'rgba(245, 158, 11, 0.15)' },
-  { key: 'due', label: 'Due Soon', value: stats.value.countdowns?.due_soon || 0, color: 'rgba(139, 92, 246, 0.15)' }
+  { key: 'total', label: t('dashboard.totalTodos'), value: stats.value.todos?.total || 0, color: 'rgba(99, 102, 241, 0.15)' },
+  { key: 'done', label: t('dashboard.completed'), value: stats.value.todos?.done || 0, color: 'rgba(34, 197, 94, 0.15)' },
+  { key: 'pending', label: t('dashboard.pending'), value: stats.value.todos?.pending || 0, color: 'rgba(245, 158, 11, 0.15)' },
+  { key: 'due', label: t('dashboard.dueSoon'), value: stats.value.countdowns?.due_soon || 0, color: 'rgba(139, 92, 246, 0.15)' }
 ])
 
-const expandedLabel = computed(() => ({ total: 'All Tasks', done: 'Completed Tasks', pending: 'Pending Tasks', due: 'Upcoming Deadlines' }[expanded.value] || ''))
+const expandedLabel = computed(() => ({
+  total: t('dashboard.allTasks'),
+  done: t('dashboard.completedTasks'),
+  pending: t('dashboard.pendingTasks'),
+  due: t('dashboard.upcomingDeadlines')
+}[expanded.value] || ''))
 const expandedLink = computed(() => expanded.value === 'due' ? '/countdowns' : '/todos')
-const expandedEmptyText = computed(() => expanded.value === 'due' ? 'No upcoming deadlines' : expanded.value === 'done' ? 'No completed tasks' : 'No tasks')
+const expandedEmptyText = computed(() => expanded.value === 'due' ? t('dashboard.noDeadlines') : expanded.value === 'done' ? t('dashboard.noCompletedTasks') : t('dashboard.noTasks'))
 
 const expandedList = computed(() => {
   if (expanded.value === 'total') return [...todos.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -234,19 +240,19 @@ const priorityBars = computed(() => {
   const bp = stats.value.todos?.by_priority || {}
   const pending = stats.value.todos?.pending || 1
   return [
-    { key: 'high', label: 'High', count: bp.high || 0, pct: Math.round(((bp.high || 0) / pending) * 100), color: 'var(--danger)' },
-    { key: 'medium', label: 'Medium', count: bp.medium || 0, pct: Math.round(((bp.medium || 0) / pending) * 100), color: 'var(--warning)' },
-    { key: 'low', label: 'Low', count: bp.low || 0, pct: Math.round(((bp.low || 0) / pending) * 100), color: 'var(--success)' }
+    { key: 'high', label: t('common.high'), count: bp.high || 0, pct: Math.round(((bp.high || 0) / pending) * 100), color: 'var(--danger)' },
+    { key: 'medium', label: t('common.medium'), count: bp.medium || 0, pct: Math.round(((bp.medium || 0) / pending) * 100), color: 'var(--warning)' },
+    { key: 'low', label: t('common.low'), count: bp.low || 0, pct: Math.round(((bp.low || 0) / pending) * 100), color: 'var(--success)' }
   ]
 })
 
 function priorityLabel(p) { return { high: 'H', medium: 'M', low: 'L' }[p] || 'M' }
 function daysLeft(date) {
-  const t = new Date(date), n = new Date()
-  n.setHours(0,0,0,0); t.setHours(0,0,0,0)
-  return Math.ceil((t - n) / 864e5)
+  const t2 = new Date(date), n = new Date()
+  n.setHours(0,0,0,0); t2.setHours(0,0,0,0)
+  return Math.ceil((t2 - n) / 864e5)
 }
-function formatDate(date) { return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }
+function formatDate(date) { return new Date(date).toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric' }) }
 function daysClass(date) { const d = daysLeft(date); return d < 0 ? 'overdue' : d <= 3 ? 'soon' : 'normal' }
 
 async function toggleTodo(id) { await todoStore.toggleTodo(id); await fetchStats() }

@@ -2,25 +2,25 @@
   <div class="todos-page">
     <div class="page-header">
       <div class="header-content">
-        <h1>Tasks</h1>
-        <p class="subtitle">{{ pendingCount }} pending · {{ doneCount }} completed</p>
+        <h1>{{ $t('todo.title') }}</h1>
+        <p class="subtitle">{{ $t('todo.summary', { pending: pendingCount, done: doneCount }) }}</p>
       </div>
       <div class="header-actions">
         <Button v-if="selectedIds.size > 0" variant="danger" @click="batchDelete">
-          Delete ({{ selectedIds.size }})
+          {{ $t('todo.batchDelete', { n: selectedIds.size }) }}
         </Button>
         <Button v-if="selectedIds.size > 0" variant="secondary" @click="batchComplete">
-          Complete ({{ selectedIds.size }})
+          {{ $t('todo.batchComplete', { n: selectedIds.size }) }}
         </Button>
         <Button v-if="selectedIds.size > 0" variant="secondary" @click="clearSelection">
-          Cancel
+          {{ $t('common.cancel') }}
         </Button>
         <Button @click="openModal()" variant="primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Add Task
+          {{ $t('todo.add') }}
         </Button>
       </div>
     </div>
@@ -32,35 +32,35 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input v-model="search" type="text" placeholder="Search tasks..." />
+        <input v-model="search" type="text" :placeholder="$t('todo.search')" />
       </div>
       <select v-model="filterPriority" class="filter-select">
-        <option value="">All Priority</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
+        <option value="">{{ $t('todo.allPriority') }}</option>
+        <option value="high">{{ $t('todo.high') }}</option>
+        <option value="medium">{{ $t('todo.medium') }}</option>
+        <option value="low">{{ $t('todo.low') }}</option>
       </select>
       <select v-model="filterStatus" class="filter-select">
-        <option value="">All</option>
-        <option value="pending">Pending</option>
-        <option value="completed">Completed</option>
+        <option value="">{{ $t('todo.allStatuses') }}</option>
+        <option value="pending">{{ $t('todo.pending') }}</option>
+        <option value="completed">{{ $t('todo.completed') }}</option>
       </select>
       <select v-model="filterCategory" class="filter-select">
-        <option value="">All Categories</option>
+        <option value="">{{ $t('todo.allCategories') }}</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
       </select>
-      <Button 
-        :variant="selectMode ? 'primary' : 'secondary'" 
-        size="sm" 
+      <Button
+        :variant="selectMode ? 'primary' : 'secondary'"
+        size="sm"
         @click="toggleSelectMode"
       >
-        {{ selectMode ? 'Done' : 'Select' }}
+        {{ selectMode ? $t('todo.done_select') : $t('todo.select') }}
       </Button>
     </div>
 
     <!-- Pinned Section -->
     <div v-if="pinnedTodos.length > 0 && filterStatus !== 'completed'" class="section">
-      <h2 class="section-title">📌 Pinned</h2>
+      <h2 class="section-title">📌 {{ $t('todo.pinned') }}</h2>
       <div class="todo-list">
         <TodoItem
           v-for="todo in pinnedTodos"
@@ -80,7 +80,7 @@
 
     <!-- Regular Section -->
     <div v-if="regularTodos.length > 0 && filterStatus !== 'completed'" class="section">
-      <h2 v-if="pinnedTodos.length > 0" class="section-title">All Tasks</h2>
+      <h2 v-if="pinnedTodos.length > 0" class="section-title">{{ $t('todo.allTasks') }}</h2>
       <div class="todo-list">
         <TodoItem
           v-for="todo in regularTodos"
@@ -101,9 +101,9 @@
     <!-- Completed Section -->
     <div v-if="completedTodos.length > 0 && filterStatus !== 'pending'" class="section completed-section">
       <div class="section-header">
-        <h2 class="section-title">✓ Completed</h2>
+        <h2 class="section-title">✓ {{ $t('todo.completed') }}</h2>
         <button v-if="completedTodos.length > 0" class="clear-completed" @click="clearCompleted">
-          Clear all completed
+          {{ $t('todo.clearCompleted') }}
         </button>
       </div>
       <div class="todo-list">
@@ -126,8 +126,8 @@
     <!-- Empty State -->
     <div v-if="filteredTodos.length === 0 && !todoStore.loading" class="empty-state">
       <div class="empty-icon">📝</div>
-      <h3>{{ filterStatus === 'completed' ? 'No completed tasks' : 'No tasks yet' }}</h3>
-      <p>{{ filterStatus === 'completed' ? 'Complete some tasks to see them here' : 'Create your first task to get started' }}</p>
+      <h3>{{ filterStatus === 'completed' ? $t('todo.noCompleted') : $t('todo.noTodos') }}</h3>
+      <p>{{ filterStatus === 'completed' ? $t('todo.noCompletedHint') : $t('todo.noTasksHint') }}</p>
     </div>
 
     <!-- Modal -->
@@ -135,45 +135,43 @@
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal glass-card">
           <div class="modal-header">
-            <h2>{{ editingTodo ? 'Edit Task' : 'New Task' }}</h2>
+            <h2>{{ editingTodo ? $t('todo.edit') : $t('todo.new') }}</h2>
           </div>
           <form @submit.prevent="saveTodo" class="modal-body">
             <div class="form-group">
-              <label>Content</label>
+              <label>{{ $t('todo.content') }}</label>
               <textarea
                 v-model="form.content"
                 required
                 rows="3"
-                placeholder="What needs to be done?"
+                :placeholder="$t('todo.contentPlaceholder')"
               ></textarea>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label>Priority</label>
+                <label>{{ $t('todo.priority') }}</label>
                 <select v-model="form.priority">
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
+                  <option value="high">{{ $t('todo.high') }}</option>
+                  <option value="medium">{{ $t('todo.medium') }}</option>
+                  <option value="low">{{ $t('todo.low') }}</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label>Category (Optional)</label>
-                <div class="category-select-wrapper">
-                  <select v-model="form.category_id">
-                    <option :value="null">No Category</option>
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                      {{ cat.name }}
-                    </option>
-                  </select>
-                </div>
+                <label>{{ $t('todo.categoryOptional') }}</label>
+                <select v-model="form.category_id">
+                  <option :value="null">{{ $t('todo.noCategory') }}</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                  </option>
+                </select>
               </div>
             </div>
           </form>
           <div class="modal-footer">
-            <Button variant="secondary" @click="closeModal">Cancel</Button>
-            <Button variant="primary" @click="saveTodo">Save</Button>
+            <Button variant="secondary" @click="closeModal">{{ $t('common.cancel') }}</Button>
+            <Button variant="primary" @click="saveTodo">{{ $t('common.save') }}</Button>
           </div>
         </div>
       </div>
@@ -183,12 +181,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTodoStore } from '../stores/todo'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
 import Button from '../components/ui/Button.vue'
 import TodoItem from '../components/TodoItem.vue'
 
+const { t } = useI18n()
 const todoStore = useTodoStore()
 const categoryStore = useCategoryStore()
 const { todos } = storeToRefs(todoStore)
@@ -248,7 +248,7 @@ function clearSelection() {
 }
 
 async function batchDelete() {
-  if (!confirm(`Delete ${selectedIds.value.size} tasks?`)) return
+  if (!confirm(t('todo.confirmBatchDelete', { n: selectedIds.value.size }))) return
   await todoStore.batchDeleteTodos([...selectedIds.value])
   clearSelection()
 }
@@ -269,7 +269,7 @@ async function batchComplete() {
 async function clearCompleted() {
   const completedIds = todos.value.filter(t => t.done).map(t => t.id)
   if (completedIds.length === 0) return
-  if (!confirm(`Delete ${completedIds.length} completed tasks?`)) return
+  if (!confirm(t('todo.confirmClearCompleted', { n: completedIds.length }))) return
   await todoStore.batchDeleteTodos(completedIds)
 }
 
@@ -307,7 +307,7 @@ async function createCategory() {
     c => c.name.toLowerCase() === newCategoryName.value.trim().toLowerCase()
   )
   if (isDuplicate) {
-    alert('A category with this name already exists')
+    alert(t('settings.duplicateCategory'))
     return
   }
   
@@ -345,7 +345,7 @@ async function saveTodo() {
 const toggleTodo = (id) => todoStore.toggleTodo(id)
 const pinTodo = (id) => todoStore.pinTodo(id)
 const deleteTodo = (id) => {
-  if (confirm('Delete this task?')) {
+  if (confirm(t('todo.confirmDelete'))) {
     todoStore.deleteTodo(id)
   }
 }

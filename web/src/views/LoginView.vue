@@ -17,56 +17,56 @@
           </svg>
         </div>
         <h1>MemoPad</h1>
-        <p>Your personal task manager</p>
+        <p>{{ $t('login.tagline') }}</p>
       </div>
 
       <!-- Tab Switcher -->
       <div class="login-tabs">
-        <button 
+        <button
           :class="['tab', { active: mode === 'login' }]"
           @click="switchMode('login')"
         >
-          Sign In
+          {{ $t('login.signIn') }}
         </button>
-        <button 
+        <button
           :class="['tab', { active: mode === 'register' }]"
           @click="switchMode('register')"
         >
-          Sign Up
+          {{ $t('login.signUp') }}
         </button>
       </div>
 
       <!-- Form -->
       <form @submit.prevent="handleSubmit" class="login-form">
         <div class="form-group">
-          <label>Username</label>
-          <input 
+          <label>{{ $t('login.username') }}</label>
+          <input
             v-model="form.username"
             type="text"
             required
             autocomplete="username"
-            placeholder="Enter your username"
+            :placeholder="$t('login.usernamePlaceholder')"
           />
         </div>
 
         <div v-if="mode === 'register'" class="form-group">
-          <label>Email <span class="optional">(optional)</span></label>
-          <input 
+          <label>{{ $t('login.email') }} <span class="optional">{{ $t('login.optional') }}</span></label>
+          <input
             v-model="form.email"
             type="email"
             autocomplete="email"
-            placeholder="your@email.com"
+            :placeholder="$t('login.emailPlaceholder')"
           />
         </div>
 
         <div class="form-group">
-          <label>Password</label>
-          <input 
+          <label>{{ $t('login.password') }}</label>
+          <input
             v-model="form.password"
             type="password"
             required
             :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
-            :placeholder="mode === 'login' ? 'Enter your password' : 'Create a password (min 6 chars)'"
+            :placeholder="mode === 'login' ? $t('login.passwordPlaceholder') : $t('login.newPasswordPlaceholder')"
           />
         </div>
 
@@ -76,15 +76,15 @@
 
         <button type="submit" :disabled="authStore.loading" class="submit-btn">
           <span v-if="authStore.loading" class="spinner"></span>
-          <span v-else>{{ mode === 'login' ? 'Sign In' : 'Create Account' }}</span>
+          <span v-else>{{ mode === 'login' ? $t('login.signIn') : $t('login.createAccount') }}</span>
         </button>
       </form>
 
       <!-- Footer -->
       <p class="login-footer">
-        {{ mode === 'login' ? "Don't have an account?" : 'Already have an account?' }}
+        {{ mode === 'login' ? $t('login.noAccount') : $t('login.hasAccount') }}
         <button @click="switchMode(mode === 'login' ? 'register' : 'login')" class="switch-btn">
-          {{ mode === 'login' ? 'Sign Up' : 'Sign In' }}
+          {{ mode === 'login' ? $t('login.signUp') : $t('login.signIn') }}
         </button>
       </p>
     </div>
