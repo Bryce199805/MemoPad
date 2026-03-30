@@ -1,5 +1,6 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const { t } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -23,11 +24,75 @@ Page({
     // Detail modal
     showTicketDetail: false,
     currentTicket: null,
-    replyText: ''
+    replyText: '',
+    ticketFilterLabels: [],
+    i: {}
   },
 
   // Index 0 = "All" (no filter), rest map to ticket status values
   ticketStatusOptions: ['', 'open', 'in_progress', 'resolved', 'closed'],
+
+  applyI18n() {
+    const ticketFilterLabels = [
+      t('admin.filterAll'),
+      t('admin.filterOpen'),
+      t('admin.filterInProgress'),
+      t('admin.filterResolved'),
+      t('admin.filterClosed')
+    ]
+    this.setData({
+      ticketFilterLabels,
+      i: {
+        title: t('admin.title'),
+        logout: t('settings.logout'),
+        totalUsers: t('admin.totalUsers'),
+        activeUsers: t('admin.activeUsers'),
+        openTickets: t('admin.openTickets'),
+        totalTickets: t('admin.totalTickets'),
+        users: t('admin.userManagement'),
+        activeUsersLabel: t('admin.activeUsers'),
+        openTicketsLabel: t('admin.openTickets'),
+        allTickets: t('admin.totalTickets'),
+        collapse: t('common.close'),
+        noEmail: t('settings.noEmail'),
+        recentTickets: t('admin.recentTickets'),
+        // User tab
+        tasks: t('nav.tasks'),
+        countdowns: t('nav.countdowns'),
+        enable: t('admin.enable'),
+        disable: t('admin.disable'),
+        delete: t('common.delete'),
+        you: '(You)',
+        // Tickets tab
+        noTickets: t('admin.noTickets'),
+        noDescription: t('feedback.noDescription'),
+        // Config tab
+        userRegistration: t('admin.userRegistration'),
+        userRegistrationDesc: t('admin.userRegistrationDesc'),
+        // Bottom tabs
+        tabDashboard: t('nav.dashboard'),
+        tabUsers: t('admin.userManagement'),
+        tabTickets: t('admin.ticketManagement'),
+        tabConfig: t('settings.title'),
+        // Ticket detail modal
+        ticketDetails: t('feedback.ticketDetails'),
+        detailTitle: t('feedback.titleField'),
+        detailFrom: t('admin.by'),
+        detailStatus: t('common.status'),
+        detailDescription: t('feedback.description'),
+        reply: t('admin.yourReply'),
+        replyPlaceholder: t('admin.replyPlaceholder'),
+        inProgress: t('feedback.statusInProgress'),
+        resolve: t('feedback.statusResolved'),
+        close: t('common.close'),
+        // Status labels for WXS
+        statusOpen: t('feedback.statusOpen'),
+        statusInProgress: t('feedback.statusInProgress'),
+        statusResolved: t('feedback.statusResolved'),
+        statusClosed: t('feedback.statusClosed')
+      }
+    })
+  },
 
   onShow() {
     const user = auth.getUser()
@@ -36,11 +101,12 @@ Page({
       return
     }
     if (!user || user.role !== 'admin') {
-      wx.showToast({ title: 'Admin only', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
       setTimeout(() => wx.reLaunch({ url: '/pages/login/login' }), 1000)
       return
     }
     this.setData({ user })
+    this.applyI18n()
     this.fetchAll()
   },
 
@@ -127,16 +193,18 @@ Page({
     if (!user) return
 
     wx.showModal({
-      title: 'Disable User',
-      content: 'Disable "' + user.username + '"?',
+      title: t('admin.disable'),
+      content: t('admin.confirmDisable'),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
         try {
           await api.patch('/api/admin/users/' + id + '/disable')
           this.fetchAll()
-          wx.showToast({ title: 'Disabled', icon: 'success' })
+          wx.showToast({ title: t('admin.disabled'), icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('admin.failedDisable'), icon: 'none' })
         }
       }
     })
@@ -146,8 +214,8 @@ Page({
     const id = e.currentTarget.dataset.id
     api.patch('/api/admin/users/' + id + '/enable').then(() => {
       this.fetchAll()
-      wx.showToast({ title: 'Enabled', icon: 'success' })
-    }).catch(() => wx.showToast({ title: 'Failed', icon: 'none' }))
+      wx.showToast({ title: t('admin.active'), icon: 'success' })
+    }).catch(() => wx.showToast({ title: t('admin.failedEnable'), icon: 'none' }))
   },
 
   onDeleteUser(e) {
@@ -156,22 +224,24 @@ Page({
     if (!user) return
 
     if (user.id === this.data.user.id) {
-      wx.showToast({ title: 'Cannot delete yourself', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
       return
     }
 
     wx.showModal({
-      title: 'Delete User',
-      content: 'Delete "' + user.username + '"? This cannot be undone.',
+      title: t('common.delete'),
+      content: t('admin.confirmDeleteUser', { username: user.username }),
       confirmColor: '#ef4444',
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
         try {
           await api.del('/api/admin/users/' + id)
           this.fetchAll()
-          wx.showToast({ title: 'Deleted', icon: 'success' })
+          wx.showToast({ title: t('common.deleted'), icon: 'success' })
         } catch (err) {
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('admin.failedDeleteUser'), icon: 'none' })
         }
       }
     })
@@ -203,15 +273,15 @@ Page({
     const ticket = this.data.currentTicket
     if (!ticket) return
 
-    wx.showLoading({ title: 'Updating...' })
+    wx.showLoading({ title: t('common.loading') })
     api.put('/api/admin/tickets/' + ticket.id, { status, reply: this.data.replyText }).then(() => {
       wx.hideLoading()
-      wx.showToast({ title: 'Updated', icon: 'success' })
+      wx.showToast({ title: t('common.updated'), icon: 'success' })
       this.onCloseTicketDetail()
       this.fetchAll()
     }).catch(() => {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('admin.failedUpdateStatus'), icon: 'none' })
     })
   },
 
@@ -220,21 +290,23 @@ Page({
     if (!ticket) return
 
     wx.showModal({
-      title: 'Delete Ticket',
-      content: 'Delete this ticket?',
+      title: t('common.delete'),
+      content: t('admin.confirmDeleteTicket', { title: ticket.title }),
       confirmColor: '#ef4444',
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Deleting...' })
+        wx.showLoading({ title: t('common.loading') })
         try {
           await api.del('/api/admin/tickets/' + ticket.id)
           wx.hideLoading()
-          wx.showToast({ title: 'Deleted', icon: 'success' })
+          wx.showToast({ title: t('common.deleted'), icon: 'success' })
           this.onCloseTicketDetail()
           this.fetchAll()
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('admin.failedDeleteTicket'), icon: 'none' })
         }
       }
     })
@@ -245,7 +317,7 @@ Page({
     const enabled = e.detail.value
     this.setData({ 'config.registration_enabled': enabled })
     api.put('/api/admin/config', { registration_enabled: enabled }).catch(() => {
-      wx.showToast({ title: 'Failed to update', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
       this.setData({ 'config.registration_enabled': !enabled })
     })
   },
@@ -253,8 +325,10 @@ Page({
   // Logout
   onLogout() {
     wx.showModal({
-      title: 'Logout',
-      content: 'Are you sure?',
+      title: t('settings.logout'),
+      content: t('settings.logoutConfirm'),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: (res) => {
         if (res.confirm) auth.logout()
       }

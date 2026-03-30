@@ -1,13 +1,23 @@
 <wxs module="utils">
 module.exports = {
-  statusLabel: function(status) {
-    var map = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
-    return map[status] || status
+  statusLabel: function(status, i) {
+    if (i) {
+      var map = { open: i.statusOpen, in_progress: i.statusInProgress, resolved: i.statusResolved, closed: i.statusClosed }
+      if (map[status]) return map[status]
+    }
+    var fallback = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
+    return fallback[status] || status
   },
   formatDate: function(dateStr) {
     if (!dateStr) return ''
     var d = getDate(dateStr)
     return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0')
+  },
+  expandedTitle: function(card, i) {
+    if (card === 'users') return i.totalUsers || 'Users'
+    if (card === 'active') return i.activeUsers || 'Active Users'
+    if (card === 'tickets') return i.openTickets || 'Open Tickets'
+    return i.totalTickets || 'All Tickets'
   }
 }
 </wxs>
@@ -23,10 +33,10 @@ module.exports = {
     <!-- Header -->
     <view class="admin-header">
       <view class="admin-header-left">
-        <text class="admin-title">Admin Panel</text>
+        <text class="admin-title">{{i.title}}</text>
         <text class="admin-subtitle">{{user.username}}</text>
       </view>
-      <text class="logout-btn" bind:tap="onLogout">Logout</text>
+      <text class="logout-btn" bind:tap="onLogout">{{i.logout}}</text>
     </view>
 
     <!-- Content Area -->
@@ -36,27 +46,27 @@ module.exports = {
         <view class="stats-grid">
           <view class="stat-card {{expandedCard === 'users' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="users">
             <text class="stat-value">{{stats.totalUsers}}</text>
-            <text class="stat-label">Total Users</text>
+            <text class="stat-label">{{i.totalUsers}}</text>
           </view>
           <view class="stat-card {{expandedCard === 'active' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="active">
             <text class="stat-value stat-value--success">{{stats.activeUsers}}</text>
-            <text class="stat-label">Active Users</text>
+            <text class="stat-label">{{i.activeUsers}}</text>
           </view>
           <view class="stat-card {{expandedCard === 'tickets' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="tickets">
             <text class="stat-value stat-value--warning">{{stats.openTickets}}</text>
-            <text class="stat-label">Open Tickets</text>
+            <text class="stat-label">{{i.openTickets}}</text>
           </view>
           <view class="stat-card {{expandedCard === 'all-tickets' ? 'stat-card--active' : ''}}" bind:tap="onStatTap" data-card="all-tickets">
             <text class="stat-value">{{stats.totalTickets}}</text>
-            <text class="stat-label">Total Tickets</text>
+            <text class="stat-label">{{i.totalTickets}}</text>
           </view>
         </view>
 
         <!-- Expanded Preview -->
         <view class="expanded-section" wx:if="{{expandedCard}}">
           <view class="expanded-header">
-            <text class="expanded-title">{{expandedCard === 'users' ? 'Users' : expandedCard === 'active' ? 'Active Users' : expandedCard === 'tickets' ? 'Open Tickets' : 'All Tickets'}}</text>
-            <text class="expanded-collapse" bind:tap="onCollapsePreview">Collapse</text>
+            <text class="expanded-title">{{utils.expandedTitle(expandedCard, i)}}</text>
+            <text class="expanded-collapse" bind:tap="onCollapsePreview">{{i.collapse}}</text>
           </view>
           <view class="expanded-list">
             <!-- Users Preview -->
@@ -70,9 +80,9 @@ module.exports = {
                     <view class="user-name-row">
                       <text class="user-name">{{item.username}}</text>
                       <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
-                      <text class="badge badge--disabled" wx:if="{{item.disabled}}">Disabled</text>
+                      <text class="badge badge--disabled" wx:if="{{item.disabled}}">{{i.disable}}</text>
                     </view>
-                    <text class="user-email">{{item.email || 'No email'}}</text>
+                    <text class="user-email">{{item.email || i.noEmail}}</text>
                   </view>
                 </view>
               </view>
@@ -82,7 +92,7 @@ module.exports = {
               <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{expandedCard === 'all-tickets' || item.status === 'open' || item.status === 'in_progress'}}" bind:tap="onViewTicket" data-id="{{item.id}}">
                 <view class="ticket-header">
                   <text class="ticket-title">{{item.title}}</text>
-                  <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
+                  <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status, i)}}</text>
                 </view>
                 <view class="ticket-meta">
                   <text class="ticket-user">{{item.username}}</text>
@@ -95,12 +105,12 @@ module.exports = {
 
         <!-- Recent Tickets -->
         <view class="section" wx:if="{{tickets.length > 0 && !expandedCard}}">
-          <text class="section-title">Recent Tickets</text>
+          <text class="section-title">{{i.recentTickets}}</text>
           <view class="ticket-list">
             <view class="ticket-card" wx:for="{{tickets}}" wx:key="id" wx:if="{{index < 5}}" bind:tap="onViewTicket" data-id="{{item.id}}">
               <view class="ticket-header">
                 <text class="ticket-title">{{item.title}}</text>
-                <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
+                <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status, i)}}</text>
               </view>
               <view class="ticket-meta">
                 <text class="ticket-user">{{item.username}}</text>
@@ -123,19 +133,19 @@ module.exports = {
                 <view class="user-name-row">
                   <text class="user-name">{{item.username}}</text>
                   <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
-                  <text class="badge badge--disabled" wx:if="{{item.disabled}}">Disabled</text>
+                  <text class="badge badge--disabled" wx:if="{{item.disabled}}">{{i.disable}}</text>
                 </view>
-                <text class="user-email">{{item.email || 'No email'}}</text>
-                <text class="user-stats">{{item.todo_count}} tasks · {{item.countdown_count}} countdowns</text>
+                <text class="user-email">{{item.email || i.noEmail}}</text>
+                <text class="user-stats">{{item.todo_count}} {{i.tasks}} · {{item.countdown_count}} {{i.countdowns}}</text>
               </view>
             </view>
             <view class="user-actions" wx:if="{{item.id !== user.id}}">
-              <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">Enable</text>
-              <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">Disable</text>
-              <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">Delete</text>
+              <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">{{i.enable}}</text>
+              <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">{{i.disable}}</text>
+              <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">{{i.delete}}</text>
             </view>
             <view class="user-actions user-actions--self" wx:else>
-              <text class="self-label">(You)</text>
+              <text class="self-label">{{i.you}}</text>
             </view>
           </view>
         </view>
@@ -145,10 +155,10 @@ module.exports = {
       <view class="tab-content" wx:if="{{activeTab === 'tickets'}}">
         <!-- Filter -->
         <view class="filter-row">
-          <picker mode="selector" range="{{['All', 'Open', 'In Progress', 'Resolved', 'Closed']}}" value="{{ticketFilter ? ['open', 'in_progress', 'resolved', 'closed'].indexOf(ticketFilter) + 1 : 0}}" bindchange="onTicketFilterChange">
+          <picker mode="selector" range="{{ticketFilterLabels}}" value="{{ticketFilter}}" bindchange="onTicketFilterChange">
             <view class="filter-picker">
-              <text>{{ticketFilter ? utils.statusLabel(ticketFilter) : 'All Tickets'}}</text>
-              <text class="chip-arrow">▾</text>
+              <text>{{ticketFilterLabels[ticketFilter]}}</text>
+              <text class="chip-arrow">&#9662;</text>
             </view>
           </picker>
         </view>
@@ -156,10 +166,10 @@ module.exports = {
           <view class="ticket-card" wx:for="{{filteredTickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
             <view class="ticket-header">
               <text class="ticket-title">{{item.title}}</text>
-              <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status)}}</text>
+              <text class="ticket-status ticket-status--{{item.status}}">{{utils.statusLabel(item.status, i)}}</text>
             </view>
             <view class="ticket-body">
-              <text class="ticket-desc">{{item.description || 'No description'}}</text>
+              <text class="ticket-desc">{{item.description || i.noDescription}}</text>
             </view>
             <view class="ticket-footer">
               <text class="ticket-user">{{item.username}}</text>
@@ -169,7 +179,7 @@ module.exports = {
         </view>
 
         <view class="empty-state" wx:if="{{filteredTickets.length === 0}}">
-          <text class="empty-text">No tickets found</text>
+          <text class="empty-text">{{i.noTickets}}</text>
         </view>
       </view>
 
@@ -178,8 +188,8 @@ module.exports = {
         <view class="config-card">
           <view class="config-row">
             <view class="config-info">
-              <text class="config-label">User Registration</text>
-              <text class="config-desc">Allow new users to register accounts</text>
+              <text class="config-label">{{i.userRegistration}}</text>
+              <text class="config-desc">{{i.userRegistrationDesc}}</text>
             </view>
             <switch checked="{{config.registration_enabled}}" bindchange="onToggleRegistration" color="#f59e0b" />
           </view>
@@ -192,54 +202,54 @@ module.exports = {
     <!-- Bottom Tabs -->
     <view class="bottom-tabs">
       <view class="bottom-tab {{activeTab === 'dashboard' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="dashboard">
-        <text class="bottom-tab-icon">📊</text>
-        <text class="bottom-tab-text">Dashboard</text>
+        <text class="bottom-tab-icon">&#128202;</text>
+        <text class="bottom-tab-text">{{i.tabDashboard}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'users' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="users">
-        <text class="bottom-tab-icon">👥</text>
-        <text class="bottom-tab-text">Users</text>
+        <text class="bottom-tab-icon">&#128101;</text>
+        <text class="bottom-tab-text">{{i.tabUsers}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'tickets' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="tickets">
-        <text class="bottom-tab-icon">🎫</text>
-        <text class="bottom-tab-text">Tickets</text>
+        <text class="bottom-tab-icon">&#127915;</text>
+        <text class="bottom-tab-text">{{i.tabTickets}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'config' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="config">
-        <text class="bottom-tab-icon">⚙</text>
-        <text class="bottom-tab-text">Config</text>
+        <text class="bottom-tab-icon">&#9881;</text>
+        <text class="bottom-tab-text">{{i.tabConfig}}</text>
       </view>
     </view>
   </block>
 
   <!-- Ticket Detail Modal -->
-  <modal show="{{showTicketDetail}}" title="Ticket Details" hideFooter="{{true}}" bind:close="onCloseTicketDetail">
+  <modal show="{{showTicketDetail}}" title="{{i.ticketDetails}}" hideFooter="{{true}}" bind:close="onCloseTicketDetail">
     <view class="ticket-detail" wx:if="{{currentTicket}}">
       <view class="detail-row">
-        <text class="detail-label">Title</text>
+        <text class="detail-label">{{i.detailTitle}}</text>
         <text class="detail-value">{{currentTicket.title}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">From</text>
+        <text class="detail-label">{{i.detailFrom}}</text>
         <text class="detail-value">{{currentTicket.username}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">Status</text>
-        <text class="ticket-status ticket-status--{{currentTicket.status}}">{{utils.statusLabel(currentTicket.status)}}</text>
+        <text class="detail-label">{{i.detailStatus}}</text>
+        <text class="ticket-status ticket-status--{{currentTicket.status}}">{{utils.statusLabel(currentTicket.status, i)}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">Description</text>
-        <text class="detail-value detail-value--block">{{currentTicket.description || 'No description'}}</text>
+        <text class="detail-label">{{i.detailDescription}}</text>
+        <text class="detail-value detail-value--block">{{currentTicket.description || i.noDescription}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">Reply</text>
-        <textarea class="reply-input" placeholder="Enter your reply..." value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
+        <text class="detail-label">{{i.reply}}</text>
+        <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
       </view>
       <view class="detail-actions">
-        <text class="action-btn action-btn--primary" bind:tap="onUpdateStatus" data-status="in_progress">In Progress</text>
-        <text class="action-btn action-btn--success" bind:tap="onUpdateStatus" data-status="resolved">Resolve</text>
-        <text class="action-btn action-btn--danger" bind:tap="onDeleteTicket">Delete</text>
+        <text class="action-btn action-btn--primary" bind:tap="onUpdateStatus" data-status="in_progress">{{i.inProgress}}</text>
+        <text class="action-btn action-btn--success" bind:tap="onUpdateStatus" data-status="resolved">{{i.resolve}}</text>
+        <text class="action-btn action-btn--danger" bind:tap="onDeleteTicket">{{i.delete}}</text>
       </view>
       <view class="detail-close">
-        <text class="action-btn" bind:tap="onCloseTicketDetail">Close</text>
+        <text class="action-btn" bind:tap="onCloseTicketDetail">{{i.close}}</text>
       </view>
     </view>
   </modal>
