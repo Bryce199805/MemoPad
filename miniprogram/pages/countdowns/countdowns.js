@@ -2,6 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 const ws = require('../../utils/websocket')
+const { t, getLang } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -17,16 +18,17 @@ Page({
     selectMode: false,
     selectedIds: [],
     showFormModal: false,
-    formTitle: 'Add Countdown',
+    formTitle: '',
     editingId: null,
     formPriorityIdx: 1,
-    formPriorityLabel: 'Medium',
+    formPriorityLabel: '',
     form: {
       title: '',
       targetDate: '',
       targetTime: '00:00',
       priority: 'medium'
-    }
+    },
+    i: {}
   },
 
   priorityOptions: ['high', 'medium', 'low'],
@@ -52,11 +54,56 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
+    this.applyI18n()
     this.fetchData()
   },
 
   onPullDownRefresh() {
     this.fetchData().then(() => wx.stopPullDownRefresh())
+  },
+
+  applyI18n() {
+    const priorityLabels = [t('countdown.high'), t('countdown.medium'), t('countdown.low')]
+    this.setData({
+      i: {
+        title: t('countdown.title'),
+        subtitle: t('countdown.subtitle'),
+        add: t('countdown.add'),
+        searchPlaceholder: t('countdown.searchPlaceholder'),
+        upcoming: t('countdown.upcoming'),
+        dueSoon: t('countdown.dueSoon'),
+        overdue: t('countdown.overdue'),
+        daysLeft: t('countdown.daysLeft'),
+        daysAgo: t('countdown.daysAgo'),
+        pinned: t('countdown.pinned'),
+        newCountdown: t('countdown.new'),
+        editCountdown: t('countdown.edit'),
+        name: t('countdown.name'),
+        targetDate: t('countdown.targetDate'),
+        priority: t('countdown.priority'),
+        high: t('countdown.high'),
+        medium: t('countdown.medium'),
+        low: t('countdown.low'),
+        noCountdowns: t('countdown.noCountdowns'),
+        noCountdownsHint: t('countdown.noCountdownsHint'),
+        select: t('countdown.select'),
+        doneSelect: t('countdown.doneSelect'),
+        save: t('common.save'),
+        cancel: t('common.cancel'),
+        all: t('countdown.all'),
+        none: t('countdown.none'),
+        delete: t('common.delete'),
+        selected: t('countdown.selected'),
+        noMatches: t('countdown.noMatches'),
+        noMatchesHint: t('countdown.noMatchesHint'),
+        selectDate: t('countdown.selectDate'),
+        selectTime: t('countdown.selectTime'),
+        countdownName: t('countdown.countdownName'),
+        countdowns: t('countdown.title'),
+        priorityLabels: priorityLabels
+      },
+      formPriorityLabel: t('countdown.medium')
+    })
   },
 
   // WebSocket event handlers
@@ -181,20 +228,22 @@ Page({
     const { selectedIds } = this.data
     if (selectedIds.length === 0) return
     wx.showModal({
-      title: 'Delete Countdowns',
-      content: 'Delete ' + selectedIds.length + ' selected countdown(s)?',
+      title: t('countdown.confirmBatchDelete', { n: selectedIds.length }),
+      content: t('countdown.confirmBatchDelete', { n: selectedIds.length }),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Deleting...' })
+        wx.showLoading({ title: '' })
         try {
           await Promise.all(selectedIds.map(id => api.del('/api/countdowns/' + id)))
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData(true)
           wx.hideLoading()
-          wx.showToast({ title: 'Deleted', icon: 'success' })
+          wx.showToast({ title: t('common.deleted'), icon: 'success' })
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -207,10 +256,10 @@ Page({
     const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
     this.setData({
       showFormModal: true,
-      formTitle: 'Add Countdown',
+      formTitle: t('countdown.new'),
       editingId: null,
       formPriorityIdx: 1,
-      formPriorityLabel: 'Medium',
+      formPriorityLabel: t('countdown.medium'),
       form: {
         title: '',
         targetDate: dateStr,
@@ -225,13 +274,14 @@ Page({
     const c = this.data.countdowns.find(item => item.id === id)
     if (!c) return
     const priorityIdx = this.priorityOptions.indexOf(c.priority || 'medium')
-    const priorityLabel = ['High', 'Medium', 'Low'][priorityIdx]
+    const priorityLabels = [t('countdown.high'), t('countdown.medium'), t('countdown.low')]
+    const priorityLabel = priorityLabels[priorityIdx]
     const dateParts = c.target_date ? c.target_date.split('T') : []
     const dateVal = dateParts[0] || ''
     const timeVal = (dateParts[1] || '00:00').substring(0, 5)
     this.setData({
       showFormModal: true,
-      formTitle: 'Edit Countdown',
+      formTitle: t('countdown.edit'),
       editingId: id,
       formPriorityIdx: priorityIdx,
       formPriorityLabel: priorityLabel,
@@ -247,15 +297,17 @@ Page({
   onCountdownDelete(e) {
     const id = e.detail.id
     wx.showModal({
-      title: 'Delete Countdown',
-      content: 'Are you sure?',
+      title: t('countdown.confirmDelete'),
+      content: t('countdown.confirmDelete'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
         try {
           await api.del('/api/countdowns/' + id)
           this.fetchData(true)
         } catch (err) {
-          wx.showToast({ title: 'Failed to delete', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -269,7 +321,7 @@ Page({
       await api.put('/api/countdowns/' + id, { pinned: !c.pinned })
       this.fetchData(true)
     } catch (err) {
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
@@ -294,18 +346,19 @@ Page({
   onFormPriorityChange(e) {
     const idx = Number(e.detail.value)
     const val = this.priorityOptions[idx]
-    const label = ['High', 'Medium', 'Low'][idx]
+    const priorityLabels = [t('countdown.high'), t('countdown.medium'), t('countdown.low')]
+    const label = priorityLabels[idx]
     this.setData({ 'form.priority': val, formPriorityIdx: idx, formPriorityLabel: label })
   },
 
   async onFormSave() {
     const { form, editingId } = this.data
     if (!form.title.trim()) {
-      wx.showToast({ title: 'Please enter a title', icon: 'none' })
+      wx.showToast({ title: t('countdown.enterTitle'), icon: 'none' })
       return
     }
     if (!form.targetDate) {
-      wx.showToast({ title: 'Please select a date', icon: 'none' })
+      wx.showToast({ title: t('countdown.selectDate'), icon: 'none' })
       return
     }
 
@@ -317,7 +370,7 @@ Page({
       priority: form.priority
     }
 
-    wx.showLoading({ title: editingId ? 'Updating...' : 'Adding...' })
+    wx.showLoading({ title: '' })
     try {
       if (editingId) {
         await api.put('/api/countdowns/' + editingId, data)
@@ -327,16 +380,16 @@ Page({
       this.setData({ showFormModal: false })
       this.fetchData(true)
       wx.hideLoading()
-      wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
+      wx.showToast({ title: editingId ? t('common.updated') : t('common.added'), icon: 'success' })
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
   onShareAppMessage() {
     return {
-      title: 'My Countdowns - MemoPad',
+      title: t('countdown.title') + ' - MemoPad',
       path: '/pages/countdowns/countdowns'
     }
   }

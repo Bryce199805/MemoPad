@@ -10,14 +10,14 @@
   <block wx:else>
     <!-- Header -->
     <view class="countdowns-header">
-      <text class="countdowns-title">Countdowns</text>
+      <text class="countdowns-title">{{i.title}}</text>
       <view class="header-btns">
         <view class="select-btn {{selectMode ? 'select-btn--active' : ''}}" bind:tap="onToggleSelectMode">
-          <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
+          <text>{{selectMode ? i.cancel : i.select}}</text>
         </view>
         <view class="add-btn" bind:tap="onAddCountdown">
           <text class="add-icon">+</text>
-          <text class="add-text">Add</text>
+          <text class="add-text">{{i.add}}</text>
         </view>
       </view>
     </view>
@@ -26,22 +26,22 @@
     <view class="stats-row">
       <view class="stat-card glass-card">
         <text class="stat-value stat-value--upcoming">{{upcomingCount}}</text>
-        <text class="stat-label">Upcoming</text>
+        <text class="stat-label">{{i.upcoming}}</text>
       </view>
       <view class="stat-card glass-card">
         <text class="stat-value stat-value--due-soon">{{dueSoonCount}}</text>
-        <text class="stat-label">Due Soon</text>
+        <text class="stat-label">{{i.dueSoon}}</text>
       </view>
       <view class="stat-card glass-card">
         <text class="stat-value stat-value--overdue">{{overdueCount}}</text>
-        <text class="stat-label">Overdue</text>
+        <text class="stat-label">{{i.overdue}}</text>
       </view>
     </view>
 
     <!-- Search Bar -->
     <view class="search-box glass-card">
       <text class="search-icon">🔍</text>
-      <input class="search-input" placeholder="Search countdowns..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
+      <input class="search-input" placeholder="{{i.searchPlaceholder}}" placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
       <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
     </view>
 
@@ -49,27 +49,27 @@
     <view class="filter-row">
       <view class="filter-chips">
         <view class="filter-chip {{priorityFilter === '' ? 'filter-chip--active' : ''}}" bind:tap="onPriorityFilter" data-priority="">
-          <text>All</text>
+          <text>{{i.all}}</text>
         </view>
         <view class="filter-chip {{priorityFilter === 'high' ? 'filter-chip--active' : ''}} filter-chip--high" bind:tap="onPriorityFilter" data-priority="high">
-          <text>High</text>
+          <text>{{i.high}}</text>
         </view>
         <view class="filter-chip {{priorityFilter === 'medium' ? 'filter-chip--active' : ''}} filter-chip--medium" bind:tap="onPriorityFilter" data-priority="medium">
-          <text>Medium</text>
+          <text>{{i.medium}}</text>
         </view>
         <view class="filter-chip {{priorityFilter === 'low' ? 'filter-chip--active' : ''}} filter-chip--low" bind:tap="onPriorityFilter" data-priority="low">
-          <text>Low</text>
+          <text>{{i.low}}</text>
         </view>
       </view>
     </view>
 
     <!-- Select Mode Actions -->
     <view class="select-actions" wx:if="{{selectMode}}">
-      <text class="select-count">{{selectedIds.length}} selected</text>
+      <text class="select-count">{{selectedIds.length}} {{i.selected}}</text>
       <view class="select-btns">
-        <text class="select-action-btn" bind:tap="onSelectAll">All</text>
-        <text class="select-action-btn" bind:tap="onDeselectAll">None</text>
-        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">Delete</text>
+        <text class="select-action-btn" bind:tap="onSelectAll">{{i.all}}</text>
+        <text class="select-action-btn" bind:tap="onDeselectAll">{{i.none}}</text>
+        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">{{i.delete}}</text>
       </view>
     </view>
 
@@ -77,7 +77,7 @@
     <view class="section" wx:if="{{pinned.length > 0}}">
       <view class="section-header">
         <text class="section-icon">📌</text>
-        <text class="section-title-text">Pinned</text>
+        <text class="section-title-text">{{i.pinned}}</text>
         <badge text="{{pinned.length}}" variant="info"></badge>
       </view>
       <view class="countdown-list">
@@ -99,7 +99,7 @@
     <!-- Unpinned Section -->
     <view class="section" wx:if="{{unpinned.length > 0}}">
       <view class="section-header" wx:if="{{pinned.length > 0}}">
-        <text class="section-title-text">Countdowns</text>
+        <text class="section-title-text">{{i.countdowns}}</text>
         <badge text="{{unpinned.length}}" variant="info"></badge>
       </view>
       <view class="countdown-list">
@@ -122,16 +122,16 @@
     <view class="empty-full" wx:if="{{countdowns.length === 0}}">
       <empty-state
         icon="⏰"
-        title="No countdowns"
-        description="Tap + to add">
+        title="{{i.noCountdowns}}"
+        description="{{i.noCountdownsHint}}">
       </empty-state>
     </view>
 
     <view class="empty-full" wx:if="{{countdowns.length > 0 && pinned.length === 0 && unpinned.length === 0}}">
       <empty-state
         icon="🔍"
-        title="No matches"
-        description="Try different keywords">
+        title="{{i.noMatches}}"
+        description="{{i.noMatchesHint}}">
       </empty-state>
     </view>
 
@@ -139,23 +139,23 @@
     <modal show="{{showFormModal}}" title="{{formTitle}}" bind:close="onCloseModal" bind:confirm="onFormSave">
       <view class="form-body">
         <view class="form-group">
-          <text class="form-label">Title</text>
-          <input class="form-input" placeholder="Countdown name" placeholder-style="color: var(--text-muted)"
+          <text class="form-label">{{i.name}}</text>
+          <input class="form-input" placeholder="{{i.countdownName}}" placeholder-style="color: var(--text-muted)"
             value="{{form.title}}" bindinput="onFormTitleInput" maxlength="100" />
         </view>
 
         <view class="form-group">
-          <text class="form-label">Target Date</text>
+          <text class="form-label">{{i.targetDate}}</text>
           <view class="date-time-row">
             <picker mode="date" value="{{form.targetDate}}" bindchange="onFormDateChange">
               <view class="form-picker form-picker--half">
-                <text class="form-picker-text">{{form.targetDate || 'Select date'}}</text>
+                <text class="form-picker-text">{{form.targetDate || i.selectDate}}</text>
                 <text class="chip-arrow">▾</text>
               </view>
             </picker>
             <picker mode="time" value="{{form.targetTime}}" bindchange="onFormTimeChange">
               <view class="form-picker form-picker--half">
-                <text class="form-picker-text">{{form.targetTime || 'Select time'}}</text>
+                <text class="form-picker-text">{{form.targetTime || i.selectTime}}</text>
                 <text class="chip-arrow">▾</text>
               </view>
             </picker>
@@ -163,8 +163,8 @@
         </view>
 
         <view class="form-group">
-          <text class="form-label">Priority</text>
-          <picker mode="selector" range="{{['High','Medium','Low']}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
+          <text class="form-label">{{i.priority}}</text>
+          <picker mode="selector" range="{{i.priorityLabels}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
             <view class="form-picker">
               <view class="form-picker-left">
                 <view class="priority-dot priority-dot--{{form.priority}}"></view>
