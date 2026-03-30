@@ -107,15 +107,19 @@ Page({
     }
     this.setData({ user })
     this.applyI18n()
-    this.fetchAll()
+    if (!this._loaded) {
+      this.fetchAll()
+    } else {
+      this.fetchAll(true)
+    }
   },
 
   onPullDownRefresh() {
     this.fetchAll().then(() => wx.stopPullDownRefresh())
   },
 
-  async fetchAll() {
-    this.setData({ loading: true })
+  async fetchAll(silent) {
+    if (!silent) this.setData({ loading: true })
     try {
       const [usersRes, ticketsRes, configRes] = await Promise.all([
         api.get('/api/admin/users'),
@@ -147,10 +151,11 @@ Page({
       }
 
       this.setData({ users, tickets, filteredTickets: tickets, stats, config })
+      this._loaded = true
     } catch (err) {
       console.error('Fetch admin data error:', err)
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 

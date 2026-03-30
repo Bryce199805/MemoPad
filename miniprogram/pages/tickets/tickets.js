@@ -53,23 +53,28 @@ Page({
       return
     }
     this.applyI18n()
-    this.fetchTickets()
+    if (!this._loaded) {
+      this.fetchTickets()
+    } else {
+      this.fetchTickets(true)
+    }
   },
 
   onPullDownRefresh() {
     this.fetchTickets().then(() => wx.stopPullDownRefresh())
   },
 
-  async fetchTickets() {
-    this.setData({ loading: true })
+  async fetchTickets(silent) {
+    if (!silent) this.setData({ loading: true })
     try {
       const res = await api.get('/api/tickets')
       const tickets = (res.data || res) || []
       this.setData({ tickets })
+      this._loaded = true
     } catch (err) {
       console.error('Fetch tickets error:', err)
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 

@@ -123,7 +123,11 @@ Page({
       return
     }
     this.applyI18n()
-    this.fetchData()
+    if (!this._loaded) {
+      this.fetchData()
+    } else {
+      this.fetchData(true)
+    }
   },
 
   onPullDownRefresh() {
@@ -196,6 +200,7 @@ Page({
       const formCategoryOptions = [t('todo.noCategory'), ...categories.map(c => c.name)]
       this.setData({ todos, categories, categoryNames, formCategoryOptions })
       this.applyFilter()
+      this._loaded = true
     } catch (err) {
       console.error('Fetch todos error:', err)
     } finally {

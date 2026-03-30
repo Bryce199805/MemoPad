@@ -33,7 +33,11 @@ Page({
     }
     this.setData({ user: auth.getUser(), currentLang: getLang() })
     this.applyI18n()
-    this.fetchData()
+    if (!this._loaded) {
+      this.fetchData()
+    } else {
+      this.fetchData(true)
+    }
   },
 
   applyI18n() {
@@ -80,7 +84,7 @@ Page({
     })
   },
 
-  async fetchData() {
+  async fetchData(silent) {
     try {
       const [catsRes, todosRes] = await Promise.all([
         api.get('/api/categories'),
@@ -105,10 +109,11 @@ Page({
       if (nextColorIdx !== -1) {
         this.setData({ newCatColorIdx: nextColorIdx, newCatColor: this.data.colorOptions[nextColorIdx] })
       }
+      this._loaded = true
     } catch (err) {
       console.error('Fetch settings error:', err)
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 

@@ -55,7 +55,11 @@ Page({
       return
     }
     this.applyI18n()
-    this.fetchData()
+    if (!this._loaded) {
+      this.fetchData()
+    } else {
+      this.fetchData(true)
+    }
   },
 
   onPullDownRefresh() {
@@ -143,6 +147,7 @@ Page({
       this.setData({ countdowns })
       this.computeStats()
       this.applyFilter()
+      this._loaded = true
     } catch (err) {
       console.error('Fetch countdowns error:', err)
     } finally {
