@@ -4,6 +4,14 @@ const util = require('../../utils/util')
 const ws = require('../../utils/websocket')
 const { t, getLang } = require('../../utils/i18n')
 
+// Map expandedCard key → translated label
+const CARD_LABEL_KEYS = {
+  total: 'dashboard.totalTodos',
+  completed: 'dashboard.completed',
+  pending: 'dashboard.pending',
+  dueSoon: 'dashboard.dueSoon'
+}
+
 Page({
   data: {
     loading: true,
@@ -21,12 +29,13 @@ Page({
     priorityBars: [],
     completionRate: 0,
     expandedCard: '',
+    expandedCardLabel: '',
     i: {}
   },
 
   onLoad() {
     // Subscribe to WS events so dashboard updates in real time
-    this._onChange = () => this.fetchAll()
+    this._onChange = () => this.fetchAll(true)
     const events = [
       'todo_created', 'todo_updated', 'todo_deleted',
       'countdown_created', 'countdown_updated', 'countdown_deleted'
@@ -51,11 +60,22 @@ Page({
     this.setData({
       todayStr: util.formatDateFull(new Date().toISOString())
     })
-    this.fetchAll()
+    if (!this._loaded) {
+      this.fetchAll()
+    } else {
+      this.fetchAll(true)
+    }
   },
 
   applyI18n() {
+    // Update expandedCardLabel if a card is currently expanded
+    const { expandedCard } = this.data
+    const expandedCardLabel = expandedCard
+      ? t(CARD_LABEL_KEYS[expandedCard] || '')
+      : ''
+
     this.setData({
+      expandedCardLabel,
       i: {
         title: t('dashboard.title'),
         total: t('dashboard.totalTodos'),
@@ -87,8 +107,8 @@ Page({
     this.fetchAll().then(() => wx.stopPullDownRefresh())
   },
 
-  async fetchAll() {
-    this.setData({ loading: true })
+  async fetchAll(silent) {
+    if (!silent) this.setData({ loading: true })
     try {
       const [statsRes, todosRes, countdownsRes] = await Promise.all([
         api.get('/api/stats'),
@@ -99,6 +119,7 @@ Page({
       const todos = (todosRes.data || todosRes) || []
       const countdowns = (countdownsRes.data || countdownsRes) || []
       this.processData(stats, todos, countdowns)
+      this._loaded = true
     } catch (err) {
       console.error('Dashboard fetch error:', err)
       const msg = err && err.message
@@ -106,7 +127,7 @@ Page({
         wx.showModal({ title: t('common.error'), content: 'Server URL not configured.', showCancel: false })
       }
     } finally {
-      this.setData({ loading: false })
+      if (!silent) this.setData({ loading: false })
     }
   },
 
@@ -125,7 +146,6 @@ Page({
       return due < today
     })
 
-    const daysLabel = t('dashboard.days')
     const overdueLabel = lang === 'zh' ? '天前' : 'd overdue'
     const todayLabel = lang === 'zh' ? '今天' : 'Today'
     const tomorrowLabel = lang === 'zh' ? '明天' : 'Tomorrow'
@@ -142,7 +162,10 @@ Page({
         else { daysText = days + 'd'; daysClass = 'text-accent' }
         return { ...c, daysText, daysClass }
       })
-      .filter(c => new Date(c.target_date) >= today)
+      .filter(c => {
+        const days = util.daysLeft(c.target_date)
+        return days >= 0 && days <= 7
+      })
       .sort((a, b) => new Date(a.target_date) - new Date(b.target_date))
       .slice(0, 5)
 
@@ -176,12 +199,15 @@ Page({
   },
 
   onStatTap(e) {
-    const label = (e.detail && e.detail.label) ||
-                  (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.label) || ''
-    if (this.data.expandedCard === label) {
-      this.setData({ expandedCard: '' })
+    const key = (e.detail && e.detail.key) ||
+                (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.key) || ''
+    if (this.data.expandedCard === key) {
+      this.setData({ expandedCard: '', expandedCardLabel: '' })
     } else {
-      this.setData({ expandedCard: label })
+      this.setData({
+        expandedCard: key,
+        expandedCardLabel: t(CARD_LABEL_KEYS[key] || '')
+      })
     }
   },
 
@@ -214,7 +240,7 @@ Page({
         if (res.confirm) {
           try {
             await api.del('/api/todos/' + id)
-            this.fetchAll()
+            this.fetchAll(true)
           } catch (err) {
             wx.showToast({ title: t('common.error'), icon: 'none' })
           }
@@ -226,7 +252,7 @@ Page({
   onTodoPin(e) {
     const id = e.detail.id
     api.patch('/api/todos/' + id + '/pin')
-      .then(() => this.fetchAll())
+      .then(() => this.fetchAll(true))
       .catch(() => wx.showToast({ title: t('common.error'), icon: 'none' }))
   },
 
@@ -236,14 +262,5 @@ Page({
 
   onViewAllCountdowns() {
     wx.switchTab({ url: '/pages/countdowns/countdowns' })
-  },
-
-  getExpandedList() {
-    const { expandedCard, allTasks, completedTasks, i } = this.data
-    if (expandedCard === i.total) return allTasks
-    if (expandedCard === i.completed) return completedTasks
-    if (expandedCard === i.pending) return this.data.pendingTasks
-    if (expandedCard === i.dueSoon) return this.data.upcomingCountdowns
-    return []
   }
 })

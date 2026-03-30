@@ -37,26 +37,26 @@ module.exports = {
 
     <!-- Stat Cards 2x2 Grid -->
     <view class="stat-grid">
-      <stat-card label="{{i.total}}" value="{{allTasks.length}}" icon="📝" active="{{expandedCard === i.total}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="{{i.completed}}" value="{{completedTasks.length}}" icon="✅" active="{{expandedCard === i.completed}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="{{i.pending}}" value="{{pendingTasks.length}}" icon="⏳" active="{{expandedCard === i.pending}}" bind:stattap="onStatTap"></stat-card>
-      <stat-card label="{{i.dueSoon}}" value="{{upcomingCountdowns.length}}" icon="⚠️" active="{{expandedCard === i.dueSoon}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card key="total" label="{{i.total}}" value="{{allTasks.length}}" icon="📝" active="{{expandedCard === 'total'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card key="completed" label="{{i.completed}}" value="{{completedTasks.length}}" icon="✅" active="{{expandedCard === 'completed'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card key="pending" label="{{i.pending}}" value="{{pendingTasks.length}}" icon="⏳" active="{{expandedCard === 'pending'}}" bind:stattap="onStatTap"></stat-card>
+      <stat-card key="dueSoon" label="{{i.dueSoon}}" value="{{upcomingCountdowns.length}}" icon="⚠️" active="{{expandedCard === 'dueSoon'}}" bind:stattap="onStatTap"></stat-card>
     </view>
 
     <!-- Expanded Preview -->
     <view class="expanded-section" wx:if="{{expandedCard}}">
       <view class="expanded-header">
-        <text class="expanded-title">{{expandedCard}}</text>
+        <text class="expanded-title">{{expandedCardLabel}}</text>
         <view class="expanded-actions">
-          <text class="expanded-collapse" bind:tap="onStatTap" data-label="{{expandedCard}}">{{i.collapse}}</text>
-          <text wx:if="{{expandedCard !== i.dueSoon}}" class="expanded-view-all" bind:tap="onViewAllTodos">{{i.viewAll}}</text>
+          <text class="expanded-collapse" bind:tap="onStatTap" data-key="{{expandedCard}}">{{i.collapse}}</text>
+          <text wx:if="{{expandedCard !== 'dueSoon'}}" class="expanded-view-all" bind:tap="onViewAllTodos">{{i.viewAll}}</text>
           <text wx:else class="expanded-view-all" bind:tap="onViewAllCountdowns">{{i.viewAll}}</text>
         </view>
       </view>
 
-      <view class="expanded-list" wx:if="{{expandedCard !== i.dueSoon}}">
+      <view class="expanded-list" wx:if="{{expandedCard !== 'dueSoon'}}">
         <block wx:for="{{allTasks}}" wx:key="id">
-          <todo-item wx:if="{{(expandedCard === i.total) || (expandedCard === i.completed && item.done) || (expandedCard === i.pending && !item.done)}}"
+          <todo-item wx:if="{{(expandedCard === 'total') || (expandedCard === 'completed' && item.done) || (expandedCard === 'pending' && !item.done)}}"
             todo="{{item}}"
             categories="{{categories}}"
             bind:toggle="onToggleTodo"
@@ -65,7 +65,7 @@ module.exports = {
             bind:pin="onTodoPin">
           </todo-item>
         </block>
-        <empty-state wx:if="{{(expandedCard === i.completed && completedTasks.length === 0) || (expandedCard === i.pending && pendingTasks.length === 0)}}"
+        <empty-state wx:if="{{(expandedCard === 'completed' && completedTasks.length === 0) || (expandedCard === 'pending' && pendingTasks.length === 0)}}"
           icon="📭"
           title="{{i.noItems}}"
           description="">

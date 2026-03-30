@@ -1,5 +1,9 @@
 Component({
   properties: {
+    key: {
+      type: String,
+      value: ''
+    },
     label: {
       type: String,
       value: ''
@@ -19,7 +23,7 @@ Component({
   },
   methods: {
     onTap() {
-      this.triggerEvent('stattap', { label: this.data.label });
+      this.triggerEvent('stattap', { key: this.data.key, label: this.data.label });
     }
   }
 });
