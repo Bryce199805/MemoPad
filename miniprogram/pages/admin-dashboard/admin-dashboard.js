@@ -139,7 +139,7 @@ Page({
       const stats = {
         totalUsers: users.length,
         activeUsers: users.filter(u => !u.disabled).length,
-        openTickets: tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
+        openTickets: tickets.filter(tk => tk.status === 'open' || tk.status === 'in_progress').length,
         totalTickets: tickets.length
       }
 
@@ -186,7 +186,7 @@ Page({
     const filter = this.ticketStatusOptions[idx] || ''
     const { tickets } = this.data
     const filteredTickets = filter
-      ? tickets.filter(t => t.status === filter)
+      ? tickets.filter(tk => tk.status === filter)
       : tickets
     this.setData({ ticketFilter: idx, filteredTickets })
   },
@@ -255,7 +255,7 @@ Page({
   // Tickets
   onViewTicket(e) {
     const id = e.currentTarget.dataset.id
-    const ticket = this.data.tickets.find(t => t.id === id)
+    const ticket = this.data.tickets.find(tk => tk.id === id)
     if (ticket) {
       this.setData({ 
         showTicketDetail: true, 

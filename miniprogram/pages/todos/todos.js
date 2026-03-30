@@ -136,7 +136,7 @@ Page({
 
   // WebSocket event handlers
   handleTodoCreated(todo) {
-    const exists = this.data.todos.find(t => t.id === todo.id)
+    const exists = this.data.todos.find(td => td.id === todo.id)
     if (!exists) {
       const todos = [todo, ...this.data.todos]  // new array, don't mutate in place
       this.setData({ todos })
@@ -145,7 +145,7 @@ Page({
   },
 
   handleTodoUpdated(todo) {
-    const idx = this.data.todos.findIndex(t => t.id === todo.id)
+    const idx = this.data.todos.findIndex(td => td.id === todo.id)
     if (idx !== -1) {
       const todos = [...this.data.todos]  // shallow copy
       todos[idx] = todo
@@ -155,7 +155,7 @@ Page({
   },
 
   handleTodoDeleted(data) {
-    const todos = this.data.todos.filter(t => t.id !== data.id && t.id !== Number(data.id))
+    const todos = this.data.todos.filter(td => td.id !== data.id && td.id !== Number(data.id))
     this.setData({ todos })
     this.applyFilter()
   },
@@ -215,15 +215,15 @@ Page({
     const pVal = ['all', 'high', 'medium', 'low'][filterPriority]
     const sVal = ['all', 'pending', 'completed'][filterStatus]
 
-    return todos.filter(t => {
-      if (searchText && t.content.toLowerCase().indexOf(searchText.toLowerCase()) === -1) return false
-      if (pVal !== 'all' && t.priority !== pVal) return false
-      if (sVal === 'pending' && t.done) return false
-      if (sVal === 'completed' && !t.done) return false
+    return todos.filter(td => {
+      if (searchText && td.content.toLowerCase().indexOf(searchText.toLowerCase()) === -1) return false
+      if (pVal !== 'all' && td.priority !== pVal) return false
+      if (sVal === 'pending' && td.done) return false
+      if (sVal === 'completed' && !td.done) return false
       var filterCat = this.data.categories[filterCategory - 1];
       if (filterCategory !== 0 && filterCat) {
-        var tCatId = (t.category && typeof t.category === 'object') ? t.category.id : t.category;
-        if (tCatId !== filterCat.id) return false;
+        var tdCatId = (td.category && typeof td.category === 'object') ? td.category.id : td.category;
+        if (tdCatId !== filterCat.id) return false;
       }
       return true
     })
@@ -231,12 +231,12 @@ Page({
 
   applyFilter() {
     const filtered = this.getFilteredTodos()
-    const pending = filtered.filter(t => !t.done)
-    const pinned = pending.filter(t => t.pinned)
-    const regular = pending.filter(t => !t.pinned)
-    const completed = filtered.filter(t => t.done)
-    const pendingCount = this.data.todos.filter(t => !t.done).length
-    const completedCount = this.data.todos.filter(t => t.done).length
+    const pending = filtered.filter(td => !td.done)
+    const pinned = pending.filter(td => td.pinned)
+    const regular = pending.filter(td => !td.pinned)
+    const completed = filtered.filter(td => td.done)
+    const pendingCount = this.data.todos.filter(td => !td.done).length
+    const completedCount = this.data.todos.filter(td => td.done).length
     this.setData({ pinned, regular, completed, pendingCount, completedCount })
   },
 
@@ -293,7 +293,7 @@ Page({
 
   onSelectAll() {
     const { todos } = this.data
-    const allIds = todos.map(t => t.id)
+    const allIds = todos.map(td => td.id)
     this.setData({ selectedIds: allIds })
   },
 
@@ -330,7 +330,7 @@ Page({
     const { selectedIds, todos } = this.data
     if (selectedIds.length === 0) return
     const toComplete = selectedIds.filter(id => {
-      const todo = todos.find(t => t.id === id)
+      const todo = todos.find(td => td.id === id)
       return todo && !todo.done
     })
     if (toComplete.length === 0) {
@@ -369,7 +369,7 @@ Page({
   },
 
   onClearCompleted() {
-    const completed = this.data.todos.filter(t => t.done)
+    const completed = this.data.todos.filter(td => td.done)
     if (completed.length === 0) return
     wx.showModal({
       title: t('todo.clearCompleted'),
@@ -380,7 +380,7 @@ Page({
         if (!res.confirm) return
         wx.showLoading({ title: t('common.loading') })
         try {
-          await Promise.all(completed.map(t => api.del('/api/todos/' + t.id)))
+          await Promise.all(completed.map(td => api.del('/api/todos/' + td.id)))
           this.fetchData(true)
           wx.hideLoading()
           wx.showToast({ title: t('common.cleared'), icon: 'success' })
@@ -412,7 +412,7 @@ Page({
 
   onTodoEdit(e) {
     const id = e.detail.id
-    const todo = this.data.todos.find(t => t.id === id)
+    const todo = this.data.todos.find(td => td.id === id)
     if (!todo) return
     const priorityIdx = this.priorityOptions.indexOf(todo.priority || 'medium')
     // category idx: 0 is "None", 1+ is actual category index + 1

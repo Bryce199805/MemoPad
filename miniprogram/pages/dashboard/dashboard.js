@@ -134,14 +134,14 @@ Page({
   processData(stats, todos, countdowns) {
     const lang = getLang()
     const allTasks = todos
-    const completedTasks = allTasks.filter(t => t.done)
-    const pendingTasks = allTasks.filter(t => !t.done)
-    const pinnedTodos = pendingTasks.filter(t => t.pinned)
+    const completedTasks = allTasks.filter(td => td.done)
+    const pendingTasks = allTasks.filter(td => !td.done)
+    const pinnedTodos = pendingTasks.filter(td => td.pinned)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const overdueTodos = pendingTasks.filter(t => {
-      if (!t.due_date) return false
-      const due = new Date(t.due_date)
+    const overdueTodos = pendingTasks.filter(td => {
+      if (!td.due_date) return false
+      const due = new Date(td.due_date)
       due.setHours(0, 0, 0, 0)
       return due < today
     })
