@@ -39,16 +39,16 @@ module.exports = {
     <!-- Header -->
     <view class="todos-header">
       <view class="todos-header-left">
-        <text class="todos-title">Tasks</text>
+        <text class="todos-title">{{i.title}}</text>
         <text class="todos-summary">
-          <text class="summary-pending">{{pendingCount}} pending</text>
+          <text class="summary-pending">{{pendingCount}} {{i.pending}}</text>
           <text class="summary-dot">·</text>
-          <text class="summary-done">{{completedCount}} completed</text>
+          <text class="summary-done">{{completedCount}} {{i.completed}}</text>
         </text>
       </view>
       <view class="add-btn" bind:tap="onAddTask">
         <text class="add-icon">+</text>
-        <text class="add-text">Add Task</text>
+        <text class="add-text">{{i.add}}</text>
       </view>
     </view>
 
@@ -56,7 +56,7 @@ module.exports = {
     <view class="filters-bar glass-card">
       <view class="search-box">
         <text class="search-icon">🔍</text>
-        <input class="search-input" placeholder="Search tasks..." placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
+        <input class="search-input" placeholder="{{i.search}}" placeholder-style="color: var(--text-muted)" value="{{searchText}}" bindinput="onSearchInput" />
         <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
       </view>
 
@@ -80,14 +80,14 @@ module.exports = {
         <view class="filter-right">
           <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
             <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
-              <text>{{filterCategory === 0 ? 'Category' : categoryNames[filterCategory - 1]}}</text>
+              <text>{{filterCategory === 0 ? i.category : categoryNames[filterCategory]}}</text>
               <text class="chip-arrow">▾</text>
             </view>
           </picker>
 
           <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
             <text>{{selectMode ? '✕' : '☑'}}</text>
-            <text>{{selectMode ? 'Cancel' : 'Select'}}</text>
+            <text>{{selectMode ? i.cancel : i.select}}</text>
           </view>
         </view>
       </view>
@@ -95,12 +95,12 @@ module.exports = {
 
     <!-- Select Mode Actions -->
     <view class="select-actions" wx:if="{{selectMode}}">
-      <text class="select-count">{{selectedIds.length}} selected</text>
+      <text class="select-count">{{selectedIds.length}} {{i.selected}}</text>
       <view class="select-btns">
-        <text class="select-action-btn" bind:tap="onSelectAll">All</text>
-        <text class="select-action-btn" bind:tap="onDeselectAll">None</text>
-        <text class="select-action-btn select-action-btn--success" bind:tap="onBatchComplete">Complete</text>
-        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">Delete</text>
+        <text class="select-action-btn" bind:tap="onSelectAll">{{i.all}}</text>
+        <text class="select-action-btn" bind:tap="onDeselectAll">{{i.none}}</text>
+        <text class="select-action-btn select-action-btn--success" bind:tap="onBatchComplete">{{i.complete}}</text>
+        <text class="select-action-btn select-action-btn--danger" bind:tap="onBatchDelete">{{i.delete}}</text>
       </view>
     </view>
 
@@ -110,7 +110,7 @@ module.exports = {
       <view class="section section--pinned" wx:if="{{pinned.length > 0}}">
         <view class="section-header">
           <text class="section-icon">📌</text>
-          <text class="section-title-text">Pinned</text>
+          <text class="section-title-text">{{i.pinned}}</text>
           <badge text="{{pinned.length}}" variant="info"></badge>
         </view>
         <view class="glass-card glass-card--compact">
@@ -132,7 +132,7 @@ module.exports = {
       <!-- Regular Tasks Section -->
       <view class="section" wx:if="{{regular.length > 0}}">
         <view class="section-header" wx:if="{{pinned.length > 0}}">
-          <text class="section-title-text">Tasks</text>
+          <text class="section-title-text">{{i.allTasks}}</text>
           <badge text="{{regular.length}}" variant="info"></badge>
         </view>
         <view class="glass-card glass-card--compact">
@@ -155,10 +155,10 @@ module.exports = {
       <view class="section completed-section" wx:if="{{completed.length > 0}}">
         <view class="section-header section-header--completed" bind:tap="onToggleCompleted">
           <text class="collapse-arrow {{completedExpanded ? 'collapse-arrow--open' : ''}}">▶</text>
-          <text class="section-title-text section-title-text--muted">Completed</text>
+          <text class="section-title-text section-title-text--muted">{{i.completed}}</text>
           <badge text="{{completed.length}}" variant="success"></badge>
           <view class="clear-btn" catchtap="onClearCompleted">
-            <text class="clear-text">Clear</text>
+            <text class="clear-text">{{i.clearCompleted}}</text>
           </view>
         </view>
         <view class="glass-card glass-card--compact" wx:if="{{completedExpanded}}">
@@ -181,8 +181,8 @@ module.exports = {
       <view class="empty-full" wx:if="{{todos.length === 0}}">
         <empty-state
           icon="📋"
-          title="No tasks"
-          description="Tap + to add">
+          title="{{i.noTasks}}"
+          description="{{i.tapToAdd}}">
         </empty-state>
       </view>
 
@@ -190,8 +190,8 @@ module.exports = {
       <view class="empty-full" wx:if="{{todos.length > 0 && pinned.length === 0 && regular.length === 0 && (completed.length === 0 || !completedExpanded)}}">
         <empty-state
           icon="🔍"
-          title="No matches"
-          description="Try different filters">
+          title="{{i.noMatches}}"
+          description="{{i.tryFilters}}">
         </empty-state>
       </view>
     </block>
@@ -200,14 +200,14 @@ module.exports = {
     <modal show="{{showFormModal}}" title="{{formTitle}}" bind:close="onCloseModal" bind:confirm="onFormSave">
       <view class="form-body">
         <view class="form-group">
-          <text class="form-label">Content</text>
-          <textarea class="form-textarea form-input" placeholder="What needs to be done?" placeholder-style="color: var(--text-muted)"
+          <text class="form-label">{{i.content}}</text>
+          <textarea class="form-textarea form-input" placeholder="{{i.contentPlaceholder}}" placeholder-style="color: var(--text-muted)"
             value="{{form.content}}" bindinput="onFormContentInput" maxlength="500" auto-height></textarea>
         </view>
 
         <view class="form-group">
-          <text class="form-label">Priority</text>
-          <picker mode="selector" range="{{['High','Medium','Low']}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
+          <text class="form-label">{{i.priority}}</text>
+          <picker mode="selector" range="{{[i.high, i.medium, i.low]}}" value="{{formPriorityIdx}}" bindchange="onFormPriorityChange">
             <view class="form-picker">
               <view class="form-picker-left">
                 <view class="priority-dot priority-dot--{{form.priority}}"></view>
@@ -219,7 +219,7 @@ module.exports = {
         </view>
 
         <view class="form-group" wx:if="{{categoryNames.length > 0}}">
-          <text class="form-label">Category (Optional)</text>
+          <text class="form-label">{{i.categoryOptional}}</text>
           <picker mode="selector" range="{{formCategoryOptions}}" value="{{formCategoryIdx}}" bindchange="onFormCategoryChange">
             <view class="form-picker">
               <view class="form-picker-left">

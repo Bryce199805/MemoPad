@@ -1,6 +1,7 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const ws = require('../../utils/websocket')
+const { t, getLang } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -16,27 +17,80 @@ Page({
     selectedIds: [],
     completedExpanded: false,
     showFormModal: false,
-    formTitle: 'Add Task',
+    formTitle: '',
     editingId: null,
     pinned: [],
     regular: [],
     completed: [],
     pendingCount: 0,
     completedCount: 0,
-    priorityLabels: ['All', 'High', 'Medium', 'Low'],
-    statusLabels: ['All', 'Pending', 'Completed'],
+    priorityLabels: [],
+    statusLabels: [],
     formPriorityIdx: 1,
     formCategoryIdx: 0,
-    formPriorityLabel: 'Medium',
-    formCategoryOptions: ['None'],
+    formPriorityLabel: '',
+    formCategoryOptions: [],
     form: {
       content: '',
       priority: 'medium',
       category: ''
-    }
+    },
+    i: {}
   },
 
   priorityOptions: ['high', 'medium', 'low'],
+
+  applyI18n() {
+    const priorityLabels = [t('todo.allPriority'), t('todo.high'), t('todo.medium'), t('todo.low')]
+    const statusLabels = [t('todo.allStatuses'), t('todo.pending'), t('todo.completed')]
+    const formCategoryOptions = [t('todo.noCategory'), ...this.data.categories.map(c => c.name)]
+    const formPriorityLabel = [t('todo.high'), t('todo.medium'), t('todo.low')][this.data.formPriorityIdx]
+    this.setData({
+      priorityLabels,
+      statusLabels,
+      formCategoryOptions,
+      formPriorityLabel,
+      i: {
+        title: t('todo.title'),
+        add: t('todo.add'),
+        search: t('todo.search'),
+        allPriority: t('todo.allPriority'),
+        allStatuses: t('todo.allStatuses'),
+        allCategories: t('todo.allCategories'),
+        pending: t('todo.pending'),
+        completed: t('todo.completed'),
+        high: t('todo.high'),
+        medium: t('todo.medium'),
+        low: t('todo.low'),
+        pinned: t('todo.pinned'),
+        allTasks: t('todo.allTasks'),
+        clearCompleted: t('todo.clearCompleted'),
+        newTask: t('todo.new'),
+        editTask: t('todo.edit'),
+        content: t('todo.content'),
+        contentPlaceholder: t('todo.contentPlaceholder'),
+        priority: t('todo.priority'),
+        categoryOptional: t('todo.categoryOptional'),
+        noCategory: t('todo.noCategory'),
+        noTodos: t('todo.noTodos'),
+        noCompleted: t('todo.noCompleted'),
+        select: t('todo.select'),
+        doneSelect: t('todo.doneSelect'),
+        save: t('common.save'),
+        cancel: t('common.cancel'),
+        category: t('todo.allCategories'),
+        noTasks: t('todo.noTodos'),
+        noMatches: t('todo.noMatches'),
+        tapToAdd: t('todo.tapToAdd'),
+        tryFilters: t('todo.tryFilters'),
+        selected: t('todo.selected'),
+        all: t('todo.allStatuses'),
+        none: t('todo.none'),
+        complete: t('todo.completed'),
+        delete: t('todo.delete')
+      }
+    })
+  },
 
   onLoad() {
     // Store bound references so ws.off() can find the exact same function
@@ -68,6 +122,7 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
+    this.applyI18n()
     this.fetchData()
   },
 
@@ -105,8 +160,8 @@ Page({
     const exists = this.data.categories.find(c => c.id === category.id)
     if (!exists) {
       const categories = [...this.data.categories, category]
-      const categoryNames = ['All', ...categories.map(c => c.name)]
-      const formCategoryOptions = ['None', ...categories.map(c => c.name)]
+      const categoryNames = [t('todo.allCategories'), ...categories.map(c => c.name)]
+      const formCategoryOptions = [t('todo.noCategory'), ...categories.map(c => c.name)]
       this.setData({ categories, categoryNames, formCategoryOptions })
     }
   },
@@ -116,15 +171,15 @@ Page({
     if (idx !== -1) {
       const categories = [...this.data.categories]
       categories[idx] = category
-      const categoryNames = ['All', ...categories.map(c => c.name)]
+      const categoryNames = [t('todo.allCategories'), ...categories.map(c => c.name)]
       this.setData({ categories, categoryNames })
     }
   },
 
   handleCategoryDeleted(data) {
     const categories = this.data.categories.filter(c => c.id !== data.id && c.id !== Number(data.id))
-    const categoryNames = ['All', ...categories.map(c => c.name)]
-    const formCategoryOptions = ['None', ...categories.map(c => c.name)]
+    const categoryNames = [t('todo.allCategories'), ...categories.map(c => c.name)]
+    const formCategoryOptions = [t('todo.noCategory'), ...categories.map(c => c.name)]
     this.setData({ categories, categoryNames, formCategoryOptions })
   },
 
@@ -137,8 +192,8 @@ Page({
       ])
       const todos = (todosRes.data || todosRes) || []
       const categories = (catsRes.data || catsRes) || []
-      const categoryNames = ['All', ...categories.map(c => c.name)]
-      const formCategoryOptions = ['None', ...categories.map(c => c.name)]
+      const categoryNames = [t('todo.allCategories'), ...categories.map(c => c.name)]
+      const formCategoryOptions = [t('todo.noCategory'), ...categories.map(c => c.name)]
       this.setData({ todos, categories, categoryNames, formCategoryOptions })
       this.applyFilter()
     } catch (err) {
@@ -245,20 +300,22 @@ Page({
     const { selectedIds } = this.data
     if (selectedIds.length === 0) return
     wx.showModal({
-      title: 'Delete Tasks',
-      content: 'Delete ' + selectedIds.length + ' selected task(s)?',
+      title: t('todo.batchDelete', { n: selectedIds.length }),
+      content: t('todo.confirmBatchDelete', { n: selectedIds.length }),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Deleting...' })
+        wx.showLoading({ title: t('common.loading') })
         try {
           await Promise.all(selectedIds.map(id => api.del('/api/todos/' + id)))
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData(true)
           wx.hideLoading()
-          wx.showToast({ title: 'Deleted', icon: 'success' })
+          wx.showToast({ title: t('common.deleted'), icon: 'success' })
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -272,24 +329,26 @@ Page({
       return todo && !todo.done
     })
     if (toComplete.length === 0) {
-      wx.showToast({ title: 'All selected tasks are already completed', icon: 'none' })
+      wx.showToast({ title: t('todo.allAlreadyCompleted'), icon: 'none' })
       return
     }
     wx.showModal({
-      title: 'Complete Tasks',
-      content: 'Mark ' + toComplete.length + ' selected task(s) as completed?',
+      title: t('todo.batchComplete', { n: toComplete.length }),
+      content: t('todo.confirmBatchComplete', { n: toComplete.length }),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Completing...' })
+        wx.showLoading({ title: t('common.loading') })
         try {
           await Promise.all(toComplete.map(id => api.patch('/api/todos/' + id + '/toggle')))
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData(true)
           wx.hideLoading()
-          wx.showToast({ title: 'Completed', icon: 'success' })
+          wx.showToast({ title: t('common.completed'), icon: 'success' })
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -308,19 +367,21 @@ Page({
     const completed = this.data.todos.filter(t => t.done)
     if (completed.length === 0) return
     wx.showModal({
-      title: 'Clear Completed',
-      content: 'Remove all ' + completed.length + ' completed task(s)?',
+      title: t('todo.clearCompleted'),
+      content: t('todo.confirmClearCompleted', { n: completed.length }),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Clearing...' })
+        wx.showLoading({ title: t('common.loading') })
         try {
           await Promise.all(completed.map(t => api.del('/api/todos/' + t.id)))
           this.fetchData(true)
           wx.hideLoading()
-          wx.showToast({ title: 'Cleared', icon: 'success' })
+          wx.showToast({ title: t('common.cleared'), icon: 'success' })
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -331,11 +392,11 @@ Page({
   onAddTask() {
     this.setData({
       showFormModal: true,
-      formTitle: 'Add Task',
+      formTitle: t('todo.new'),
       editingId: null,
       formPriorityIdx: 1,
       formCategoryIdx: 0,
-      formPriorityLabel: 'Medium',
+      formPriorityLabel: t('todo.medium'),
       form: {
         content: '',
         priority: 'medium',
@@ -356,10 +417,10 @@ Page({
       const ci = this.data.categories.findIndex(c => c.id === editCatId)
       if (ci !== -1) { catIdx = ci + 1 }
     }
-    const priorityLabel = ['High', 'Medium', 'Low'][priorityIdx]
+    const priorityLabel = [t('todo.high'), t('todo.medium'), t('todo.low')][priorityIdx]
     this.setData({
       showFormModal: true,
-      formTitle: 'Edit Task',
+      formTitle: t('todo.edit'),
       editingId: id,
       formPriorityIdx: priorityIdx,
       formCategoryIdx: catIdx,
@@ -378,7 +439,7 @@ Page({
       await api.patch('/api/todos/' + id + '/toggle')
       this.fetchData(true)
     } catch (err) {
-      wx.showToast({ title: 'Failed to update', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
@@ -388,22 +449,24 @@ Page({
       await api.patch('/api/todos/' + id + '/pin')
       this.fetchData(true)
     } catch (err) {
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
   onTodoDelete(e) {
     const id = e.detail.id
     wx.showModal({
-      title: 'Delete Task',
-      content: 'Are you sure?',
+      title: t('todo.delete'),
+      content: t('todo.confirmDelete'),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
         try {
           await api.del('/api/todos/' + id)
           this.fetchData(true)
         } catch (err) {
-          wx.showToast({ title: 'Failed to delete', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -422,7 +485,7 @@ Page({
   onFormPriorityChange(e) {
     const idx = Number(e.detail.value)
     const val = this.priorityOptions[idx]
-    const label = ['High', 'Medium', 'Low'][idx]
+    const label = [t('todo.high'), t('todo.medium'), t('todo.low')][idx]
     this.setData({ 'form.priority': val, formPriorityIdx: idx, formPriorityLabel: label })
   },
 
@@ -446,7 +509,7 @@ Page({
   async onFormSave() {
     const { form, editingId } = this.data
     if (!form.content.trim()) {
-      wx.showToast({ title: 'Please enter content', icon: 'none' })
+      wx.showToast({ title: t('todo.contentRequired'), icon: 'none' })
       return
     }
 
@@ -458,7 +521,7 @@ Page({
       data.category_id = form.category
     }
 
-    wx.showLoading({ title: editingId ? 'Updating...' : 'Adding...' })
+    wx.showLoading({ title: t('common.loading') })
     try {
       if (editingId) {
         await api.put('/api/todos/' + editingId, data)
@@ -468,16 +531,16 @@ Page({
       this.setData({ showFormModal: false })
       this.fetchData(true)
       wx.hideLoading()
-      wx.showToast({ title: editingId ? 'Updated' : 'Added', icon: 'success' })
+      wx.showToast({ title: editingId ? t('common.updated') : t('common.added'), icon: 'success' })
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
   onShareAppMessage() {
     return {
-      title: 'My Tasks - MemoPad',
+      title: t('todo.shareTitle'),
       path: '/pages/todos/todos'
     }
   }
