@@ -1,5 +1,6 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const { t, getLang } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -11,7 +12,39 @@ Page({
       description: '',
       priority: 'medium'
     },
-    priorityIdx: 1
+    priorityIdx: 1,
+    i: {}
+  },
+
+  applyI18n() {
+    this.setData({
+      i: {
+        title: t('feedback.title'),
+        new: t('feedback.submitTicket'),
+        titleField: t('feedback.titleField'),
+        titlePlaceholder: t('feedback.titlePlaceholder'),
+        priority: t('feedback.priority'),
+        priorityHigh: t('feedback.priorityHigh'),
+        priorityMedium: t('feedback.priorityMedium'),
+        priorityLow: t('feedback.priorityLow'),
+        description: t('feedback.description'),
+        descPlaceholder: t('feedback.descPlaceholder'),
+        submit: t('feedback.submit'),
+        submitting: t('feedback.submitting'),
+        myTickets: t('feedback.myTickets'),
+        noTickets: t('feedback.noTickets'),
+        noTicketsDesc: t('feedback.submitTicket'),
+        adminReply: t('feedback.adminReply'),
+        statusOpen: t('feedback.statusOpen'),
+        statusInProgress: t('feedback.statusInProgress'),
+        statusResolved: t('feedback.statusResolved'),
+        statusClosed: t('feedback.statusClosed'),
+        save: t('common.save'),
+        cancel: t('common.cancel'),
+        error: t('common.error'),
+        failedToSubmit: t('feedback.failedToSubmit')
+      }
+    })
   },
 
   onShow() {
@@ -19,6 +52,7 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
+    this.applyI18n()
     this.fetchTickets()
   },
 
@@ -68,11 +102,11 @@ Page({
   async onSubmit() {
     const { form } = this.data
     if (!form.title.trim()) {
-      wx.showToast({ title: 'Please enter title', icon: 'none' })
+      wx.showToast({ title: t('feedback.titlePlaceholder'), icon: 'none' })
       return
     }
 
-    wx.showLoading({ title: 'Submitting...' })
+    wx.showLoading({ title: t('feedback.submitting') })
     try {
       await api.post('/api/tickets', {
         title: form.title.trim(),
@@ -80,12 +114,12 @@ Page({
         priority: form.priority
       })
       wx.hideLoading()
-      wx.showToast({ title: 'Submitted', icon: 'success' })
+      wx.showToast({ title: t('feedback.submit'), icon: 'success' })
       this.setData({ showModal: false })
       this.fetchTickets()
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('feedback.failedToSubmit'), icon: 'none' })
     }
   }
 })
