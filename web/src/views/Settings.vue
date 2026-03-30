@@ -1,7 +1,7 @@
 <template>
   <div class="settings-page">
     <div class="page-header">
-      <h1>Settings</h1>
+      <h1>{{ $t('settings.title') }}</h1>
     </div>
 
     <div class="settings-grid">
@@ -10,24 +10,24 @@
 
         <!-- Profile Section -->
         <Card class="section-card">
-          <template #header>Profile</template>
+          <template #header>{{ $t('settings.profile') }}</template>
           <div class="profile-info">
             <div class="avatar">{{ userInitial }}</div>
             <div class="profile-details">
               <p class="username">{{ authStore.user?.username }}</p>
               <p class="role-badge" :class="authStore.user?.role">{{ authStore.user?.role }}</p>
-              <p class="email">{{ authStore.user?.email || 'No email set' }}</p>
+              <p class="email">{{ authStore.user?.email || $t('settings.noEmail') }}</p>
             </div>
           </div>
         </Card>
 
         <!-- API Key -->
         <Card class="section-card">
-          <template #header>API Key</template>
-          <p class="section-desc">Use this key to connect desktop and mobile apps</p>
+          <template #header>{{ $t('settings.apiKey') }}</template>
+          <p class="section-desc">{{ $t('settings.apiKeyDesc') }}</p>
           <div class="api-key-display">
             <input class="api-key-input" :value="showApiKey ? apiKey : '•'.repeat(32)" readonly />
-            <button class="icon-btn" @click="showApiKey = !showApiKey" :title="showApiKey ? 'Hide' : 'Show'">
+            <button class="icon-btn" @click="showApiKey = !showApiKey" :title="showApiKey ? $t('settings.hide') : $t('settings.show')">
               <svg v-if="!showApiKey" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
@@ -35,25 +35,41 @@
           <div class="api-key-actions">
             <Button variant="secondary" size="sm" @click="copyApiKey">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              Copy
+              {{ $t('settings.copy') }}
             </Button>
-            <Button variant="danger" size="sm" @click="regenerateApiKey">Regenerate</Button>
+            <Button variant="danger" size="sm" @click="regenerateApiKey">{{ $t('settings.regenerate') }}</Button>
           </div>
-          <p v-if="copyFeedback" class="copy-feedback">✓ Copied to clipboard</p>
+          <p v-if="copyFeedback" class="copy-feedback">✓ {{ $t('settings.copied') }}</p>
         </Card>
 
         <!-- Theme Section -->
         <Card class="section-card">
-          <template #header>Appearance</template>
-          <p class="section-desc">Choose your preferred color scheme</p>
+          <template #header>{{ $t('settings.appearance') }}</template>
+          <p class="section-desc">{{ $t('settings.appearanceDesc') }}</p>
           <div class="theme-options">
             <button :class="['theme-btn', { active: theme === 'dark' }]" @click="setTheme('dark')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-              Dark
+              {{ $t('settings.dark') }}
             </button>
             <button :class="['theme-btn', { active: theme === 'light' }]" @click="setTheme('light')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-              Light
+              {{ $t('settings.light') }}
+            </button>
+          </div>
+        </Card>
+
+        <!-- Language Section -->
+        <Card class="section-card">
+          <template #header>{{ $t('settings.language') }}</template>
+          <p class="section-desc">{{ $t('settings.languageDesc') }}</p>
+          <div class="theme-options">
+            <button :class="['theme-btn', { active: currentLocale === 'en' }]" @click="setLocale('en')">
+              <span style="font-size: 18px;">🌐</span>
+              English
+            </button>
+            <button :class="['theme-btn', { active: currentLocale === 'zh' }]" @click="setLocale('zh')">
+              <span style="font-size: 18px;">🌏</span>
+              中文
             </button>
           </div>
         </Card>
@@ -67,7 +83,7 @@
         <Card class="section-card categories-card">
           <template #header>
             <div class="card-header-row">
-              <span>Categories</span>
+              <span>{{ $t('settings.categories') }}</span>
               <span class="header-count">{{ categories.length }}</span>
             </div>
           </template>
@@ -76,44 +92,67 @@
             <input
               v-model="newCategory.name"
               type="text"
-              placeholder="New category name..."
+              :placeholder="$t('settings.newCategoryPlaceholder')"
               @keydown.enter="addCategory"
             />
             <input v-model="newCategory.color" type="color" class="color-input" />
             <Button variant="primary" size="sm" @click="addCategory" :disabled="!newCategory.name.trim()">
-              Add
+              {{ $t('settings.add') }}
             </Button>
           </div>
           <div class="category-list">
             <div v-for="cat in categories" :key="cat.id" class="category-item">
               <div class="category-color" :style="{ background: cat.color }"></div>
               <span class="category-name">{{ cat.name }}</span>
-              <span class="usage-count">{{ getCategoryUsage(cat.id) }} tasks</span>
-              <button class="icon-btn danger" @click="deleteCategory(cat.id, cat.name)" title="Delete">
+              <span class="usage-count">{{ getCategoryUsage(cat.id) }} {{ $t('settings.tasks') }}</span>
+              <button class="icon-btn danger" @click="deleteCategory(cat.id, cat.name)" :title="$t('common.delete')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
               </button>
             </div>
-            <p v-if="categories.length === 0" class="empty-text">No categories yet</p>
+            <p v-if="categories.length === 0" class="empty-text">{{ $t('settings.noCategories') }}</p>
           </div>
         </Card>
 
-        <!-- Session + Danger zone -->
+        <!-- Account -->
         <Card class="section-card">
-          <template #header>Account</template>
+          <template #header>{{ $t('settings.account') }}</template>
           <div class="account-actions">
             <div class="account-action-row">
               <div>
-                <p class="action-label">Session</p>
-                <p class="action-desc">Sign out of your current session</p>
+                <p class="action-label">{{ $t('settings.session') }}</p>
+                <p class="action-desc">{{ $t('settings.sessionDesc') }}</p>
               </div>
-              <Button variant="secondary" @click="handleLogout">Logout</Button>
+              <Button variant="secondary" @click="handleLogout">{{ $t('settings.logout') }}</Button>
             </div>
             <div v-if="!authStore.isAdmin" class="account-action-row danger-row">
               <div>
-                <p class="action-label danger-label">Delete Account</p>
-                <p class="action-desc">Permanently delete all your data</p>
+                <p class="action-label danger-label">{{ $t('settings.deleteAccount') }}</p>
+                <p class="action-desc">{{ $t('settings.deleteAccountDesc') }}</p>
               </div>
-              <Button variant="danger" @click="handleDeleteAccount">Delete</Button>
+              <Button variant="danger" @click="handleDeleteAccount">{{ $t('common.delete') }}</Button>
+            </div>
+          </div>
+        </Card>
+
+        <!-- About -->
+        <Card class="section-card">
+          <template #header>{{ $t('settings.about') }}</template>
+          <div class="about-info">
+            <div class="about-row">
+              <span class="about-label">{{ $t('settings.version') }}</span>
+              <span class="about-value">{{ appVersion }}</span>
+            </div>
+            <div class="about-row">
+              <span class="about-label">{{ $t('settings.sourceCode') }}</span>
+              <a
+                href="https://github.com/Bryce199805/MemoPad"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="about-link"
+              >
+                github.com/Bryce199805/MemoPad
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-left:4px;vertical-align:middle;"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
             </div>
           </div>
         </Card>
@@ -126,6 +165,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useCategoryStore } from '../stores/category'
 import { storeToRefs } from 'pinia'
@@ -135,10 +175,13 @@ import api from '../api/client'
 import { useTodoStore } from '../stores/todo'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const categoryStore = useCategoryStore()
 const todoStore = useTodoStore()
 const { categories } = storeToRefs(categoryStore)
+
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
 
 const categoryColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
 
@@ -155,6 +198,13 @@ const apiKey = ref('')
 const showApiKey = ref(false)
 const copyFeedback = ref(false)
 
+const currentLocale = computed(() => locale.value)
+
+function setLocale(lang) {
+  locale.value = lang
+  localStorage.setItem('memo-lang', lang)
+}
+
 function copyApiKey() {
   navigator.clipboard.writeText(apiKey.value)
   copyFeedback.value = true
@@ -162,7 +212,7 @@ function copyApiKey() {
 }
 
 async function regenerateApiKey() {
-  if (confirm('Regenerate API key? The old key will stop working and you will be logged out.')) {
+  if (confirm(t('settings.confirmRegenerate'))) {
     const res = await api.post('/api/auth/api-key/regenerate')
     if (res.data?.data?.api_key) {
       apiKey.value = res.data.data.api_key
@@ -185,14 +235,14 @@ function handleLogout() {
 }
 
 async function handleDeleteAccount() {
-  if (!confirm('Are you sure? This action cannot be undone and all your data will be permanently deleted.')) return
-  if (!confirm('Final confirmation: all todos, countdowns, and categories will be deleted.')) return
+  if (!confirm(t('settings.confirmDeleteAccount'))) return
+  if (!confirm(t('settings.confirmDeleteAccount2'))) return
   try {
     await api.delete('/api/auth/account')
     authStore.logout()
     router.push('/login')
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to delete account')
+    alert(e.response?.data?.error || t('settings.failedDelete'))
   }
 }
 
@@ -202,7 +252,7 @@ async function addCategory() {
     c => c.name.toLowerCase() === newCategory.value.name.trim().toLowerCase()
   )
   if (isDuplicate) {
-    alert('A category with this name already exists')
+    alert(t('settings.duplicateCategory'))
     return
   }
   await categoryStore.createCategory(newCategory.value)
@@ -216,10 +266,10 @@ function getCategoryUsage(catId) {
 function deleteCategory(id, name) {
   const usage = getCategoryUsage(id)
   if (usage > 0) {
-    alert(`Cannot delete "${name}": ${usage} task(s) are using it.`)
+    alert(t('settings.cannotDeleteCategory', { name, count: usage }))
     return
   }
-  if (confirm(`Delete category "${name}"?`)) {
+  if (confirm(t('settings.confirmDeleteCategory', { name }))) {
     categoryStore.deleteCategory(id)
   }
 }
@@ -390,7 +440,7 @@ onMounted(() => {
   color: var(--danger);
 }
 
-/* Theme */
+/* Theme & Language */
 .theme-options {
   display: flex;
   gap: 12px;
@@ -569,5 +619,41 @@ onMounted(() => {
 .action-desc {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* About */
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.about-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.about-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.about-link {
+  color: var(--accent-primary);
+  font-size: 13px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.about-link:hover {
+  text-decoration: underline;
 }
 </style>

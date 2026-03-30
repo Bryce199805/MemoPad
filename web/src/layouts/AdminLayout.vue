@@ -3,7 +3,7 @@
     <!-- Mobile Header -->
     <header class="mobile-header">
       <div class="mobile-header-content">
-        <span class="mobile-title">Admin</span>
+        <span class="mobile-title">{{ $t('nav.admin') }}</span>
         <div class="mobile-actions">
           <button @click="showMobileMenu = !showMobileMenu" class="mobile-menu-btn">
             <svg v-if="!showMobileMenu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -22,20 +22,20 @@
       <!-- Mobile Nav -->
       <nav v-if="showMobileMenu" class="mobile-nav">
         <router-link to="/admin" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Dashboard</span>
+          <span>{{ $t('nav.dashboard') }}</span>
         </router-link>
         <router-link to="/admin/users" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Users</span>
+          <span>{{ $t('nav.users') }}</span>
         </router-link>
         <router-link to="/admin/tickets" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Tickets</span>
+          <span>{{ $t('nav.tickets') }}</span>
           <span v-if="openTicketCount > 0" class="mobile-badge">{{ openTicketCount }}</span>
         </router-link>
         <router-link to="/admin/config" class="mobile-nav-item" @click="showMobileMenu = false">
-          <span>Config</span>
+          <span>{{ $t('nav.config') }}</span>
         </router-link>
         <button @click="handleLogout" class="mobile-logout">
-          Logout
+          {{ $t('nav.logout') }}
         </button>
       </nav>
     </header>
@@ -49,7 +49,7 @@
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
           </svg>
         </router-link>
-        <span class="logo-text">Admin</span>
+        <span class="logo-text">{{ $t('nav.admin') }}</span>
       </div>
 
       <nav class="sidebar-nav">
@@ -60,7 +60,7 @@
             <rect x="3" y="14" width="7" height="7" rx="1" />
             <rect x="14" y="14" width="7" height="7" rx="1" />
           </svg>
-          <span>Dashboard</span>
+          <span>{{ $t('nav.dashboard') }}</span>
         </router-link>
 
         <router-link to="/admin/users" class="nav-item" active-class="active">
@@ -70,14 +70,14 @@
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span>Users</span>
+          <span>{{ $t('nav.users') }}</span>
         </router-link>
 
         <router-link to="/admin/tickets" class="nav-item" active-class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
           </svg>
-          <span>Tickets</span>
+          <span>{{ $t('nav.tickets') }}</span>
           <span v-if="openTicketCount > 0" class="nav-badge">{{ openTicketCount }}</span>
         </router-link>
 
@@ -86,7 +86,7 @@
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
           </svg>
-          <span>Config</span>
+          <span>{{ $t('nav.config') }}</span>
         </router-link>
       </nav>
 
@@ -95,7 +95,7 @@
           <div class="avatar">{{ userInitial }}</div>
           <span class="username">{{ authStore.user?.username }}</span>
         </div>
-        <button @click="handleLogout" class="logout-btn" title="Logout">
+        <button @click="handleLogout" class="logout-btn" :title="$t('nav.logout')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
             <polyline points="16,17 21,12 16,7" />
