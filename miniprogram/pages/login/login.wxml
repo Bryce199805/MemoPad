@@ -9,16 +9,16 @@
         <text class="logo-check">✓</text>
       </view>
       <text class="app-name">MemoPad</text>
-      <text class="app-tagline">Capture your thoughts</text>
+      <text class="app-tagline">{{i.tagline}}</text>
     </view>
 
     <!-- Tab switcher -->
     <view class="tab-switcher">
       <view class="tab-item {{mode === 'login' ? 'tab-active' : ''}}" bindtap="switchMode">
-        <text>Login</text>
+        <text>{{i.signIn}}</text>
       </view>
       <view class="tab-item {{mode === 'register' ? 'tab-active' : ''}}" bindtap="switchMode">
-        <text>Register</text>
+        <text>{{i.signUp}}</text>
       </view>
       <view class="tab-indicator" style="left: {{mode === 'login' ? '0%' : '50%'}}"></view>
     </view>
@@ -32,11 +32,11 @@
       </view>
 
       <view class="form-group">
-        <text class="form-label">Username</text>
+        <text class="form-label">{{i.username}}</text>
         <input
           class="form-input"
           type="text"
-          placeholder="Enter your username"
+          placeholder="{{i.usernamePlaceholder}}"
           placeholder-class="input-placeholder"
           value="{{username}}"
           bindinput="onUsernameInput"
@@ -44,11 +44,11 @@
       </view>
 
       <view class="form-group">
-        <text class="form-label">Password</text>
+        <text class="form-label">{{i.password}}</text>
         <input
           class="form-input"
           password
-          placeholder="Enter your password"
+          placeholder="{{i.passwordPlaceholder}}"
           placeholder-class="input-placeholder"
           value="{{password}}"
           bindinput="onPasswordInput"
@@ -56,11 +56,11 @@
       </view>
 
       <view class="form-group" wx:if="{{mode === 'register'}}">
-        <text class="form-label">Email (optional)</text>
+        <text class="form-label">{{i.email}}</text>
         <input
           class="form-input"
           type="text"
-          placeholder="Enter your email"
+          placeholder="your@email.com"
           placeholder-class="input-placeholder"
           value="{{email}}"
           bindinput="onEmailInput"
@@ -69,7 +69,7 @@
 
       <!-- Submit button -->
       <button class="submit-btn {{loading ? 'btn-disabled' : ''}}" bindtap="submit" disabled="{{loading}}">
-        <text wx:if="{{!loading}}">{{mode === 'login' ? 'Login' : 'Register'}}</text>
+        <text wx:if="{{!loading}}">{{mode === 'login' ? i.signIn : i.createAccount}}</text>
         <view class="loading-spinner" wx:else></view>
       </button>
     </view>

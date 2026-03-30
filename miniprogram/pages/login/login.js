@@ -1,5 +1,6 @@
 const auth = require('../../utils/auth')
 const ws = require('../../utils/websocket')
+const { t, getLang } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -8,15 +9,35 @@ Page({
     password: '',
     email: '',
     loading: false,
-    error: ''
+    error: '',
+    i: {}
   },
 
   onLoad() {
+    this.applyI18n()
     this.checkAndRedirect()
   },
 
   onShow() {
+    this.applyI18n()
     this.checkAndRedirect()
+  },
+
+  applyI18n() {
+    this.setData({
+      i: {
+        tagline: t('login.tagline'),
+        signIn: t('login.signIn'),
+        signUp: t('login.signUp'),
+        username: t('login.username'),
+        email: t('login.email') + ' ' + t('login.optional'),
+        password: t('login.password'),
+        usernamePlaceholder: t('login.usernamePlaceholder'),
+        passwordPlaceholder: t('login.passwordPlaceholder'),
+        newPasswordPlaceholder: t('login.newPasswordPlaceholder'),
+        createAccount: t('login.createAccount')
+      }
+    })
   },
 
   checkAndRedirect() {
@@ -62,19 +83,19 @@ Page({
     const { mode, username, password, email } = this.data
 
     if (!username.trim()) {
-      this.setData({ error: 'Please enter your username' })
+      this.setData({ error: t('login.usernamePlaceholder') })
       return
     }
     if (!password) {
-      this.setData({ error: 'Please enter your password' })
+      this.setData({ error: t('login.passwordPlaceholder') })
       return
     }
     if (mode === 'register' && password.length < 6) {
-      this.setData({ error: 'Password must be at least 6 characters' })
+      this.setData({ error: t('login.newPasswordPlaceholder') })
       return
     }
     if (mode === 'register' && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      this.setData({ error: 'Please enter a valid email address' })
+      this.setData({ error: t('login.emailInvalid') })
       return
     }
 
@@ -98,10 +119,10 @@ Page({
           wx.switchTab({ url: '/pages/dashboard/dashboard' })
         }
       } else {
-        this.setData({ error: res.message || (mode === 'login' ? 'Login failed' : 'Registration failed') })
+        this.setData({ error: res.message || (mode === 'login' ? t('login.loginFailed') : t('login.registerFailed')) })
       }
     } catch (err) {
-      this.setData({ error: err.message || 'Network error, please try again' })
+      this.setData({ error: err.message || t('common.error') })
     } finally {
       this.setData({ loading: false })
     }
