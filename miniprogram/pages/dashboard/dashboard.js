@@ -2,6 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 const ws = require('../../utils/websocket')
+const { t, getLang } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -19,7 +20,8 @@ Page({
     upcomingCountdowns: [],
     priorityBars: [],
     completionRate: 0,
-    expandedCard: ''
+    expandedCard: '',
+    i: {}
   },
 
   onLoad() {
@@ -45,10 +47,40 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
+    this.applyI18n()
     this.setData({
       todayStr: util.formatDateFull(new Date().toISOString())
     })
     this.fetchAll()
+  },
+
+  applyI18n() {
+    this.setData({
+      i: {
+        title: t('dashboard.title'),
+        total: t('dashboard.totalTodos'),
+        completed: t('dashboard.completed'),
+        pending: t('dashboard.pending'),
+        dueSoon: t('dashboard.dueSoon'),
+        collapse: t('common.close'),
+        viewAll: t('dashboard.viewAll'),
+        noItems: t('dashboard.noCompletedTasks'),
+        noCountdowns: t('dashboard.noDeadlines'),
+        taskProgress: t('dashboard.taskProgress'),
+        completedLabel: t('dashboard.completed'),
+        doneLabel: t('dashboard.completed'),
+        pendingLabel: t('dashboard.pending'),
+        byPriority: t('dashboard.byPriority'),
+        viewAllTasks: t('dashboard.viewAll') + ' ' + t('nav.tasks'),
+        viewAllCountdowns: t('dashboard.viewAll') + ' ' + t('nav.countdowns'),
+        upcoming: t('dashboard.upcomingCountdowns'),
+        pinnedTasks: t('dashboard.pinned'),
+        overdueTasks: t('dashboard.overdueTasks'),
+        overdueAlert: '',
+        welcomeTitle: 'Welcome to MemoPad',
+        welcomeDesc: t('todo.noTasksHint')
+      }
+    })
   },
 
   onPullDownRefresh() {
@@ -71,7 +103,7 @@ Page({
       console.error('Dashboard fetch error:', err)
       const msg = err && err.message
       if (msg && msg.indexOf('Server URL') !== -1) {
-        wx.showModal({ title: 'Error', content: 'Server URL not configured. Please go to Settings to set it.', showCancel: false })
+        wx.showModal({ title: t('common.error'), content: 'Server URL not configured.', showCancel: false })
       }
     } finally {
       this.setData({ loading: false })
@@ -79,6 +111,7 @@ Page({
   },
 
   processData(stats, todos, countdowns) {
+    const lang = getLang()
     const allTasks = todos
     const completedTasks = allTasks.filter(t => t.done)
     const pendingTasks = allTasks.filter(t => !t.done)
@@ -91,14 +124,20 @@ Page({
       due.setHours(0, 0, 0, 0)
       return due < today
     })
+
+    const daysLabel = t('dashboard.days')
+    const overdueLabel = lang === 'zh' ? '天前' : 'd overdue'
+    const todayLabel = lang === 'zh' ? '今天' : 'Today'
+    const tomorrowLabel = lang === 'zh' ? '明天' : 'Tomorrow'
+
     const upcomingCountdowns = countdowns
       .map(c => {
         const days = util.daysLeft(c.target_date)
         let daysText = ''
         let daysClass = ''
-        if (days < 0) { daysText = Math.abs(days) + 'd overdue'; daysClass = 'text-danger' }
-        else if (days === 0) { daysText = 'Today'; daysClass = 'text-warning' }
-        else if (days === 1) { daysText = 'Tomorrow'; daysClass = 'text-warning' }
+        if (days < 0) { daysText = Math.abs(days) + overdueLabel; daysClass = 'text-danger' }
+        else if (days === 0) { daysText = todayLabel; daysClass = 'text-warning' }
+        else if (days === 1) { daysText = tomorrowLabel; daysClass = 'text-warning' }
         else if (days <= 3) { daysText = days + 'd'; daysClass = 'text-warning' }
         else { daysText = days + 'd'; daysClass = 'text-accent' }
         return { ...c, daysText, daysClass }
@@ -113,6 +152,12 @@ Page({
     const priorityBars = (stats && stats.todos && stats.todos.by_priority) || []
     const categories = (stats && stats.categories && stats.categories.list) || []
 
+    // Update overdue alert text
+    const overdueCount = overdueTodos.length
+    const alertText = lang === 'zh'
+      ? '你有 ' + overdueCount + ' 个过期任务'
+      : 'You have ' + overdueCount + ' overdue task' + (overdueCount > 1 ? 's' : '')
+
     this.setData({
       stats,
       todos,
@@ -125,13 +170,12 @@ Page({
       overdueTodos,
       upcomingCountdowns,
       priorityBars,
-      completionRate
+      completionRate,
+      'i.overdueAlert': alertText
     })
   },
 
   onStatTap(e) {
-    // Support both: stat-card component event (e.detail.label)
-    // and direct bind:tap on element (e.currentTarget.dataset.label)
     const label = (e.detail && e.detail.label) ||
                   (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.label) || ''
     if (this.data.expandedCard === label) {
@@ -152,7 +196,7 @@ Page({
       this.processData(stats, todos, this.data.countdowns)
     } catch (err) {
       console.error('Toggle todo error:', err)
-      wx.showToast({ title: 'Failed to update', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
@@ -164,15 +208,15 @@ Page({
   onTodoDelete(e) {
     const id = e.detail.id
     wx.showModal({
-      title: 'Delete Task',
-      content: 'Are you sure?',
+      title: t('common.delete'),
+      content: t('todo.confirmDelete'),
       success: async (res) => {
         if (res.confirm) {
           try {
             await api.del('/api/todos/' + id)
             this.fetchAll()
           } catch (err) {
-            wx.showToast({ title: 'Failed to delete', icon: 'none' })
+            wx.showToast({ title: t('common.error'), icon: 'none' })
           }
         }
       }
@@ -183,7 +227,7 @@ Page({
     const id = e.detail.id
     api.patch('/api/todos/' + id + '/pin')
       .then(() => this.fetchAll())
-      .catch(() => wx.showToast({ title: 'Failed', icon: 'none' }))
+      .catch(() => wx.showToast({ title: t('common.error'), icon: 'none' }))
   },
 
   onViewAllTodos() {
@@ -195,13 +239,11 @@ Page({
   },
 
   getExpandedList() {
-    const { expandedCard, allTasks, completedTasks } = this.data
-    switch (expandedCard) {
-      case 'Total': return allTasks
-      case 'Completed': return completedTasks
-      case 'Pending': return this.data.pendingTasks
-      case 'Due Soon': return this.data.upcomingCountdowns
-      default: return []
-    }
+    const { expandedCard, allTasks, completedTasks, i } = this.data
+    if (expandedCard === i.total) return allTasks
+    if (expandedCard === i.completed) return completedTasks
+    if (expandedCard === i.pending) return this.data.pendingTasks
+    if (expandedCard === i.dueSoon) return this.data.upcomingCountdowns
+    return []
   }
 })
