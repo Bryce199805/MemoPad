@@ -1,8 +1,8 @@
 <template>
   <div class="admin-page admin-theme">
     <div class="page-header">
-      <h1>Ticket Management</h1>
-      <p class="subtitle">Handle user feedback and issues</p>
+      <h1>{{ $t('admin.ticketManagement') }}</h1>
+      <p class="subtitle">{{ $t('admin.handleTickets') }}</p>
     </div>
 
     <!-- Filters -->
@@ -32,7 +32,7 @@
               <button
                 :class="['status-badge', ticket.status]"
                 @click="cycleStatus(ticket)"
-                :title="`Click to change: ${nextStatus(ticket.status).label}`"
+                :title="`${$t('admin.clickToChange')}: ${nextStatus(ticket.status).label}`"
               >
                 {{ formatStatus(ticket.status) }}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
@@ -49,11 +49,11 @@
           </div>
           <!-- Icon action buttons -->
           <div class="ticket-actions">
-            <button class="action-btn reply-btn" @click="openReplyModal(ticket)" title="Reply">
+            <button class="action-btn reply-btn" @click="openReplyModal(ticket)" :title="$t('admin.reply')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
               <span v-if="ticket.reply" class="reply-dot"></span>
             </button>
-            <button class="action-btn delete-btn" @click="deleteTicket(ticket)" title="Delete">
+            <button class="action-btn delete-btn" @click="deleteTicket(ticket)" :title="$t('common.delete')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
@@ -68,15 +68,14 @@
         <div v-if="ticket.reply" class="ticket-reply">
           <div class="reply-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            Admin Reply
-          </div>
+            {{ $t('feedback.adminReplyLabel') }}</div>
           <p class="reply-text">{{ ticket.reply }}</p>
         </div>
       </div>
 
       <div v-if="filteredTickets.length === 0 && !loading" class="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <p>No {{ ticketFilter || '' }} tickets</p>
+        <p>{{ ticketFilter ? $t('admin.noFilteredTickets', { filter: ticketFilter }) : $t('admin.noTickets') }}</p>
       </div>
     </div>
 
@@ -86,7 +85,7 @@
         <div class="modal glass-card">
           <div class="modal-header">
             <div>
-              <h2>Reply to Ticket</h2>
+              <h2>{{ $t('admin.replyToTicket') }}</h2>
               <p class="modal-subtitle">{{ replyTicket?.title }}</p>
             </div>
             <button class="close-btn" @click="showReplyModal = false">
@@ -94,12 +93,12 @@
             </button>
           </div>
           <div class="modal-body">
-            <label class="form-label">Your Reply</label>
-            <textarea v-model="replyText" rows="5" placeholder="Enter your reply..."></textarea>
+            <label class="form-label">{{ $t('admin.yourReply') }}</label>
+            <textarea v-model="replyText" rows="5" :placeholder="$t('admin.replyPlaceholder')"></textarea>
           </div>
           <div class="modal-footer">
-            <Button variant="secondary" @click="showReplyModal = false">Cancel</Button>
-            <Button variant="primary" @click="submitReply">Send Reply</Button>
+            <Button variant="secondary" @click="showReplyModal = false">{{ $t('common.cancel') }}</Button>
+            <Button variant="primary" @click="submitReply">{{ $t('admin.sendReply') }}</Button>
           </div>
         </div>
       </div>
@@ -109,8 +108,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Button from '../../components/ui/Button.vue'
 import api from '../../api/client'
+
+const { t } = useI18n()
 
 const tickets = ref([])
 const loading = ref(false)
@@ -119,13 +121,13 @@ const showReplyModal = ref(false)
 const replyTicket = ref(null)
 const replyText = ref('')
 
-const statusTabs = [
-  { value: '', label: 'All' },
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'closed', label: 'Closed' },
-]
+const statusTabs = computed(() => [
+  { value: '', label: t('admin.all') },
+  { value: 'open', label: t('feedback.statusOpen') },
+  { value: 'in_progress', label: t('feedback.statusInProgress') },
+  { value: 'resolved', label: t('feedback.statusResolved') },
+  { value: 'closed', label: t('feedback.statusClosed') },
+])
 
 // Status cycle order: clicking the badge advances to next status
 const statusCycle = ['open', 'in_progress', 'resolved', 'closed']
@@ -144,7 +146,7 @@ async function cycleStatus(ticket) {
     await api.put(`/api/admin/tickets/${ticket.id}`, { status: next.value })
   } catch (e) {
     ticket.status = prev // Roll back on error
-    alert(e.response?.data?.error || 'Failed to update status')
+    alert(e.response?.data?.error || t('admin.failedUpdateStatus'))
   }
 }
 
@@ -187,22 +189,27 @@ async function submitReply() {
     replyTicket.value.reply = replyText.value
     showReplyModal.value = false
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to submit reply')
+    alert(e.response?.data?.error || t('admin.failedSubmitReply'))
   }
 }
 
 async function deleteTicket(ticket) {
-  if (!confirm(`Delete ticket "${ticket.title}"?`)) return
+  if (!confirm(t('admin.confirmDeleteTicket', { title: ticket.title }))) return
   try {
     await api.delete(`/api/admin/tickets/${ticket.id}`)
     tickets.value = tickets.value.filter(t => t.id !== ticket.id)
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to delete ticket')
+    alert(e.response?.data?.error || t('admin.failedDeleteTicket'))
   }
 }
 
 function formatStatus(status) {
-  const map = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
+  const map = {
+    open: t('feedback.statusOpen'),
+    in_progress: t('feedback.statusInProgress'),
+    resolved: t('feedback.statusResolved'),
+    closed: t('feedback.statusClosed')
+  }
   return map[status] || status
 }
 

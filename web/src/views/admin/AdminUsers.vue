@@ -1,8 +1,8 @@
 <template>
   <div class="admin-page admin-theme">
     <div class="page-header">
-      <h1>User Management</h1>
-      <p class="subtitle">Manage system users</p>
+      <h1>{{ $t('admin.userManagement') }}</h1>
+      <p class="subtitle">{{ $t('admin.manageUsers') }}</p>
     </div>
 
     <Card>
@@ -11,13 +11,13 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Todos / Countdowns</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>{{ $t('admin.username') }}</th>
+              <th>{{ $t('admin.email') }}</th>
+              <th>{{ $t('admin.role') }}</th>
+              <th>{{ $t('admin.todosCountdowns') }}</th>
+              <th>{{ $t('common.status') }}</th>
+              <th>{{ $t('admin.created') }}</th>
+              <th>{{ $t('admin.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -33,7 +33,7 @@
               <td>{{ user.todo_count }} / {{ user.countdown_count }}</td>
               <td>
                 <Badge :variant="user.disabled ? 'danger' : 'success'">
-                  {{ user.disabled ? 'Disabled' : 'Active' }}
+                  {{ user.disabled ? $t('admin.disabled') : $t('admin.active') }}
                 </Badge>
               </td>
               <td>{{ formatDate(user.created_at) }}</td>
@@ -45,7 +45,7 @@
                   @click="disableUser(user.id)"
                   :disabled="user.role === 'admin' || user.id === currentUserId"
                 >
-                  Disable
+                  {{ $t('admin.disable') }}
                 </Button>
                 <Button
                   v-else
@@ -53,7 +53,7 @@
                   size="sm"
                   @click="enableUser(user.id)"
                 >
-                  Enable
+                  {{ $t('admin.enable') }}
                 </Button>
                 <Button
                   variant="danger"
@@ -61,7 +61,7 @@
                   @click="deleteUser(user)"
                   :disabled="user.role === 'admin' || user.id === currentUserId"
                 >
-                  Delete
+                  {{ $t('common.delete') }}
                 </Button>
               </td>
             </tr>
@@ -74,12 +74,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Card from '../../components/ui/Card.vue'
 import Button from '../../components/ui/Button.vue'
 import Badge from '../../components/ui/Badge.vue'
 import api from '../../api/client'
 import { useAuthStore } from '../../stores/auth'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const users = ref([])
 
@@ -95,12 +97,12 @@ async function fetchUsers() {
 }
 
 async function disableUser(id) {
-  if (!confirm('Disable this user?')) return
+  if (!confirm(t('admin.confirmDisable'))) return
   try {
     await api.patch(`/api/admin/users/${id}/disable`)
     fetchUsers()
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to disable user')
+    alert(e.response?.data?.error || t('admin.failedDisable'))
   }
 }
 
@@ -109,17 +111,17 @@ async function enableUser(id) {
     await api.patch(`/api/admin/users/${id}/enable`)
     fetchUsers()
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to enable user')
+    alert(e.response?.data?.error || t('admin.failedEnable'))
   }
 }
 
 async function deleteUser(user) {
-  if (!confirm(`Delete user "${user.username}" and all their data? This cannot be undone.`)) return
+  if (!confirm(t('admin.confirmDeleteUser', { username: user.username }))) return
   try {
     await api.delete(`/api/admin/users/${user.id}`)
     fetchUsers()
   } catch (e) {
-    alert(e.response?.data?.error || 'Failed to delete user')
+    alert(e.response?.data?.error || t('admin.failedDeleteUser'))
   }
 }
 

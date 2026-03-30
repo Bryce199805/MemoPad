@@ -1,8 +1,8 @@
 <template>
   <div class="admin-page admin-theme">
     <div class="page-header">
-      <h1>Dashboard</h1>
-      <p class="subtitle">System overview</p>
+      <h1>{{ $t('admin.dashboard') }}</h1>
+      <p class="subtitle">{{ $t('admin.systemOverview') }}</p>
     </div>
 
     <!-- Stats Overview -->
@@ -18,7 +18,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.total || 0 }}</span>
-          <span class="stat-label">Total Users</span>
+          <span class="stat-label">{{ $t('admin.totalUsers') }}</span>
         </div>
       </router-link>
       <router-link to="/admin/users" class="stat-card">
@@ -30,7 +30,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.active || 0 }}</span>
-          <span class="stat-label">Active Users</span>
+          <span class="stat-label">{{ $t('admin.activeUsers') }}</span>
         </div>
       </router-link>
       <router-link to="/admin/tickets" class="stat-card">
@@ -41,7 +41,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ openTicketCount }}</span>
-          <span class="stat-label">Open Tickets</span>
+          <span class="stat-label">{{ $t('admin.openTickets') }}</span>
         </div>
       </router-link>
       <div class="stat-card">
@@ -53,7 +53,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.users?.recent || 0 }}</span>
-          <span class="stat-label">New This Week</span>
+          <span class="stat-label">{{ $t('admin.newThisWeek') }}</span>
         </div>
       </div>
     </div>
@@ -61,22 +61,22 @@
     <!-- Quick Stats -->
     <div class="quick-stats">
       <Card>
-        <template #header>Data Overview</template>
+        <template #header>{{ $t('admin.dataOverview') }}</template>
         <div class="data-stats">
           <div class="data-stat">
-            <span class="data-label">Total Todos</span>
+            <span class="data-label">{{ $t('admin.totalTodos') }}</span>
             <span class="data-value">{{ stats.data?.todos || 0 }}</span>
           </div>
           <div class="data-stat">
-            <span class="data-label">Total Countdowns</span>
+            <span class="data-label">{{ $t('admin.totalCountdowns') }}</span>
             <span class="data-value">{{ stats.data?.countdowns || 0 }}</span>
           </div>
           <div class="data-stat">
-            <span class="data-label">Total Categories</span>
+            <span class="data-label">{{ $t('admin.totalCategories') }}</span>
             <span class="data-value">{{ stats.data?.categories || 0 }}</span>
           </div>
           <div class="data-stat">
-            <span class="data-label">Total Tickets</span>
+            <span class="data-label">{{ $t('admin.totalTickets') }}</span>
             <span class="data-value">{{ totalTicketCount }}</span>
           </div>
         </div>
@@ -86,17 +86,17 @@
     <!-- Recent Activity -->
     <div class="recent-section" v-if="recentTickets.length > 0">
       <Card>
-        <template #header>Recent Tickets</template>
+        <template #header>{{ $t('admin.recentTickets') }}</template>
         <div class="recent-tickets">
           <div v-for="ticket in recentTickets" :key="ticket.id" class="recent-ticket">
             <div class="ticket-info">
               <span class="ticket-title">{{ ticket.title }}</span>
-              <span class="ticket-user">by {{ ticket.username }}</span>
+              <span class="ticket-user">{{ $t('admin.by') }} {{ ticket.username }}</span>
             </div>
             <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
           </div>
         </div>
-        <router-link to="/admin/tickets" class="view-all-link">View all tickets →</router-link>
+        <router-link to="/admin/tickets" class="view-all-link">{{ $t('admin.viewAllTickets') }}</router-link>
       </Card>
     </div>
   </div>
@@ -104,8 +104,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Card from '../../components/ui/Card.vue'
 import api from '../../api/client'
+
+const { t } = useI18n()
 
 const stats = ref({})
 const tickets = ref([])
@@ -138,10 +141,10 @@ async function fetchTickets() {
 
 function formatStatus(status) {
   const map = {
-    'open': 'Open',
-    'in_progress': 'In Progress',
-    'resolved': 'Resolved',
-    'closed': 'Closed'
+    'open': t('feedback.statusOpen'),
+    'in_progress': t('feedback.statusInProgress'),
+    'resolved': t('feedback.statusResolved'),
+    'closed': t('feedback.statusClosed')
   }
   return map[status] || status
 }

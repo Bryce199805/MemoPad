@@ -1,17 +1,17 @@
 <template>
   <div class="admin-page admin-theme">
     <div class="page-header">
-      <h1>System Configuration</h1>
-      <p class="subtitle">Manage system settings</p>
+      <h1>{{ $t('admin.systemConfig') }}</h1>
+      <p class="subtitle">{{ $t('admin.manageSettings') }}</p>
     </div>
 
     <Card class="config-card">
-      <template #header>General Settings</template>
+      <template #header>{{ $t('admin.generalSettings') }}</template>
       <div class="config-list">
         <div class="config-item">
           <div class="config-info">
-            <span class="config-label">User Registration</span>
-            <span class="config-desc">Allow new users to register accounts on the platform</span>
+            <span class="config-label">{{ $t('admin.userRegistration') }}</span>
+            <span class="config-desc">{{ $t('admin.userRegistrationDesc') }}</span>
           </div>
           <label class="toggle">
             <input type="checkbox" v-model="config.registration_enabled" @change="updateConfig" />
@@ -22,14 +22,14 @@
     </Card>
 
     <Card class="config-card">
-      <template #header>System Info</template>
+      <template #header>{{ $t('admin.systemInfo') }}</template>
       <div class="info-list">
         <div class="info-item">
-          <span class="info-label">Platform Version</span>
-          <span class="info-value">2.1.0</span>
+          <span class="info-label">{{ $t('admin.platformVersion') }}</span>
+          <span class="info-value">{{ appVersion }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">Environment</span>
+          <span class="info-label">{{ $t('admin.environment') }}</span>
           <span class="info-value">{{ envMode }}</span>
         </div>
       </div>
@@ -39,15 +39,20 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Card from '../../components/ui/Card.vue'
 import api from '../../api/client'
+
+const { t } = useI18n()
 
 const config = ref({
   registration_enabled: true
 })
 
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+
 const envMode = computed(() => {
-  return import.meta.env.PROD ? 'Production' : 'Development'
+  return import.meta.env.PROD ? t('admin.production') : t('admin.development')
 })
 
 async function fetchConfig() {
