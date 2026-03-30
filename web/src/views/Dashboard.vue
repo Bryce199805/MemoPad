@@ -56,6 +56,7 @@
             </div>
           </template>
           <p v-if="expandedList.length === 0" class="empty-hint">{{ expandedEmptyText }}</p>
+        </div>
       </div>
     </Transition>
 
