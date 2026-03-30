@@ -10,31 +10,45 @@
   <block wx:else>
     <!-- Header -->
     <view class="settings-header">
-      <text class="settings-title">Settings</text>
+      <text class="settings-title">{{i.title}}</text>
     </view>
 
     <!-- Profile Section -->
     <view class="section-card glass-card">
-      <text class="section-card-title">Profile</text>
+      <text class="section-card-title">{{i.profile}}</text>
       <view class="profile-row">
         <view class="avatar-circle">
           <text class="avatar-letter">{{user.username ? user.username[0].toUpperCase() : '?'}}</text>
         </view>
         <view class="profile-info">
           <text class="profile-name">{{user.username || 'Unknown'}}</text>
-          <text class="profile-email">{{user.email || 'No email'}}</text>
-          <text class="profile-role" wx:if="{{user.role}}">Role: {{user.role}}</text>
+          <text class="profile-email">{{user.email || i.noEmail}}</text>
+          <text class="profile-role" wx:if="{{user.role}}">{{user.role}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Language Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">{{i.language}}</text>
+      <text class="section-desc">{{i.languageDesc}}</text>
+      <view class="lang-options">
+        <view class="lang-btn {{currentLang === 'en' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="en">
+          <text>🌐 English</text>
+        </view>
+        <view class="lang-btn {{currentLang === 'zh' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="zh">
+          <text>🌏 中文</text>
         </view>
       </view>
     </view>
 
     <!-- Categories Section -->
     <view class="section-card glass-card">
-      <text class="section-card-title">Categories</text>
+      <text class="section-card-title">{{i.categories}}</text>
 
       <!-- Add Form -->
       <view class="cat-add-form">
-        <input class="cat-name-input" placeholder="Category name" placeholder-style="color: var(--text-muted)"
+        <input class="cat-name-input" placeholder="{{i.newCategoryPlaceholder}}" placeholder-style="color: var(--text-muted)"
           value="{{newCatName}}" bindinput="onCatNameInput" maxlength="30" />
         <picker mode="selector" range="{{colorLabels}}" value="{{newCatColorIdx}}" bindchange="onCatColorChange">
           <view class="cat-color-picker">
@@ -43,7 +57,7 @@
           </view>
         </picker>
         <view class="cat-add-btn" bind:tap="onAddCategory">
-          <text class="cat-add-text">Add</text>
+          <text class="cat-add-text">{{i.add}}</text>
         </view>
       </view>
 
@@ -52,7 +66,7 @@
         <view class="cat-item" wx:for="{{categories}}" wx:key="id">
           <!-- Edit Mode -->
           <block wx:if="{{editingCatId === item.id}}">
-            <input class="cat-name-input cat-edit-input" placeholder="Category name" placeholder-style="color: var(--text-muted)"
+            <input class="cat-name-input cat-edit-input" placeholder="{{i.newCategoryPlaceholder}}" placeholder-style="color: var(--text-muted)"
               value="{{editingCatName}}" bindinput="onEditingCatNameInput" maxlength="30" />
             <picker mode="selector" range="{{colorLabels}}" value="{{editingCatColorIdx}}" bindchange="onEditingCatColorChange">
               <view class="cat-color-picker">
@@ -62,10 +76,10 @@
             </picker>
             <view class="cat-edit-btns">
               <view class="cat-save-btn" bind:tap="onSaveEditCategory">
-                <text class="cat-save-text">Save</text>
+                <text class="cat-save-text">{{i.save}}</text>
               </view>
               <view class="cat-cancel-btn" bind:tap="onCancelEditCategory">
-                <text class="cat-cancel-text">Cancel</text>
+                <text class="cat-cancel-text">{{i.cancel}}</text>
               </view>
             </view>
           </block>
@@ -88,26 +102,26 @@
       <view wx:if="{{categories.length === 0}}" class="cat-empty">
         <empty-state
           icon="🏷"
-          title="No categories"
-          description="Add your first category above">
+          title="{{i.noCategories}}"
+          description="">
         </empty-state>
       </view>
     </view>
 
     <!-- Feedback Section -->
     <view class="section-card glass-card" wx:if="{{user.role !== 'admin'}}">
-      <text class="section-card-title">Support</text>
+      <text class="section-card-title">{{i.support}}</text>
       <view class="admin-link" bind:tap="onGoTickets">
-        <text class="admin-link-text">Feedback & Issues</text>
+        <text class="admin-link-text">{{i.feedbackIssues}}</text>
         <text class="arrow">→</text>
       </view>
     </view>
 
     <!-- Admin Section -->
     <view class="section-card glass-card" wx:if="{{user.role === 'admin'}}">
-      <text class="section-card-title">Admin</text>
+      <text class="section-card-title">{{i.admin}}</text>
       <view class="admin-link" bind:tap="onGoAdmin">
-        <text class="admin-link-text">Admin Panel</text>
+        <text class="admin-link-text">{{i.adminPanel}}</text>
         <text class="arrow">→</text>
       </view>
     </view>
@@ -115,16 +129,29 @@
     <!-- Danger Zone -->
     <view class="section-card danger-zone">
       <view class="logout-btn" bind:tap="onLogout">
-        <text class="logout-text">Logout</text>
+        <text class="logout-text">{{i.logout}}</text>
       </view>
     </view>
 
     <!-- Delete Account (non-admin only) -->
     <view class="section-card danger-zone" wx:if="{{user.role !== 'admin'}}">
-      <text class="section-card-title section-card-title--danger">Delete Account</text>
-      <text class="danger-desc">This action cannot be undone. All your data will be permanently deleted.</text>
+      <text class="section-card-title section-card-title--danger">{{i.deleteAccount}}</text>
+      <text class="danger-desc">{{i.deleteAccountDesc}}</text>
       <view class="delete-account-btn" bind:tap="onDeleteAccount">
-        <text class="delete-account-text">Delete My Account</text>
+        <text class="delete-account-text">{{i.deleteAccount}}</text>
+      </view>
+    </view>
+
+    <!-- About Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">{{i.about}}</text>
+      <view class="about-row">
+        <text class="about-label">{{i.version}}</text>
+        <text class="about-value">{{appVersion}}</text>
+      </view>
+      <view class="about-row about-row--link" bind:tap="onCopyGithub">
+        <text class="about-label">{{i.sourceCode}}</text>
+        <text class="about-link">github.com/Bryce199805/MemoPad ↗</text>
       </view>
     </view>
 

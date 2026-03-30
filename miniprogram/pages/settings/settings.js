@@ -1,5 +1,9 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const { t, getLang, setLang } = require('../../utils/i18n')
+
+const APP_VERSION = '2.1.0'
+const GITHUB_URL = 'https://github.com/Bryce199805/MemoPad'
 
 Page({
   data: {
@@ -16,7 +20,10 @@ Page({
     editingCatId: null,
     editingCatName: '',
     editingCatColorIdx: 0,
-    editingCatColor: '#6366f1'
+    editingCatColor: '#6366f1',
+    currentLang: 'en',
+    appVersion: APP_VERSION,
+    i: {}
   },
 
   onShow() {
@@ -24,8 +31,53 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
-    this.setData({ user: auth.getUser() })
+    this.setData({ user: auth.getUser(), currentLang: getLang() })
+    this.applyI18n()
     this.fetchData()
+  },
+
+  applyI18n() {
+    this.setData({
+      i: {
+        title: t('settings.title'),
+        profile: t('settings.profile'),
+        noEmail: t('settings.noEmail'),
+        language: t('settings.language'),
+        languageDesc: t('settings.languageDesc'),
+        categories: t('settings.categories'),
+        newCategoryPlaceholder: t('settings.newCategoryPlaceholder'),
+        add: t('settings.add'),
+        save: t('common.save'),
+        cancel: t('common.cancel'),
+        noCategories: t('settings.noCategories'),
+        support: 'Support',
+        feedbackIssues: t('feedback.title'),
+        admin: 'Admin',
+        adminPanel: t('admin.title'),
+        logout: t('settings.logout'),
+        deleteAccount: t('settings.deleteAccount'),
+        deleteAccountDesc: t('settings.deleteAccountDesc'),
+        about: t('settings.about'),
+        version: t('settings.version'),
+        sourceCode: t('settings.sourceCode')
+      }
+    })
+  },
+
+  setLang(e) {
+    const lang = e.currentTarget.dataset.lang
+    setLang(lang)
+    this.setData({ currentLang: lang })
+    this.applyI18n()
+  },
+
+  onCopyGithub() {
+    wx.setClipboardData({
+      data: GITHUB_URL,
+      success: () => {
+        wx.showToast({ title: t('settings.linkCopied'), icon: 'success' })
+      }
+    })
   },
 
   async fetchData() {
@@ -39,8 +91,8 @@ Page({
 
       // Count category usage
       const catUsageCounts = {}
-      todos.forEach(t => {
-        const catId = t.category_id || (t.category && t.category.id)
+      todos.forEach(todo => {
+        const catId = todo.category_id || (todo.category && todo.category.id)
         if (catId) {
           catUsageCounts[catId] = (catUsageCounts[catId] || 0) + 1
         }
@@ -78,23 +130,23 @@ Page({
     const { newCatName, newCatColor, categories } = this.data
     const name = newCatName.trim()
     if (!name) {
-      wx.showToast({ title: 'Please enter a name', icon: 'none' })
+      wx.showToast({ title: t('settings.newCategoryPlaceholder'), icon: 'none' })
       return
     }
     if (categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-      wx.showToast({ title: 'Category already exists', icon: 'none' })
+      wx.showToast({ title: t('settings.duplicateCategory'), icon: 'none' })
       return
     }
-    wx.showLoading({ title: 'Adding...' })
+    wx.showLoading({ title: t('common.loading') })
     try {
       await api.post('/api/categories', { name: newCatName.trim(), color: newCatColor })
       this.setData({ newCatName: '' })
       this.fetchData()
       wx.hideLoading()
-      wx.showToast({ title: 'Added', icon: 'success' })
+      wx.showToast({ title: t('common.success'), icon: 'success' })
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
@@ -104,24 +156,24 @@ Page({
     const usageCount = this.data.catUsageCounts[id] || 0
 
     if (usageCount > 0) {
-      wx.showToast({ title: 'Cannot delete: ' + usageCount + ' task(s) use "' + name + '"', icon: 'none', duration: 2500 })
+      wx.showToast({ title: t('settings.cannotDeleteCategory', { name, count: usageCount }), icon: 'none', duration: 2500 })
       return
     }
 
     wx.showModal({
-      title: 'Delete Category',
-      content: 'Delete "' + name + '"?',
+      title: t('common.delete'),
+      content: t('settings.confirmDeleteCategory', { name }),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: 'Deleting...' })
+        wx.showLoading({ title: t('common.loading') })
         try {
           await api.del('/api/categories/' + id)
           this.fetchData()
           wx.hideLoading()
-          wx.showToast({ title: 'Deleted', icon: 'success' })
+          wx.showToast({ title: t('common.success'), icon: 'success' })
         } catch (err) {
           wx.hideLoading()
-          wx.showToast({ title: 'Failed', icon: 'none' })
+          wx.showToast({ title: t('common.error'), icon: 'none' })
         }
       }
     })
@@ -158,24 +210,24 @@ Page({
     const { editingCatId, editingCatName, editingCatColor, categories } = this.data
     const name = editingCatName.trim()
     if (!name) {
-      wx.showToast({ title: 'Please enter a name', icon: 'none' })
+      wx.showToast({ title: t('settings.newCategoryPlaceholder'), icon: 'none' })
       return
     }
     // Check for duplicate name (excluding current category)
     if (categories.some(c => c.id !== editingCatId && c.name.toLowerCase() === name.toLowerCase())) {
-      wx.showToast({ title: 'Category already exists', icon: 'none' })
+      wx.showToast({ title: t('settings.duplicateCategory'), icon: 'none' })
       return
     }
-    wx.showLoading({ title: 'Saving...' })
+    wx.showLoading({ title: t('common.loading') })
     try {
       await api.put('/api/categories/' + editingCatId, { name, color: editingCatColor })
       this.setData({ editingCatId: null, editingCatName: '' })
       this.fetchData()
       wx.hideLoading()
-      wx.showToast({ title: 'Saved', icon: 'success' })
+      wx.showToast({ title: t('common.success'), icon: 'success' })
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: 'Failed', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
     }
   },
 
@@ -187,8 +239,8 @@ Page({
 
   onLogout() {
     wx.showModal({
-      title: 'Logout',
-      content: 'Are you sure you want to logout?',
+      title: t('settings.logout'),
+      content: t('settings.logoutConfirm'),
       confirmColor: '#ef4444',
       success: (res) => {
         if (res.confirm) {
@@ -215,27 +267,27 @@ Page({
       return
     }
     wx.showModal({
-      title: 'Delete Account',
-      content: 'This action cannot be undone. All your data will be permanently deleted.',
+      title: t('settings.deleteAccount'),
+      content: t('settings.confirmDeleteAccount'),
       confirmColor: '#ef4444',
-      confirmText: 'Delete',
+      confirmText: t('common.confirm'),
       success: (res) => {
         if (!res.confirm) return
         wx.showModal({
-          title: 'Confirm Delete',
-          content: 'Are you absolutely sure? Type "DELETE" to confirm.',
+          title: t('settings.deleteAccount'),
+          content: t('settings.confirmDeleteAccount2'),
           confirmColor: '#ef4444',
-          confirmText: 'DELETE',
+          confirmText: t('common.confirm'),
           success: async (res2) => {
             if (!res2.confirm) return
-            wx.showLoading({ title: 'Deleting...' })
+            wx.showLoading({ title: t('common.loading') })
             try {
               await api.del('/api/auth/account')
               wx.hideLoading()
               auth.logout()
             } catch (err) {
               wx.hideLoading()
-              wx.showToast({ title: err.error || 'Failed', icon: 'none' })
+              wx.showToast({ title: err.error || t('settings.failedDelete'), icon: 'none' })
             }
           }
         })
