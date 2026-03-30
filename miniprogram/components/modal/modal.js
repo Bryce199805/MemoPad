@@ -1,4 +1,8 @@
+const i18nBehavior = require('../../utils/i18n-behavior')
+
 Component({
+  behaviors: [i18nBehavior],
+
   properties: {
     show: {
       type: Boolean,
@@ -11,6 +15,14 @@ Component({
     hideFooter: {
       type: Boolean,
       value: false
+    },
+    cancelText: {
+      type: String,
+      value: ''
+    },
+    confirmText: {
+      type: String,
+      value: ''
     }
   },
 

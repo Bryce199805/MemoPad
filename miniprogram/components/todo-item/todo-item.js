@@ -1,4 +1,8 @@
+const i18nBehavior = require('../../utils/i18n-behavior')
+
 Component({
+  behaviors: [i18nBehavior],
+
   properties: {
     todo: {
       type: Object,

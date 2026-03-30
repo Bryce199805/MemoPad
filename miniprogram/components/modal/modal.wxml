@@ -1,3 +1,17 @@
+<wxs module="utils">
+module.exports = {
+  btnText: function(key, lang) {
+    if (lang === 'zh') {
+      if (key === 'cancel') return '取消';
+      if (key === 'confirm') return '确认';
+    }
+    if (key === 'cancel') return 'Cancel';
+    if (key === 'confirm') return 'Confirm';
+    return '';
+  }
+};
+</wxs>
+
 <view class="modal-mask {{show ? 'modal-mask--show' : ''}}" wx:if="{{show}}" catchtouchmove="preventTouchMove" bind:tap="onMaskClick">
   <view class="modal-sheet" catchtap="stopPropagation">
     <view class="modal-header">
@@ -11,10 +25,10 @@
 
     <view class="modal-footer" wx:if="{{!hideFooter}}">
       <view class="modal-btn modal-btn--cancel" bind:tap="onClose">
-        <text>Cancel</text>
+        <text>{{cancelText || utils.btnText('cancel', _lang)}}</text>
       </view>
       <view class="modal-btn modal-btn--confirm" bind:tap="onConfirm">
-        <text>Confirm</text>
+        <text>{{confirmText || utils.btnText('confirm', _lang)}}</text>
       </view>
     </view>
   </view>

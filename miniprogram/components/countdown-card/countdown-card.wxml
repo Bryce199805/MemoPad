@@ -4,17 +4,24 @@ module.exports = {
     var map = { high: 'danger', medium: 'warning', low: 'success' };
     return map[priority] || 'info';
   },
-  getPriorityLabel: function(priority) {
-    var map = { high: 'High', medium: 'Medium', low: 'Low' };
-    return map[priority] || '';
+  getPriorityLabel: function(priority, lang) {
+    if (lang === 'zh') {
+      var zh = { high: '高', medium: '中', low: '低' };
+      return zh[priority] || '';
+    }
+    var en = { high: 'High', medium: 'Medium', low: 'Low' };
+    return en[priority] || '';
   },
   getPriorityColor: function(priority) {
     var map = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
     return map[priority] || '#6366f1';
   },
-  formatDate: function(dateStr) {
+  formatDate: function(dateStr, lang) {
     if (!dateStr) return '';
     var date = getDate(dateStr);
+    if (lang === 'zh') {
+      return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
+    }
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
   },
@@ -25,13 +32,23 @@ module.exports = {
     var diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
     return diff;
   },
-  getDaysDisplay: function(dateStr) {
+  getDaysLabel: function(dateStr, lang) {
     var diff = this.calcDaysLeft(dateStr);
-    if (diff >= 0) {
-      return { num: diff, label: 'd' };
-    } else {
-      return { num: -diff, label: 'd ago' };
+    if (lang === 'zh') {
+      return diff >= 0 ? '天剩余' : '天前';
     }
+    return diff >= 0 ? 'd' : 'd ago';
+  },
+  actionText: function(key, pinned, lang) {
+    if (lang === 'zh') {
+      if (key === 'pin') return pinned ? '取消置顶' : '置顶';
+      if (key === 'edit') return '编辑';
+      if (key === 'delete') return '删除';
+    }
+    if (key === 'pin') return pinned ? 'Unpin' : 'Pin';
+    if (key === 'edit') return 'Edit';
+    if (key === 'delete') return 'Delete';
+    return '';
   }
 };
 </wxs>
@@ -41,25 +58,25 @@ module.exports = {
 
   <view class="countdown-header">
     <text class="countdown-title">{{countdown.title}}</text>
-    <badge wx:if="{{countdown.priority}}" text="{{utils.getPriorityLabel(countdown.priority)}}" variant="{{utils.getPriorityVariant(countdown.priority)}}"></badge>
+    <badge wx:if="{{countdown.priority}}" text="{{utils.getPriorityLabel(countdown.priority, _lang)}}" variant="{{utils.getPriorityVariant(countdown.priority)}}"></badge>
   </view>
 
   <view class="countdown-body">
     <text class="countdown-days">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? utils.calcDaysLeft(countdown.target_date) : -utils.calcDaysLeft(countdown.target_date)}}</text>
-    <text class="countdown-days-label">{{utils.calcDaysLeft(countdown.target_date) >= 0 ? 'd' : 'd ago'}}</text>
+    <text class="countdown-days-label">{{utils.getDaysLabel(countdown.target_date, _lang)}}</text>
   </view>
 
-  <text class="countdown-date">{{utils.formatDate(countdown.target_date)}}</text>
+  <text class="countdown-date">{{utils.formatDate(countdown.target_date, _lang)}}</text>
 
   <view class="countdown-footer">
     <view class="countdown-action" bind:tap="onPin">
-      <text>{{countdown.pinned ? 'Unpin' : 'Pin'}}</text>
+      <text>{{utils.actionText('pin', countdown.pinned, _lang)}}</text>
     </view>
     <view class="countdown-action" bind:tap="onEdit">
-      <text>Edit</text>
+      <text>{{utils.actionText('edit', false, _lang)}}</text>
     </view>
     <view class="countdown-action countdown-action--danger" bind:tap="onDelete">
-      <text>Delete</text>
+      <text>{{utils.actionText('delete', false, _lang)}}</text>
     </view>
   </view>
 </view>

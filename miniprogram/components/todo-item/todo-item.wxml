@@ -4,6 +4,14 @@ module.exports = {
     var map = { high: 'danger', medium: 'warning', low: 'success' };
     return map[priority] || 'info';
   },
+  getPriorityLabel: function(priority, lang) {
+    if (lang === 'zh') {
+      var zh = { high: '高', medium: '中', low: '低' };
+      return zh[priority] || '';
+    }
+    var en = { high: 'High', medium: 'Medium', low: 'Low' };
+    return en[priority] || '';
+  },
   getCategoryName: function(categoryId, categories) {
     // If already a full object, use its name directly
     if (categoryId && typeof categoryId === 'object' && categoryId.name) {
@@ -35,6 +43,17 @@ module.exports = {
       if (categories[i].id === categoryId) return true;
     }
     return false;
+  },
+  actionText: function(key, pinned, lang) {
+    if (lang === 'zh') {
+      if (key === 'pin') return pinned ? '取消置顶' : '置顶';
+      if (key === 'edit') return '编辑';
+      if (key === 'delete') return '删除';
+    }
+    if (key === 'pin') return pinned ? 'Unpin' : 'Pin';
+    if (key === 'edit') return 'Edit';
+    if (key === 'delete') return 'Delete';
+    return '';
   }
 };
 </wxs>
@@ -50,7 +69,7 @@ module.exports = {
     <text class="todo-text {{todo.done ? 'todo-text--done' : ''}}">{{todo.content}}</text>
     <view class="todo-meta" wx:if="{{todo.priority || todo.category}}">
       <view wx:if="{{todo.priority}}" class="priority-badge-wrap">
-        <badge text="{{todo.priority === 'high' ? 'High' : todo.priority === 'medium' ? 'Medium' : 'Low'}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
+        <badge text="{{utils.getPriorityLabel(todo.priority, _lang)}}" variant="{{utils.getPriorityVariant(todo.priority)}}"></badge>
       </view>
       <badge wx:if="{{utils.hasCategoryName(todo.category, categories)}}" text="{{utils.getCategoryName(todo.category, categories)}}" customColor="{{utils.getCategoryColor(todo.category, categories)}}"></badge>
     </view>
@@ -67,13 +86,13 @@ module.exports = {
 
       <view class="todo-action-menu {{showActions ? 'todo-action-menu--show' : ''}}" wx:if="{{showActions}}">
         <view class="todo-action-item" bind:tap="onPin">
-          <text>{{todo.pinned ? 'Unpin' : 'Pin'}}</text>
+          <text>{{utils.actionText('pin', todo.pinned, _lang)}}</text>
         </view>
         <view class="todo-action-item" bind:tap="onEdit">
-          <text>Edit</text>
+          <text>{{utils.actionText('edit', false, _lang)}}</text>
         </view>
         <view class="todo-action-item todo-action-item--danger" bind:tap="onDelete">
-          <text>Delete</text>
+          <text>{{utils.actionText('delete', false, _lang)}}</text>
         </view>
       </view>
     </view>
