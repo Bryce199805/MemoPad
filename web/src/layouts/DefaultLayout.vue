@@ -383,7 +383,8 @@ onMounted(() => {
 }
 
 .mobile-nav-item {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 14px 16px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
