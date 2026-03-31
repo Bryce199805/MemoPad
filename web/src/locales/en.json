@@ -277,6 +277,7 @@
     "failedSubmitReply": "Failed to submit reply",
     "failedDeleteReply": "Failed to delete reply",
     "failedDeleteTicket": "Failed to delete ticket",
+    "statusInProg": "In Progress",
     "systemConfig": "System Configuration",
     "manageSettings": "Manage system settings",
     "generalSettings": "General Settings",

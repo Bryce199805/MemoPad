@@ -277,6 +277,7 @@
     "failedSubmitReply": "发送回复失败",
     "failedDeleteReply": "删除回复失败",
     "failedDeleteTicket": "删除工单失败",
+    "statusInProg": "处理中",
     "systemConfig": "系统配置",
     "manageSettings": "管理系统设置",
     "generalSettings": "基本设置",

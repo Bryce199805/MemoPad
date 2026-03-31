@@ -50,6 +50,8 @@
               v-for="ticket in pagedTickets"
               :key="ticket.id"
               :class="{ 'row-highlight': ticket.id === highlightId }"
+              class="ticket-row"
+              @click="openDetail(ticket)"
             >
               <td class="col-id text-muted">{{ ticket.id }}</td>
               <td class="col-title">
@@ -71,9 +73,10 @@
                   :value="ticket.status"
                   :class="['status-select', ticket.status]"
                   @change="updateStatus(ticket, $event.target.value)"
+                  @click.stop
                 >
                   <option value="open">{{ $t('feedback.statusOpen') }}</option>
-                  <option value="in_progress">{{ $t('feedback.statusInProgress') }}</option>
+                  <option value="in_progress">{{ $t('admin.statusInProg') }}</option>
                   <option value="resolved">{{ $t('feedback.statusResolved') }}</option>
                   <option value="closed">{{ $t('feedback.statusClosed') }}</option>
                 </select>
@@ -83,7 +86,7 @@
                 <div class="row-actions">
                   <button
                     class="action-btn reply-btn"
-                    @click="openDetail(ticket)"
+                    @click.stop="openDetail(ticket)"
                     :title="$t('admin.reply')"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -91,7 +94,7 @@
                   </button>
                   <button
                     class="action-btn delete-btn"
-                    @click="deleteTicket(ticket)"
+                    @click.stop="deleteTicket(ticket)"
                     :title="$t('common.delete')"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -492,18 +495,18 @@ onMounted(async () => {
 }
 
 .ticket-table th {
-  padding: 10px 14px;
+  padding: 12px 14px;
   text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
 .ticket-table td {
-  padding: 11px 14px;
+  padding: 13px 14px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
@@ -523,10 +526,14 @@ onMounted(async () => {
 .col-id      { width: 48px; }
 .col-title   { min-width: 200px; }
 .col-user    { width: 130px; }
-.col-priority{ width: 90px; }
-.col-status  { width: 140px; }
-.col-date    { width: 110px; white-space: nowrap; }
-.col-actions { width: 90px; }
+.col-priority{ width: 80px; text-align: center; }
+.col-status  { width: 110px; text-align: center; }
+.col-date    { width: 100px; white-space: nowrap; }
+.col-actions { width: 80px; text-align: center; }
+
+.ticket-row {
+  cursor: pointer;
+}
 
 .text-muted { color: var(--text-muted); }
 
@@ -568,9 +575,9 @@ onMounted(async () => {
 
 /* Status select */
 .status-select {
-  padding: 4px 8px;
+  padding: 4px 6px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   border: none;
   outline: none;
@@ -578,6 +585,7 @@ onMounted(async () => {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
+  text-align: center;
 }
 
 .status-select.open        { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
