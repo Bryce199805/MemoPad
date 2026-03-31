@@ -5,76 +5,84 @@
       <p class="subtitle">{{ $t('feedback.subtitle') }}</p>
     </div>
 
-    <!-- Submit Form -->
-    <Card class="section-card">
-      <template #header>{{ $t('feedback.submitTicket') }}</template>
-      <form @submit.prevent="submitTicket" class="ticket-form">
-        <div class="form-group">
-          <label>{{ $t('feedback.titleField') }}</label>
-          <input
-            v-model="form.title"
-            type="text"
-            :placeholder="$t('feedback.titlePlaceholder')"
-            required
-            maxlength="200"
-          />
-        </div>
+    <div class="feedback-grid">
+      <!-- Left column: Submit Form -->
+      <div class="feedback-col">
+        <Card class="section-card">
+          <template #header>{{ $t('feedback.submitTicket') }}</template>
+          <form @submit.prevent="submitTicket" class="ticket-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>{{ $t('feedback.titleField') }}</label>
+                <input
+                  v-model="form.title"
+                  type="text"
+                  :placeholder="$t('feedback.titlePlaceholder')"
+                  required
+                  maxlength="200"
+                />
+              </div>
 
-        <div class="form-group">
-          <label>{{ $t('feedback.priority') }}</label>
-          <select v-model="form.priority">
-            <option value="low">{{ $t('feedback.priorityLow') }}</option>
-            <option value="medium">{{ $t('feedback.priorityMedium') }}</option>
-            <option value="high">{{ $t('feedback.priorityHigh') }}</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>{{ $t('feedback.description') }}</label>
-          <textarea
-            v-model="form.description"
-            :placeholder="$t('feedback.descPlaceholder')"
-            rows="5"
-            maxlength="2000"
-          ></textarea>
-        </div>
-
-        <div class="form-actions">
-          <Button type="submit" variant="primary" :disabled="!form.title.trim() || submitting">
-            {{ submitting ? $t('feedback.submitting') : $t('feedback.submit') }}
-          </Button>
-        </div>
-      </form>
-    </Card>
-
-    <!-- My Tickets -->
-    <Card class="section-card">
-      <template #header>{{ $t('feedback.myTickets') }}</template>
-      <div class="tickets-list">
-        <div v-for="ticket in tickets" :key="ticket.id" class="ticket-item" @click="showTicketDetail(ticket)">
-          <div class="ticket-header">
-            <div class="ticket-title-row">
-              <span class="ticket-title">{{ ticket.title }}</span>
-              <span v-if="ticket.reply && !ticket.reply_read_at" class="unread-dot" :title="$t('feedback.newReply')"></span>
+              <div class="form-group form-group-priority">
+                <label>{{ $t('feedback.priority') }}</label>
+                <select v-model="form.priority">
+                  <option value="low">{{ $t('feedback.priorityLow') }}</option>
+                  <option value="medium">{{ $t('feedback.priorityMedium') }}</option>
+                  <option value="high">{{ $t('feedback.priorityHigh') }}</option>
+                </select>
+              </div>
             </div>
-            <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
-          </div>
-          <div class="ticket-meta">
-            <span class="ticket-priority" :class="ticket.priority">{{ ticket.priority }}</span>
-            <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
-          </div>
-          <div v-if="ticket.reply" class="ticket-reply-preview">
-            <strong>{{ $t('feedback.adminReply') }}</strong>
-            <span v-if="!ticket.reply_read_at" class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
-            {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
-          </div>
-        </div>
-        <div v-if="tickets.length === 0 && !loading" class="empty-text">
-          {{ $t('feedback.noTickets') }}
-        </div>
-          <div v-if="loading" class="loading-text">{{ $t('common.loading') }}</div>
+
+            <div class="form-group">
+              <label>{{ $t('feedback.description') }}</label>
+              <textarea
+                v-model="form.description"
+                :placeholder="$t('feedback.descPlaceholder')"
+                rows="6"
+                maxlength="2000"
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <Button type="submit" variant="primary" :disabled="!form.title.trim() || submitting">
+                {{ submitting ? $t('feedback.submitting') : $t('feedback.submit') }}
+              </Button>
+            </div>
+          </form>
+        </Card>
       </div>
-    </Card>
+
+      <!-- Right column: My Tickets -->
+      <div class="feedback-col">
+        <Card class="section-card">
+          <template #header>{{ $t('feedback.myTickets') }}</template>
+          <div class="tickets-list">
+            <div v-for="ticket in tickets" :key="ticket.id" class="ticket-item" @click="showTicketDetail(ticket)">
+              <div class="ticket-header">
+                <div class="ticket-title-row">
+                  <span class="ticket-title">{{ ticket.title }}</span>
+                  <span v-if="ticket.reply && !ticket.reply_read_at" class="unread-dot" :title="$t('feedback.newReply')"></span>
+                </div>
+                <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
+              </div>
+              <div class="ticket-meta">
+                <span class="ticket-priority" :class="ticket.priority">{{ ticket.priority }}</span>
+                <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
+              </div>
+              <div v-if="ticket.reply" class="ticket-reply-preview">
+                <strong>{{ $t('feedback.adminReply') }}</strong>
+                <span v-if="!ticket.reply_read_at" class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
+                {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
+              </div>
+            </div>
+            <div v-if="tickets.length === 0 && !loading" class="empty-text">
+              {{ $t('feedback.noTickets') }}
+            </div>
+            <div v-if="loading" class="loading-text">{{ $t('common.loading') }}</div>
+          </div>
+        </Card>
+      </div>
+    </div>
 
     <!-- Ticket Detail Modal -->
     <Teleport to="body">
@@ -211,7 +219,7 @@ onMounted(() => {
 
 <style scoped>
 .feedback-page {
-  max-width: 700px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -231,8 +239,22 @@ onMounted(() => {
   margin-top: 4px;
 }
 
+/* Two-column grid layout */
+.feedback-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.feedback-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .section-card {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 /* Form */
@@ -240,6 +262,19 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group-priority {
+  flex: 0 0 140px !important;
 }
 
 .form-group {
@@ -267,7 +302,7 @@ onMounted(() => {
 
 .form-group textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
 }
 
 .form-actions {
@@ -424,7 +459,7 @@ onMounted(() => {
 
 .modal {
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   max-height: 90vh;
   overflow: auto;
 }
@@ -503,5 +538,20 @@ onMounted(() => {
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
+}
+
+/* Responsive: collapse to single column on smaller screens */
+@media (max-width: 768px) {
+  .feedback-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-group-priority {
+    flex: 1 !important;
+  }
 }
 </style>
