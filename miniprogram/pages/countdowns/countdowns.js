@@ -240,6 +240,8 @@ Page({
       success: async (res) => {
         if (!res.confirm) return
         wx.showLoading({ title: t('common.loading') })
+        try {
+          await Promise.all(selectedIds.map(id => api.del('/api/countdowns/' + id)))
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData(true)
           wx.hideLoading()
