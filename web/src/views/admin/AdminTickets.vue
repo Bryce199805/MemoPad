@@ -158,10 +158,10 @@
                 <div
                   v-for="reply in detailTicket.replies"
                   :key="reply.id"
-                  class="reply-item"
+                  :class="['reply-item', reply.is_admin ? 'reply-item--admin' : 'reply-item--user']"
                 >
                   <div class="reply-item-header">
-                    <span class="reply-admin-label">{{ $t('admin.adminReply') }}</span>
+                    <span :class="reply.is_admin ? 'reply-admin-label' : 'reply-user-label'">{{ reply.is_admin ? $t('admin.adminReply') : (detailTicket.username || $t('feedback.userReply')) }}</span>
                     <span class="reply-time">{{ formatDateTime(reply.created_at) }}</span>
                     <button
                       class="reply-delete-btn"
@@ -816,10 +816,18 @@ onMounted(async () => {
 }
 
 .reply-item {
-  background: rgba(20, 184, 166, 0.06);
-  border-left: 2px solid rgba(20, 184, 166, 0.4);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: 10px 12px;
+}
+
+.reply-item--admin {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 2px solid rgba(20, 184, 166, 0.4);
+}
+
+.reply-item--user {
+  background: rgba(99, 102, 241, 0.06);
+  border-left: 2px solid rgba(99, 102, 241, 0.4);
 }
 
 .reply-item-header {
@@ -833,6 +841,15 @@ onMounted(async () => {
   font-size: 11px;
   font-weight: 600;
   color: #14b8a6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+
+.reply-user-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   flex: 1;
