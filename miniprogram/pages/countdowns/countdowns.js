@@ -234,7 +234,7 @@ Page({
     if (selectedIds.length === 0) return
     wx.showModal({
       title: t('countdown.confirmBatchDelete', { n: selectedIds.length }),
-      content: t('countdown.confirmBatchDelete', { n: selectedIds.length }),
+      content: t('countdown.batchDeleteHint'),
       confirmText: t('common.delete'),
       cancelText: t('common.cancel'),
       success: async (res) => {

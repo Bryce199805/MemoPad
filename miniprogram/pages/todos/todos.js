@@ -305,8 +305,8 @@ Page({
     const { selectedIds } = this.data
     if (selectedIds.length === 0) return
     wx.showModal({
-      title: t('todo.batchDelete', { n: selectedIds.length }),
-      content: t('todo.confirmBatchDelete', { n: selectedIds.length }),
+      title: t('todo.confirmBatchDelete', { n: selectedIds.length }),
+      content: t('todo.batchDeleteHint'),
       confirmText: t('common.confirm'),
       cancelText: t('common.cancel'),
       success: async (res) => {
