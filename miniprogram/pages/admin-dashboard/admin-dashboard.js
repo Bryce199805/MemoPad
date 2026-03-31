@@ -62,7 +62,7 @@ Page({
         enable: t('admin.enable'),
         disable: t('admin.disable'),
         delete: t('common.delete'),
-        you: '(You)',
+        you: t('admin.you'),
         // Tickets tab
         noTickets: t('admin.noTickets'),
         noDescription: t('feedback.noDescription'),
