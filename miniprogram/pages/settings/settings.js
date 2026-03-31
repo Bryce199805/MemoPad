@@ -23,6 +23,7 @@ Page({
     editingCatColor: '#6366f1',
     currentLang: 'en',
     appVersion: APP_VERSION,
+    unreadCount: 0,
     i: {}
   },
 
@@ -38,6 +39,7 @@ Page({
     } else {
       this.fetchData(true)
     }
+    this.fetchUnreadCount()
   },
 
   applyI18n() {
@@ -82,6 +84,18 @@ Page({
         wx.showToast({ title: t('settings.linkCopied'), icon: 'success' })
       }
     })
+  },
+
+  async fetchUnreadCount() {
+    const user = auth.getUser()
+    if (user && user.role === 'admin') return
+    try {
+      const res = await api.get('/api/tickets/unread-count')
+      const data = res.data || res
+      this.setData({ unreadCount: data.count || 0 })
+    } catch (e) {
+      // silently ignore
+    }
   },
 
   async fetchData(silent) {

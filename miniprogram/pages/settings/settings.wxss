@@ -349,6 +349,27 @@
   color: var(--accent-primary);
 }
 
+.link-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.unread-badge {
+  background: #ef4444;
+  border-radius: 999rpx;
+  padding: 2rpx 12rpx;
+  min-width: 32rpx;
+  text-align: center;
+}
+
+.unread-badge-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #fff;
+  line-height: 28rpx;
+}
+
 /* Danger Zone */
 .danger-zone {
   border: 1px solid rgba(239, 68, 68, 0.2);
