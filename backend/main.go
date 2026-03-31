@@ -246,6 +246,12 @@ func startRateLimitCleanup() {
 					}
 				}
 				loginFailLimiter.mu.Unlock()
+
+				// Auto-close resolved tickets after 3 days
+				db.Model(&Ticket{}).
+					Where("status = ? AND resolved_at IS NOT NULL AND resolved_at < ?",
+						"resolved", time.Now().Add(-3*24*time.Hour)).
+					Updates(map[string]interface{}{"status": "closed"})
 			case <-rateLimitStop:
 				return
 			}
@@ -484,17 +490,27 @@ type SystemConfig struct {
 
 // Ticket 工单模型
 type Ticket struct {
-	ID          uint      `json:"id" gorm:"primaryKey"`
-	UserID      uint      `json:"user_id" gorm:"index;not null"`
-	User        *User     `json:"user,omitempty" gorm:"foreignKey:UserID"`
-	Title       string    `json:"title" gorm:"size:200;not null"`
-	Description string    `json:"description" gorm:"size:2000"`
-	Priority    string    `json:"priority" gorm:"size:10;default:medium"`  // high/medium/low
-	Status      string    `json:"status" gorm:"size:20;default:open"`      // open/in_progress/resolved/closed
-	Reply       string     `json:"reply" gorm:"size:2000"`
-	ReplyReadAt *time.Time `json:"reply_read_at" gorm:"default:null"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	UserID      uint           `json:"user_id" gorm:"index;not null"`
+	User        *User          `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Title       string         `json:"title" gorm:"size:200;not null"`
+	Description string         `json:"description" gorm:"size:2000"`
+	Priority    string         `json:"priority" gorm:"size:10;default:medium"`  // high/medium/low
+	Status      string         `json:"status" gorm:"size:20;default:open"`      // open/in_progress/resolved/closed
+	Reply       string         `json:"reply" gorm:"size:2000"`                  // legacy field, kept for compatibility
+	ReplyReadAt *time.Time     `json:"reply_read_at" gorm:"default:null"`
+	ResolvedAt  *time.Time     `json:"resolved_at" gorm:"default:null"`
+	Replies     []TicketReply  `json:"replies" gorm:"foreignKey:TicketID"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+// TicketReply 工单回复模型
+type TicketReply struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	TicketID  uint      `json:"ticket_id" gorm:"index;not null"`
+	Content   string    `json:"content" gorm:"size:2000;not null"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Stats for dashboard
@@ -563,7 +579,7 @@ func main() {
 	sqlDB.Exec("PRAGMA foreign_keys=ON")    // Enforce FK constraints (off by default in SQLite)
 
 	// Auto migrate
-	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{}, &Ticket{})
+	db.AutoMigrate(&User{}, &Todo{}, &Countdown{}, &Category{}, &SystemConfig{}, &Ticket{}, &TicketReply{})
 
 	// Initialize default system config
 	initSystemConfig()
@@ -678,8 +694,10 @@ func setupRoutes(r *gin.Engine) {
 		// Tickets
 		api.GET("/tickets", getTickets)
 		api.POST("/tickets", createTicket)
+		api.GET("/tickets/unread-count", getTicketUnreadCount)
 		api.GET("/tickets/:id", getTicket)
 		api.PUT("/tickets/:id/read", markTicketRead)
+		api.PUT("/tickets/:id/close", closeTicket)
 
 		// Account management
 		api.DELETE("/auth/account", deleteOwnAccount)
@@ -710,6 +728,8 @@ func setupRoutes(r *gin.Engine) {
 		admin.GET("/tickets", adminGetTickets)
 		admin.PUT("/tickets/:id", adminUpdateTicket)
 		admin.DELETE("/tickets/:id", adminDeleteTicket)
+		admin.POST("/tickets/:id/replies", adminAddTicketReply)
+		admin.DELETE("/tickets/:id/replies/:replyId", adminDeleteTicketReply)
 	}
 }
 
@@ -1101,6 +1121,8 @@ func deleteOwnAccount(c *gin.Context) {
 
 	// Delete user's data and account in a single transaction
 	if err := db.Transaction(func(tx *gorm.DB) error {
+		// Delete ticket replies before tickets (no user_id on replies)
+		tx.Where("ticket_id IN (SELECT id FROM tickets WHERE user_id = ?)", user.ID).Delete(&TicketReply{})
 		for _, model := range []interface{}{&Todo{}, &Countdown{}, &Category{}, &Ticket{}} {
 			if err := tx.Where("user_id = ?", user.ID).Delete(model).Error; err != nil {
 				return err
@@ -1516,7 +1538,9 @@ func deleteCategory(c *gin.Context) {
 func getTickets(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 	var tickets []Ticket
-	db.Where("user_id = ?", userID).Order("created_at DESC").Find(&tickets)
+	db.Where("user_id = ?", userID).Preload("Replies", func(db *gorm.DB) *gorm.DB {
+		return db.Order("created_at ASC")
+	}).Order("created_at DESC").Find(&tickets)
 	c.JSON(http.StatusOK, successResponse(tickets))
 }
 
@@ -1525,13 +1549,15 @@ func getTicket(c *gin.Context) {
 	id := c.Param("id")
 
 	var ticket Ticket
-	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&ticket).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", id, userID).Preload("Replies", func(db *gorm.DB) *gorm.DB {
+		return db.Order("created_at ASC")
+	}).First(&ticket).Error; err != nil {
 		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
 		return
 	}
 
 	// Auto-mark reply as read when user views the ticket
-	if ticket.Reply != "" && ticket.ReplyReadAt == nil {
+	if len(ticket.Replies) > 0 && ticket.ReplyReadAt == nil {
 		now := time.Now()
 		db.Model(&ticket).Update("reply_read_at", now)
 		ticket.ReplyReadAt = &now
@@ -1550,13 +1576,43 @@ func markTicketRead(c *gin.Context) {
 		return
 	}
 
-	if ticket.Reply != "" && ticket.ReplyReadAt == nil {
+	if ticket.ReplyReadAt == nil {
 		now := time.Now()
 		db.Model(&ticket).Update("reply_read_at", now)
 		ticket.ReplyReadAt = &now
 	}
 
 	c.JSON(http.StatusOK, successResponse(ticket))
+}
+
+func getTicketUnreadCount(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
+	var count int64
+	db.Model(&Ticket{}).
+		Where("user_id = ? AND reply_read_at IS NULL AND id IN (SELECT DISTINCT ticket_id FROM ticket_replies)", userID).
+		Count(&count)
+
+	c.JSON(http.StatusOK, successResponse(map[string]int64{"count": count}))
+}
+
+func closeTicket(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&ticket).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	if ticket.Status == "closed" {
+		c.JSON(http.StatusBadRequest, errorResponse("Ticket is already closed", "VALIDATION_ERROR"))
+		return
+	}
+
+	db.Model(&ticket).Update("status", "closed")
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Ticket closed"}))
 }
 
 func createTicket(c *gin.Context) {
@@ -1667,29 +1723,32 @@ func getStats(c *gin.Context) {
 // Admin ticket handlers
 func adminGetTickets(c *gin.Context) {
 	status := c.Query("status")
-	
+
 	var tickets []Ticket
-	query := db.Preload("User").Order("created_at DESC")
-	
+	query := db.Preload("User").Preload("Replies", func(db *gorm.DB) *gorm.DB {
+		return db.Order("created_at ASC")
+	}).Order("created_at DESC")
+
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-	
+
 	query.Find(&tickets)
 
 	// Return user info without sensitive data
 	type TicketWithUser struct {
-		ID          uint       `json:"id"`
-		UserID      uint       `json:"user_id"`
-		Username    string     `json:"username"`
-		Title       string     `json:"title"`
-		Description string     `json:"description"`
-		Priority    string     `json:"priority"`
-		Status      string     `json:"status"`
-		Reply       string     `json:"reply"`
-		ReplyReadAt *time.Time `json:"reply_read_at"`
-		CreatedAt   time.Time  `json:"created_at"`
-		UpdatedAt   time.Time  `json:"updated_at"`
+		ID          uint          `json:"id"`
+		UserID      uint          `json:"user_id"`
+		Username    string        `json:"username"`
+		Title       string        `json:"title"`
+		Description string        `json:"description"`
+		Priority    string        `json:"priority"`
+		Status      string        `json:"status"`
+		ReplyReadAt *time.Time    `json:"reply_read_at"`
+		ResolvedAt  *time.Time    `json:"resolved_at"`
+		Replies     []TicketReply `json:"replies"`
+		CreatedAt   time.Time     `json:"created_at"`
+		UpdatedAt   time.Time     `json:"updated_at"`
 	}
 
 	var result []TicketWithUser
@@ -1697,6 +1756,10 @@ func adminGetTickets(c *gin.Context) {
 		username := ""
 		if t.User != nil {
 			username = t.User.Username
+		}
+		replies := t.Replies
+		if replies == nil {
+			replies = []TicketReply{}
 		}
 		result = append(result, TicketWithUser{
 			ID:          t.ID,
@@ -1706,11 +1769,16 @@ func adminGetTickets(c *gin.Context) {
 			Description: t.Description,
 			Priority:    t.Priority,
 			Status:      t.Status,
-			Reply:       t.Reply,
 			ReplyReadAt: t.ReplyReadAt,
+			ResolvedAt:  t.ResolvedAt,
+			Replies:     replies,
 			CreatedAt:   t.CreatedAt,
 			UpdatedAt:   t.UpdatedAt,
 		})
+	}
+
+	if result == nil {
+		result = []TicketWithUser{}
 	}
 
 	c.JSON(http.StatusOK, successResponse(result))
@@ -1731,8 +1799,8 @@ func adminUpdateTicket(c *gin.Context) {
 		return
 	}
 
-	// Whitelist allowed fields to prevent mass-assignment
-	allowed := map[string]bool{"status": true, "priority": true, "reply": true}
+	// Whitelist allowed fields to prevent mass-assignment (reply removed — use /replies endpoint)
+	allowed := map[string]bool{"status": true, "priority": true}
 	updates := make(map[string]interface{})
 	for k, v := range input {
 		if allowed[k] {
@@ -1747,6 +1815,13 @@ func adminUpdateTicket(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, errorResponse("Invalid status", "VALIDATION_ERROR"))
 			return
 		}
+		// Track when ticket is resolved (for auto-close after 3 days)
+		if status == "resolved" && ticket.Status != "resolved" {
+			now := time.Now()
+			updates["resolved_at"] = now
+		} else if status != "resolved" {
+			updates["resolved_at"] = nil
+		}
 	}
 
 	// Validate priority
@@ -1758,17 +1833,79 @@ func adminUpdateTicket(c *gin.Context) {
 	}
 
 	db.Model(&ticket).Updates(updates)
-	// When admin sets a reply, reset reply_read_at to NULL (GORM skips nil in Updates, use explicit Update)
-	if reply, ok := updates["reply"].(string); ok && reply != "" {
-		db.Model(&ticket).Update("reply_read_at", nil)
+	// Handle resolved_at nil explicitly (GORM skips nil in map Updates)
+	if _, hasStatus := updates["status"]; hasStatus {
+		if updates["resolved_at"] == nil {
+			db.Model(&ticket).Update("resolved_at", nil)
+		}
 	}
 	db.First(&ticket, id)
 	c.JSON(http.StatusOK, successResponse(ticket))
 }
 
+func adminAddTicketReply(c *gin.Context) {
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.First(&ticket, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	var input struct {
+		Content string `json:"content" binding:"required,max=2000"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Content is required (max 2000 chars)", "VALIDATION_ERROR"))
+		return
+	}
+
+	reply := TicketReply{
+		TicketID: ticket.ID,
+		Content:  sanitizeString(input.Content),
+	}
+	if err := db.Create(&reply).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to save reply", "INTERNAL_ERROR"))
+		return
+	}
+
+	// Reset reply_read_at so user sees the new reply notification
+	db.Model(&ticket).Update("reply_read_at", nil)
+
+	// If ticket was closed, reopen to in_progress
+	if ticket.Status == "closed" {
+		db.Model(&ticket).Updates(map[string]interface{}{"status": "in_progress", "resolved_at": nil})
+	}
+
+	// Push real-time notification to the user
+	wsManager.BroadcastToUser(ticket.UserID, "ticket_reply", map[string]interface{}{
+		"ticket_id": ticket.ID,
+		"reply":     reply,
+	})
+
+	c.JSON(http.StatusCreated, successResponse(reply))
+}
+
+func adminDeleteTicketReply(c *gin.Context) {
+	id := c.Param("id")
+	replyId := c.Param("replyId")
+
+	// Verify the reply belongs to this ticket
+	var reply TicketReply
+	if err := db.Where("id = ? AND ticket_id = ?", replyId, id).First(&reply).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Reply not found", "NOT_FOUND"))
+		return
+	}
+
+	db.Delete(&reply)
+	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Reply deleted"}))
+}
+
 func adminDeleteTicket(c *gin.Context) {
 	id := c.Param("id")
 
+	// Also delete associated replies
+	db.Where("ticket_id = ?", id).Delete(&TicketReply{})
 	result := db.Delete(&Ticket{}, id)
 	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
@@ -1954,6 +2091,8 @@ func adminDeleteUser(c *gin.Context) {
 
 	// Delete user's data and account in a single transaction
 	if err := db.Transaction(func(tx *gorm.DB) error {
+		// Delete ticket replies before tickets (no user_id on replies)
+		tx.Where("ticket_id IN (SELECT id FROM tickets WHERE user_id = ?)", id).Delete(&TicketReply{})
 		for _, model := range []interface{}{&Todo{}, &Countdown{}, &Category{}, &Ticket{}} {
 			if err := tx.Where("user_id = ?", id).Delete(model).Error; err != nil {
 				return err
