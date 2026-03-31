@@ -5,6 +5,8 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.0+-24C8D8.svg)](https://tauri.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**English** | **[中文](README_zh.md)**
+
 **MemoPad** is a multi-platform task management application with a unified backend API serving multiple frontend clients: a web dashboard, desktop widget, and WeChat mini program.
 
 ---
