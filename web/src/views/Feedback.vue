@@ -61,7 +61,7 @@
               <div class="ticket-header">
                 <div class="ticket-title-row">
                   <span class="ticket-title">{{ ticket.title }}</span>
-                  <span v-if="ticket.reply && !ticket.reply_read_at" class="unread-dot" :title="$t('feedback.newReply')"></span>
+              <span v-if="hasUnreadReplies(ticket)" class="unread-dot" :title="$t('feedback.newReply')"></span>
                 </div>
                 <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
               </div>
@@ -69,10 +69,9 @@
                 <span class="ticket-priority" :class="ticket.priority">{{ ticket.priority }}</span>
                 <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
               </div>
-              <div v-if="ticket.reply" class="ticket-reply-preview">
+              <div v-if="hasUnreadReplies(ticket)" class="ticket-reply-preview">
                 <strong>{{ $t('feedback.adminReply') }}</strong>
-                <span v-if="!ticket.reply_read_at" class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
-                {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
+                <span class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
               </div>
             </div>
             <div v-if="tickets.length === 0 && !loading" class="empty-text">
@@ -113,14 +112,27 @@
               <label>{{ $t('feedback.submitted') }}</label>
               <p>{{ formatDate(selectedTicket.created_at) }}</p>
             </div>
-            <div v-if="selectedTicket.reply" class="detail-row reply-row">
-              <label>{{ $t('feedback.adminReplyLabel') }}</label>
-              <div class="reply-box">
-                {{ selectedTicket.reply }}
+            <!-- Reply thread -->
+            <div class="detail-row reply-row">
+              <label>{{ $t('feedback.replies') }}</label>
+              <div v-if="!selectedTicket.replies || selectedTicket.replies.length === 0" class="no-replies-text">
+                {{ $t('feedback.noReplies') }}
+              </div>
+              <div v-for="reply in selectedTicket.replies" :key="reply.id" class="reply-item">
+                <div class="reply-item-header">
+                  <span class="reply-admin-label">{{ $t('feedback.adminReplyLabel') }}</span>
+                  <span class="reply-time">{{ formatDate(reply.created_at) }}</span>
+                </div>
+                <p class="reply-content">{{ reply.content }}</p>
               </div>
             </div>
           </div>
           <div class="modal-footer">
+            <Button
+              v-if="selectedTicket && canCloseTicket(selectedTicket)"
+              variant="danger"
+              @click="closeTicket"
+            >{{ $t('feedback.closeTicket') }}</Button>
             <Button variant="secondary" @click="closeModal">{{ $t('common.close') }}</Button>
           </div>
         </div>
@@ -130,13 +142,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import api from '../api/client'
 
 const { t } = useI18n()
+const refreshUnreadCount = inject('refreshUnreadCount', null)
 
 const form = ref({
   title: '',
@@ -164,7 +177,7 @@ async function fetchTickets() {
 
 async function submitTicket() {
   if (!form.value.title.trim()) return
-  
+
   submitting.value = true
   try {
     await api.post('/api/tickets', form.value)
@@ -177,16 +190,26 @@ async function submitTicket() {
   }
 }
 
+function hasUnreadReplies(ticket) {
+  return ticket.replies && ticket.replies.length > 0 && !ticket.reply_read_at
+}
+
+function canCloseTicket(ticket) {
+  return ['open', 'in_progress', 'resolved'].includes(ticket.status)
+}
+
 function showTicketDetail(ticket) {
   selectedTicket.value = ticket
   showModal.value = true
-  // Mark reply as read if unread
-  if (ticket.reply && !ticket.reply_read_at) {
+  // Mark replies as read if there are unread ones
+  if (hasUnreadReplies(ticket)) {
     api.put(`/api/tickets/${ticket.id}/read`).then(res => {
       if (res.data?.success) {
-        const idx = tickets.value.findIndex(t => t.id === ticket.id)
-        if (idx !== -1) tickets.value[idx].reply_read_at = new Date().toISOString()
-        selectedTicket.value = { ...ticket, reply_read_at: new Date().toISOString() }
+        const now = new Date().toISOString()
+        const idx = tickets.value.findIndex(tk => tk.id === ticket.id)
+        if (idx !== -1) tickets.value[idx].reply_read_at = now
+        selectedTicket.value = { ...ticket, reply_read_at: now }
+        if (refreshUnreadCount) refreshUnreadCount()
       }
     }).catch(() => {})
   }
@@ -195,6 +218,20 @@ function showTicketDetail(ticket) {
 function closeModal() {
   showModal.value = false
   selectedTicket.value = null
+}
+
+async function closeTicket() {
+  if (!selectedTicket.value) return
+  if (!confirm(t('feedback.closeTicketConfirm'))) return
+  try {
+    await api.put(`/api/tickets/${selectedTicket.value.id}/close`)
+    const idx = tickets.value.findIndex(tk => tk.id === selectedTicket.value.id)
+    if (idx !== -1) tickets.value[idx].status = 'closed'
+    selectedTicket.value = { ...selectedTicket.value, status: 'closed' }
+    alert(t('feedback.ticketClosed'))
+  } catch (err) {
+    alert(err.response?.data?.error || t('common.error'))
+  }
 }
 
 function formatStatus(status) {
@@ -524,13 +561,47 @@ onMounted(() => {
   border-top: 1px solid var(--border-subtle);
 }
 
-.reply-box {
-  padding: 16px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
+.no-replies-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+.reply-item {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 2px solid rgba(20, 184, 166, 0.4);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.reply-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.reply-admin-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #14b8a6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.reply-content {
+  font-size: 13px;
+  color: var(--text-secondary);
   white-space: pre-wrap;
-  line-height: 1.6;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .modal-footer {
@@ -538,6 +609,7 @@ onMounted(() => {
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
 }
 
 /* Responsive: collapse to single column on smaller screens */
