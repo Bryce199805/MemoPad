@@ -60,6 +60,22 @@
       </div>
     </Transition>
 
+    <!-- Reminder Banners -->
+    <router-link to="/countdowns" class="reminder-banner today" v-if="dueTodayCountdowns.length > 0">
+      <div class="reminder-content">
+        <span class="reminder-icon">⏰</span>
+        <span class="reminder-text">{{ $t('countdown.reminderTodayBanner', { n: dueTodayCountdowns.length }) }}</span>
+      </div>
+      <span class="reminder-link">{{ $t('countdown.viewReminders') }} &rarr;</span>
+    </router-link>
+    <router-link to="/countdowns" class="reminder-banner soon" v-else-if="dueIn3DaysCountdowns.length > 0">
+      <div class="reminder-content">
+        <span class="reminder-icon">📅</span>
+        <span class="reminder-text">{{ $t('countdown.reminderSoonBanner', { n: dueIn3DaysCountdowns.length }) }}</span>
+      </div>
+      <span class="reminder-link">{{ $t('countdown.viewReminders') }} &rarr;</span>
+    </router-link>
+
     <!-- Main Content Grid -->
     <div class="main-grid">
       <!-- Left Column -->
@@ -229,6 +245,9 @@ const recentTasks = computed(() => [...todos.value].sort((a, b) => new Date(b.cr
 const completedTasks = computed(() => todos.value.filter(t => t.done).sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)))
 const pendingTasks = computed(() => todos.value.filter(t => !t.done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
 const pinnedTodos = computed(() => todos.value.filter(t => t.pinned && !t.done))
+const dueTodayCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) === 0))
+const dueIn3DaysCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 1 && daysLeft(c.target_date) <= 3))
+
 const upcomingCountdowns = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0).sort((a, b) => new Date(a.target_date) - new Date(b.target_date)))
 const completionRate = computed(() => Math.round(stats.value.todos?.completion_rate || 0))
 
@@ -402,6 +421,19 @@ onMounted(fetchAll)
 .overdue-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(239,68,68,0.05); border-radius: 8px; }
 .overdue-text { flex: 1; font-size: 14px; color: var(--danger); }
 .overdue-date { font-size: 12px; color: var(--text-muted); }
+
+/* Reminder Banners */
+.reminder-banner { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; text-decoration: none; transition: all 0.2s; }
+.reminder-banner:hover { transform: translateY(-2px); }
+.reminder-banner.today { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+.reminder-banner.soon { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+.reminder-content { display: flex; align-items: center; gap: 10px; }
+.reminder-text { font-size: 15px; font-weight: 600; }
+.reminder-banner.today .reminder-text { color: var(--danger); }
+.reminder-banner.soon .reminder-text { color: var(--warning); }
+.reminder-link { font-size: 14px; font-weight: 500; }
+.reminder-banner.today .reminder-link { color: var(--danger); opacity: 0.8; }
+.reminder-banner.soon .reminder-link { color: var(--warning); opacity: 0.8; }
 
 /* Recently Completed */
 .completed-list { display: flex; flex-direction: column; gap: 6px; }

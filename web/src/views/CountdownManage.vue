@@ -22,6 +22,20 @@
       </div>
     </div>
 
+    <!-- Reminder Banners -->
+    <div class="reminder-banner today" v-if="dueTodayCount > 0 && !selectMode">
+      <div class="reminder-content">
+        <span class="reminder-icon">⏰</span>
+        <span class="reminder-text">{{ $t('countdown.reminderTodayBanner', { n: dueTodayCount }) }}</span>
+      </div>
+    </div>
+    <div class="reminder-banner soon" v-else-if="dueIn3DaysCount > 0 && !selectMode">
+      <div class="reminder-content">
+        <span class="reminder-icon">📅</span>
+        <span class="reminder-text">{{ $t('countdown.reminderSoonBanner', { n: dueIn3DaysCount }) }}</span>
+      </div>
+    </div>
+
     <!-- Stats -->
     <div class="stats-row">
       <div class="stat-item glass-card">
@@ -217,6 +231,9 @@ const upcomingCount = computed(() => countdowns.value.filter(c => daysLeft(c.tar
 const dueSoonCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 0 && daysLeft(c.target_date) <= 7).length)
 const overdueCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) < 0).length)
 
+const dueTodayCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) === 0).length)
+const dueIn3DaysCount = computed(() => countdowns.value.filter(c => daysLeft(c.target_date) >= 1 && daysLeft(c.target_date) <= 3).length)
+
 function daysLeft(date) {
   const target = new Date(date)
   const now = new Date()
@@ -380,6 +397,36 @@ onMounted(() => countdownStore.fetchCountdowns())
   display: flex;
   gap: 16px;
   margin-bottom: 20px;
+}
+
+/* Reminder Banners */
+.reminder-banner {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.reminder-banner.today {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.reminder-banner.soon {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.reminder-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.reminder-text {
+  font-size: 15px;
+  font-weight: 600;
+}
+.reminder-banner.today .reminder-text {
+  color: var(--danger);
+}
+.reminder-banner.soon .reminder-text {
+  color: var(--warning);
 }
 
 .stat-item {
