@@ -11,26 +11,24 @@
         <Card class="section-card">
           <template #header>{{ $t('feedback.submitTicket') }}</template>
           <form @submit.prevent="submitTicket" class="ticket-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>{{ $t('feedback.titleField') }}</label>
-                <input
-                  v-model="form.title"
-                  type="text"
-                  :placeholder="$t('feedback.titlePlaceholder')"
-                  required
-                  maxlength="200"
-                />
-              </div>
+            <div class="form-group">
+              <label>{{ $t('feedback.titleField') }}</label>
+              <input
+                v-model="form.title"
+                type="text"
+                :placeholder="$t('feedback.titlePlaceholder')"
+                required
+                maxlength="200"
+              />
+            </div>
 
-              <div class="form-group form-group-priority">
-                <label>{{ $t('feedback.priority') }}</label>
-                <select v-model="form.priority">
-                  <option value="low">{{ $t('feedback.priorityLow') }}</option>
-                  <option value="medium">{{ $t('feedback.priorityMedium') }}</option>
-                  <option value="high">{{ $t('feedback.priorityHigh') }}</option>
-                </select>
-              </div>
+            <div class="form-group">
+              <label>{{ $t('feedback.priority') }}</label>
+              <select v-model="form.priority">
+                <option value="low">{{ $t('feedback.priorityLow') }}</option>
+                <option value="medium">{{ $t('feedback.priorityMedium') }}</option>
+                <option value="high">{{ $t('feedback.priorityHigh') }}</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -61,17 +59,14 @@
               <div class="ticket-header">
                 <div class="ticket-title-row">
                   <span class="ticket-title">{{ ticket.title }}</span>
-              <span v-if="hasUnreadReplies(ticket)" class="unread-dot" :title="$t('feedback.newReply')"></span>
+                  <span v-if="hasUnreadReplies(ticket)" class="unread-dot" :title="$t('feedback.newReply')"></span>
                 </div>
                 <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
               </div>
               <div class="ticket-meta">
                 <span class="ticket-priority" :class="ticket.priority">{{ ticket.priority }}</span>
                 <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
-              </div>
-              <div v-if="hasUnreadReplies(ticket)" class="ticket-reply-preview">
-                <strong>{{ $t('feedback.adminReply') }}</strong>
-                <span class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
+                <span v-if="hasUnreadReplies(ticket)" class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
               </div>
             </div>
             <div v-if="tickets.length === 0 && !loading" class="empty-text">
@@ -298,20 +293,7 @@ onMounted(() => {
 .ticket-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.form-row {
-  display: flex;
-  gap: 16px;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
-.form-group-priority {
-  flex: 0 0 140px !important;
+  gap: 14px;
 }
 
 .form-group {
@@ -397,13 +379,12 @@ onMounted(() => {
 
 .new-reply-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 10px;
   color: #fff;
   background: #ef4444;
   padding: 1px 6px;
   border-radius: 4px;
-  font-weight: 500;
-  margin-right: 4px;
+  font-weight: 600;
   vertical-align: middle;
 }
 
@@ -465,14 +446,6 @@ onMounted(() => {
 
 .ticket-date {
   color: var(--text-muted);
-}
-
-.ticket-reply-preview {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
-  font-size: 13px;
-  color: var(--text-secondary);
 }
 
 .empty-text, .loading-text {
@@ -616,14 +589,6 @@ onMounted(() => {
 @media (max-width: 768px) {
   .feedback-grid {
     grid-template-columns: 1fr;
-  }
-
-  .form-row {
-    flex-direction: column;
-  }
-
-  .form-group-priority {
-    flex: 1 !important;
   }
 }
 </style>
