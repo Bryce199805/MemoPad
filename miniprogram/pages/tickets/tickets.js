@@ -7,6 +7,8 @@ Page({
     loading: true,
     tickets: [],
     showModal: false,
+    showDetail: false,
+    selectedTicket: null,
     form: {
       title: '',
       description: '',
@@ -43,7 +45,17 @@ Page({
         save: t('common.save'),
         cancel: t('common.cancel'),
         error: t('common.error'),
-        failedToSubmit: t('feedback.failedToSubmit')
+        failedToSubmit: t('feedback.failedToSubmit'),
+        // Detail modal
+        ticketDetails: t('feedback.ticketDetails'),
+        detailStatus: t('common.status'),
+        description: t('feedback.description'),
+        replies: t('feedback.replies'),
+        noReplies: t('feedback.noReplies'),
+        closeTicket: t('feedback.closeTicket'),
+        close: t('common.close'),
+        submitted: t('feedback.submitted'),
+        noDescription: t('feedback.noDescription')
       }
     })
   },
@@ -86,11 +98,43 @@ Page({
     if (idx === -1) return
 
     const ticket = tickets[idx]
-    // Mark reply as read if unread
-    if (ticket.reply && !ticket.reply_read_at) {
-      api.put('/api/tickets/' + id + '/read').catch(() => {})
-      this.setData({ ['tickets[' + idx + '].reply_read_at']: new Date().toISOString() })
+    this.setData({ showDetail: true, selectedTicket: ticket })
+
+    // Mark replies as read if unread
+    if (ticket.replies && ticket.replies.length > 0 && !ticket.reply_read_at) {
+      api.put('/api/tickets/' + id + '/read').then(() => {
+        const now = new Date().toISOString()
+        this.setData({ ['tickets[' + idx + '].reply_read_at']: now })
+      }).catch(() => {})
     }
+  },
+
+  onCloseDetail() {
+    this.setData({ showDetail: false, selectedTicket: null })
+  },
+
+  onCloseTicket() {
+    const ticket = this.data.selectedTicket
+    if (!ticket) return
+
+    wx.showModal({
+      title: t('feedback.closeTicket'),
+      content: t('feedback.closeTicketConfirm'),
+      confirmColor: '#ef4444',
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await api.put('/api/tickets/' + ticket.id + '/close')
+          wx.showToast({ title: t('feedback.ticketClosed'), icon: 'success' })
+          this.setData({ showDetail: false, selectedTicket: null })
+          this.fetchTickets(true)
+        } catch (err) {
+          wx.showToast({ title: t('common.error'), icon: 'none' })
+        }
+      }
+    })
   },
 
   onOpenModal() {

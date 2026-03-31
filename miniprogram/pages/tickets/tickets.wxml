@@ -42,23 +42,14 @@ module.exports = {
         <view class="ticket-header">
           <view class="ticket-title-row">
             <text class="ticket-title">{{item.title}}</text>
-            <view class="unread-dot" wx:if="{{item.reply && !item.reply_read_at}}"></view>
+            <view class="unread-dot" wx:if="{{item.replies && item.replies.length > 0 && !item.reply_read_at}}"></view>
           </view>
           <badge text="{{utils.statusLabel(item.status, i)}}" variant="{{utils.statusVariant(item.status)}}"></badge>
-        </view>
-        <view class="ticket-body" wx:if="{{item.description}}">
-          <text class="ticket-desc">{{item.description}}</text>
         </view>
         <view class="ticket-footer">
           <badge text="{{utils.priorityLabel(item.priority, i)}}" variant="{{item.priority === 'high' ? 'danger' : item.priority === 'low' ? 'success' : 'warning'}}"></badge>
           <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
-        </view>
-        <view class="ticket-reply" wx:if="{{item.reply}}">
-          <view class="reply-label-row">
-            <text class="reply-label">{{i.adminReply}}</text>
-            <text class="new-reply-badge" wx:if="{{!item.reply_read_at}}">{{i.newReply}}</text>
-          </view>
-          <text class="reply-text">{{item.reply}}</text>
+          <text class="new-reply-badge" wx:if="{{item.replies && item.replies.length > 0 && !item.reply_read_at}}">{{i.newReply}}</text>
         </view>
       </view>
     </view>
@@ -70,6 +61,61 @@ module.exports = {
 
     <view class="safe-bottom"></view>
   </block>
+
+  <!-- Ticket Detail Modal -->
+  <view class="detail-overlay" wx:if="{{showDetail}}" bind:tap="onCloseDetail">
+    <view class="detail-modal glass-card" catchtap="">
+      <view class="detail-modal-header">
+        <text class="detail-modal-title">{{i.ticketDetails}}</text>
+        <text class="detail-close-btn" bind:tap="onCloseDetail">✕</text>
+      </view>
+      <scroll-view scroll-y class="detail-modal-body" wx:if="{{selectedTicket}}">
+        <view class="detail-field">
+          <text class="detail-label">{{i.titleField}}</text>
+          <text class="detail-value">{{selectedTicket.title}}</text>
+        </view>
+        <view class="detail-field">
+          <text class="detail-label">{{i.detailStatus}}</text>
+          <badge text="{{utils.statusLabel(selectedTicket.status, i)}}" variant="{{utils.statusVariant(selectedTicket.status)}}"></badge>
+        </view>
+        <view class="detail-field">
+          <text class="detail-label">{{i.priority}}</text>
+          <badge text="{{utils.priorityLabel(selectedTicket.priority, i)}}" variant="{{selectedTicket.priority === 'high' ? 'danger' : selectedTicket.priority === 'low' ? 'success' : 'warning'}}"></badge>
+        </view>
+        <view class="detail-field" wx:if="{{selectedTicket.description}}">
+          <text class="detail-label">{{i.description}}</text>
+          <text class="detail-value detail-desc">{{selectedTicket.description}}</text>
+        </view>
+        <view class="detail-field">
+          <text class="detail-label">{{i.submitted}}</text>
+          <text class="detail-value">{{utils.formatDate(selectedTicket.created_at)}}</text>
+        </view>
+
+        <!-- Reply Thread -->
+        <view class="detail-field detail-replies">
+          <text class="detail-label">{{i.replies}}</text>
+          <view wx:if="{{!selectedTicket.replies || selectedTicket.replies.length === 0}}" class="no-replies-text">
+            <text>{{i.noReplies}}</text>
+          </view>
+          <view wx:for="{{selectedTicket.replies}}" wx:key="id" class="reply-item">
+            <view class="reply-item-header">
+              <text class="reply-admin-label">{{i.adminReply}}</text>
+              <text class="reply-time">{{utils.formatDate(item.created_at)}}</text>
+            </view>
+            <text class="reply-content">{{item.content}}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="detail-modal-footer">
+        <view class="close-ticket-btn" wx:if="{{selectedTicket && (selectedTicket.status === 'open' || selectedTicket.status === 'in_progress' || selectedTicket.status === 'resolved')}}" bind:tap="onCloseTicket">
+          <text>{{i.closeTicket}}</text>
+        </view>
+        <view class="detail-done-btn" bind:tap="onCloseDetail">
+          <text>{{i.close}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
 
   <!-- Submit Modal -->
   <modal show="{{showModal}}" title="{{i.new}}" bind:close="onCloseModal" bind:confirm="onSubmit">
