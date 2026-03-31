@@ -7,7 +7,8 @@ module.exports = {
     dashboard: 'Dashboard',
     tasks: 'Tasks',
     countdowns: 'Countdowns',
-    settings: 'Settings'
+    settings: 'Settings',
+    admin: 'Admin'
   },
   login: {
     tagline: 'Your personal task manager',
@@ -49,7 +50,13 @@ module.exports = {
     days: 'days',
     ago: 'ago',
     viewAll: 'View all',
-    loading: 'Loading...'
+    loading: 'Loading...',
+    welcomeTitle: 'Welcome to MemoPad',
+    overdueLabel: 'd overdue',
+    todayLabel: 'Today',
+    tomorrowLabel: 'Tomorrow',
+    overdueAlert: 'You have {count} overdue task',
+    overdueAlertPlural: 'You have {count} overdue tasks'
   },
   todo: {
     title: 'Tasks',
@@ -264,7 +271,8 @@ module.exports = {
     filterOpen: 'Open',
     filterInProgress: 'In Progress',
     filterResolved: 'Resolved',
-    filterClosed: 'Closed'
+    filterClosed: 'Closed',
+    you: '(You)'
   },
   common: {
     save: 'Save',

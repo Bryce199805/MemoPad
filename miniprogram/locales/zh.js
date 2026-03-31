@@ -7,7 +7,8 @@ module.exports = {
     dashboard: '仪表盘',
     tasks: '待办事项',
     countdowns: '倒计时',
-    settings: '设置'
+    settings: '设置',
+    admin: '管理员'
   },
   login: {
     tagline: '你的个人任务管理助手',
@@ -49,7 +50,13 @@ module.exports = {
     days: '天',
     ago: '前',
     viewAll: '查看全部',
-    loading: '加载中...'
+    loading: '加载中...',
+    welcomeTitle: '欢迎使用 MemoPad',
+    overdueLabel: '天前',
+    todayLabel: '今天',
+    tomorrowLabel: '明天',
+    overdueAlert: '你有 {count} 个过期任务',
+    overdueAlertPlural: '你有 {count} 个过期任务'
   },
   todo: {
     title: '待办事项',
@@ -264,7 +271,8 @@ module.exports = {
     filterOpen: '待处理',
     filterInProgress: '处理中',
     filterResolved: '已解决',
-    filterClosed: '已关闭'
+    filterClosed: '已关闭',
+    you: '（我）'
   },
   common: {
     save: '保存',
