@@ -510,6 +510,7 @@ type TicketReply struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	TicketID  uint      `json:"ticket_id" gorm:"index;not null"`
 	Content   string    `json:"content" gorm:"size:2000;not null"`
+	IsAdmin   bool      `json:"is_admin" gorm:"default:false"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -698,6 +699,7 @@ func setupRoutes(r *gin.Engine) {
 		api.GET("/tickets/:id", getTicket)
 		api.PUT("/tickets/:id/read", markTicketRead)
 		api.PUT("/tickets/:id/close", closeTicket)
+		api.POST("/tickets/:id/replies", addUserTicketReply)
 
 		// Account management
 		api.DELETE("/auth/account", deleteOwnAccount)
@@ -1615,6 +1617,47 @@ func closeTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, successResponse(map[string]string{"message": "Ticket closed"}))
 }
 
+func addUserTicketReply(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&ticket).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	if ticket.Status == "closed" {
+		c.JSON(http.StatusBadRequest, errorResponse("Cannot reply to a closed ticket", "VALIDATION_ERROR"))
+		return
+	}
+
+	var input struct {
+		Content string `json:"content" binding:"required,max=2000"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse("Content is required (max 2000 chars)", "VALIDATION_ERROR"))
+		return
+	}
+
+	reply := TicketReply{
+		TicketID: ticket.ID,
+		Content:  sanitizeString(input.Content),
+		IsAdmin:  false,
+	}
+	if err := db.Create(&reply).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse("Failed to save reply", "INTERNAL_ERROR"))
+		return
+	}
+
+	// If ticket was resolved, reopen to in_progress
+	if ticket.Status == "resolved" {
+		db.Model(&ticket).Updates(map[string]interface{}{"status": "in_progress", "resolved_at": nil})
+	}
+
+	c.JSON(http.StatusCreated, successResponse(reply))
+}
+
 func createTicket(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
@@ -1863,6 +1906,7 @@ func adminAddTicketReply(c *gin.Context) {
 	reply := TicketReply{
 		TicketID: ticket.ID,
 		Content:  sanitizeString(input.Content),
+		IsAdmin:  true,
 	}
 	if err := db.Create(&reply).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse("Failed to save reply", "INTERNAL_ERROR"))
