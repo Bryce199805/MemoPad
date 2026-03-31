@@ -5,8 +5,8 @@
       <p class="subtitle">{{ $t('admin.handleTickets') }}</p>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-bar">
+    <!-- Toolbar: filter tabs + search -->
+    <div class="toolbar glass-card">
       <div class="filter-tabs">
         <button
           v-for="tab in statusTabs"
@@ -18,86 +18,176 @@
           <span class="tab-count">{{ tabCount(tab.value) }}</span>
         </button>
       </div>
-    </div>
-
-    <!-- Tickets List -->
-    <div class="tickets-container">
-      <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-card glass-card">
-        <!-- Card top: title + status badge + icon actions -->
-        <div class="ticket-top">
-          <div class="ticket-left">
-            <div class="ticket-title-row">
-              <span class="ticket-title">{{ ticket.title }}</span>
-              <!-- Clickable status badge cycles through statuses -->
-              <button
-                :class="['status-badge', ticket.status]"
-                @click="cycleStatus(ticket)"
-                :title="`${$t('admin.clickToChange')}: ${nextStatus(ticket.status).label}`"
-              >
-                {{ formatStatus(ticket.status) }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </div>
-            <div class="ticket-meta">
-              <span class="meta-user">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                {{ ticket.username }}
-              </span>
-              <span :class="['meta-priority', ticket.priority]">{{ ticket.priority }}</span>
-              <span class="meta-date">{{ formatDate(ticket.created_at) }}</span>
-            </div>
-          </div>
-          <!-- Icon action buttons -->
-          <div class="ticket-actions">
-            <button class="action-btn reply-btn" @click="openReplyModal(ticket)" :title="$t('admin.reply')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            </button>
-            <button class="action-btn delete-btn" @click="deleteTicket(ticket)" :title="$t('common.delete')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <div v-if="ticket.description" class="ticket-description">
-          {{ ticket.description }}
-        </div>
-
-        <!-- Existing reply -->
-        <div v-if="ticket.reply" class="ticket-reply">
-          <div class="reply-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            {{ $t('feedback.adminReplyLabel') }}</div>
-          <p class="reply-text">{{ ticket.reply }}</p>
-        </div>
-      </div>
-
-      <div v-if="filteredTickets.length === 0 && !loading" class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <p>{{ ticketFilter ? $t('admin.noFilteredTickets', { filter: ticketFilter }) : $t('admin.noTickets') }}</p>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="$t('admin.searchTickets')"
+          class="search-input"
+        />
       </div>
     </div>
 
-    <!-- Reply Modal -->
+    <!-- Table -->
+    <div class="table-wrap glass-card">
+      <div v-if="loading" class="table-loading">{{ $t('common.loading') }}</div>
+      <template v-else>
+        <table class="ticket-table" v-if="pagedTickets.length > 0">
+          <thead>
+            <tr>
+              <th class="col-id">#</th>
+              <th class="col-title">{{ $t('feedback.titleField') }}</th>
+              <th class="col-user">{{ $t('admin.username') }}</th>
+              <th class="col-priority">{{ $t('todo.priority') }}</th>
+              <th class="col-status">{{ $t('common.status') }}</th>
+              <th class="col-date">{{ $t('admin.created') }}</th>
+              <th class="col-actions">{{ $t('admin.actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="ticket in pagedTickets"
+              :key="ticket.id"
+              :class="{ 'row-highlight': ticket.id === highlightId }"
+            >
+              <td class="col-id text-muted">{{ ticket.id }}</td>
+              <td class="col-title">
+                <div class="title-cell">
+                  <span
+                    v-if="hasUnreadReplies(ticket)"
+                    class="unread-dot"
+                    :title="$t('admin.adminReply')"
+                  ></span>
+                  <span class="title-text">{{ ticket.title }}</span>
+                </div>
+              </td>
+              <td class="col-user text-muted">{{ ticket.username }}</td>
+              <td class="col-priority">
+                <span :class="['priority-badge', ticket.priority]">{{ formatPriority(ticket.priority) }}</span>
+              </td>
+              <td class="col-status">
+                <select
+                  :value="ticket.status"
+                  :class="['status-select', ticket.status]"
+                  @change="updateStatus(ticket, $event.target.value)"
+                >
+                  <option value="open">{{ $t('feedback.statusOpen') }}</option>
+                  <option value="in_progress">{{ $t('feedback.statusInProgress') }}</option>
+                  <option value="resolved">{{ $t('feedback.statusResolved') }}</option>
+                  <option value="closed">{{ $t('feedback.statusClosed') }}</option>
+                </select>
+              </td>
+              <td class="col-date text-muted">{{ formatDate(ticket.created_at) }}</td>
+              <td class="col-actions">
+                <div class="row-actions">
+                  <button
+                    class="action-btn reply-btn"
+                    @click="openDetail(ticket)"
+                    :title="$t('admin.reply')"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    <span v-if="ticket.replies && ticket.replies.length > 0" class="reply-count">{{ ticket.replies.length }}</span>
+                  </button>
+                  <button
+                    class="action-btn delete-btn"
+                    @click="deleteTicket(ticket)"
+                    :title="$t('common.delete')"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-else class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <p>{{ ticketFilter ? $t('admin.noFilteredTickets', { filter: ticketFilter }) : $t('admin.noTickets') }}</p>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="pagination">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">‹</button>
+          <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
+        </div>
+      </template>
+    </div>
+
+    <!-- Ticket Detail Modal -->
     <Teleport to="body">
-      <div v-if="showReplyModal" class="modal-overlay" @click.self="showReplyModal = false">
+      <div v-if="detailTicket" class="modal-overlay" @click.self="detailTicket = null">
         <div class="modal glass-card">
           <div class="modal-header">
-            <div>
-              <h2>{{ $t('admin.replyToTicket') }}</h2>
-              <p class="modal-subtitle">{{ replyTicket?.title }}</p>
+            <div class="modal-title-wrap">
+              <h2>{{ $t('admin.ticketDetail') }}</h2>
+              <p class="modal-subtitle">{{ detailTicket.title }}</p>
             </div>
-            <button class="close-btn" @click="showReplyModal = false">
+            <button class="close-btn" @click="detailTicket = null">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
+
           <div class="modal-body">
-            <label class="form-label">{{ $t('admin.yourReply') }}</label>
-            <textarea v-model="replyText" rows="5" :placeholder="$t('admin.replyPlaceholder')"></textarea>
+            <!-- Info row -->
+            <div class="detail-meta">
+              <span class="text-muted">{{ detailTicket.username }}</span>
+              <span :class="['priority-badge', detailTicket.priority]">{{ formatPriority(detailTicket.priority) }}</span>
+              <span :class="['status-chip', detailTicket.status]">{{ formatStatus(detailTicket.status) }}</span>
+              <span class="text-muted">{{ formatDate(detailTicket.created_at) }}</span>
+            </div>
+
+            <!-- Description -->
+            <div v-if="detailTicket.description" class="detail-desc">
+              <div class="section-label">{{ $t('feedback.description') }}</div>
+              <p class="desc-text">{{ detailTicket.description }}</p>
+            </div>
+
+            <!-- Reply thread -->
+            <div class="reply-section">
+              <div class="section-label">{{ $t('admin.noReplies') && $t('feedback.replies') }}</div>
+              <div class="reply-thread">
+                <div v-if="!detailTicket.replies || detailTicket.replies.length === 0" class="no-replies">
+                  {{ $t('admin.noReplies') }}
+                </div>
+                <div
+                  v-for="reply in detailTicket.replies"
+                  :key="reply.id"
+                  class="reply-item"
+                >
+                  <div class="reply-item-header">
+                    <span class="reply-admin-label">{{ $t('admin.adminReply') }}</span>
+                    <span class="reply-time">{{ formatDateTime(reply.created_at) }}</span>
+                    <button
+                      class="reply-delete-btn"
+                      @click="deleteReply(detailTicket, reply)"
+                      :title="$t('admin.deleteReply')"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </div>
+                  <p class="reply-content">{{ reply.content }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add reply -->
+            <div class="add-reply-section">
+              <div class="section-label">{{ $t('admin.addReply') }}</div>
+              <textarea
+                v-model="newReplyText"
+                rows="3"
+                :placeholder="$t('admin.replyPlaceholder')"
+                class="reply-textarea"
+              ></textarea>
+            </div>
           </div>
+
           <div class="modal-footer">
-            <Button variant="secondary" @click="showReplyModal = false">{{ $t('common.cancel') }}</Button>
-            <Button variant="primary" @click="submitReply">{{ $t('admin.sendReply') }}</Button>
+            <button class="btn-secondary" @click="detailTicket = null">{{ $t('common.cancel') }}</button>
+            <button class="btn-primary" @click="sendReply" :disabled="!newReplyText.trim()">{{ $t('admin.sendReply') }}</button>
           </div>
         </div>
       </div>
@@ -106,19 +196,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Button from '../../components/ui/Button.vue'
+import { useRoute } from 'vue-router'
 import api from '../../api/client'
 
 const { t } = useI18n()
+const route = useRoute()
+const refreshTicketCount = inject('refreshTicketCount', null)
 
 const tickets = ref([])
 const loading = ref(false)
 const ticketFilter = ref('')
-const showReplyModal = ref(false)
-const replyTicket = ref(null)
-const replyText = ref('')
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = 10
+const detailTicket = ref(null)
+const newReplyText = ref('')
+const highlightId = ref(null)
 
 const statusTabs = computed(() => [
   { value: '', label: t('admin.all') },
@@ -128,40 +223,37 @@ const statusTabs = computed(() => [
   { value: 'closed', label: t('feedback.statusClosed') },
 ])
 
-// Status cycle order: clicking the badge advances to next status
-const statusCycle = ['open', 'in_progress', 'resolved', 'closed']
-
-function nextStatus(current) {
-  const idx = statusCycle.indexOf(current)
-  const next = statusCycle[(idx + 1) % statusCycle.length]
-  return { value: next, label: formatStatus(next) }
-}
-
-async function cycleStatus(ticket) {
-  const next = nextStatus(ticket.status)
-  const prev = ticket.status
-  ticket.status = next.value // Optimistic update
-  try {
-    await api.put(`/api/admin/tickets/${ticket.id}`, { status: next.value })
-  } catch (e) {
-    ticket.status = prev // Roll back on error
-    alert(e.response?.data?.error || t('admin.failedUpdateStatus'))
-  }
-}
-
-const filteredTickets = computed(() => {
-  if (!ticketFilter.value) return tickets.value
-  return tickets.value.filter(t => t.status === ticketFilter.value)
-})
-
 function tabCount(status) {
   if (!status) return tickets.value.length
-  return tickets.value.filter(t => t.status === status).length
+  return tickets.value.filter(tk => tk.status === status).length
 }
 
 function setFilter(val) {
   ticketFilter.value = val
+  currentPage.value = 1
 }
+
+watch(searchQuery, () => { currentPage.value = 1 })
+
+const filteredTickets = computed(() => {
+  let list = tickets.value
+  if (ticketFilter.value) list = list.filter(tk => tk.status === ticketFilter.value)
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.trim().toLowerCase()
+    list = list.filter(tk =>
+      tk.title.toLowerCase().includes(q) ||
+      (tk.username || '').toLowerCase().includes(q)
+    )
+  }
+  return list
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredTickets.value.length / pageSize)))
+
+const pagedTickets = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredTickets.value.slice(start, start + pageSize)
+})
 
 async function fetchTickets() {
   loading.value = true
@@ -175,20 +267,46 @@ async function fetchTickets() {
   }
 }
 
-function openReplyModal(ticket) {
-  replyTicket.value = ticket
-  replyText.value = ticket.reply || ''
-  showReplyModal.value = true
+function openDetail(ticket) {
+  detailTicket.value = ticket
+  newReplyText.value = ''
 }
 
-async function submitReply() {
-  if (!replyTicket.value) return
+async function updateStatus(ticket, newStatus) {
+  const prev = ticket.status
+  ticket.status = newStatus // optimistic
   try {
-    await api.put(`/api/admin/tickets/${replyTicket.value.id}`, { reply: replyText.value })
-    replyTicket.value.reply = replyText.value
-    showReplyModal.value = false
+    await api.put(`/api/admin/tickets/${ticket.id}`, { status: newStatus })
+    if (refreshTicketCount) refreshTicketCount()
+  } catch (e) {
+    ticket.status = prev
+    alert(e.response?.data?.error || t('admin.failedUpdateStatus'))
+  }
+}
+
+async function sendReply() {
+  if (!detailTicket.value || !newReplyText.value.trim()) return
+  try {
+    const res = await api.post(`/api/admin/tickets/${detailTicket.value.id}/replies`, {
+      content: newReplyText.value.trim()
+    })
+    const reply = res.data.data || res.data
+    if (!detailTicket.value.replies) detailTicket.value.replies = []
+    detailTicket.value.replies.push(reply)
+    newReplyText.value = ''
+    if (refreshTicketCount) refreshTicketCount()
   } catch (e) {
     alert(e.response?.data?.error || t('admin.failedSubmitReply'))
+  }
+}
+
+async function deleteReply(ticket, reply) {
+  if (!confirm(t('admin.deleteReplyConfirm'))) return
+  try {
+    await api.delete(`/api/admin/tickets/${ticket.id}/replies/${reply.id}`)
+    ticket.replies = ticket.replies.filter(r => r.id !== reply.id)
+  } catch (e) {
+    alert(e.response?.data?.error || t('admin.failedDeleteReply'))
   }
 }
 
@@ -196,10 +314,21 @@ async function deleteTicket(ticket) {
   if (!confirm(t('admin.confirmDeleteTicket', { title: ticket.title }))) return
   try {
     await api.delete(`/api/admin/tickets/${ticket.id}`)
-    tickets.value = tickets.value.filter(t => t.id !== ticket.id)
+    tickets.value = tickets.value.filter(tk => tk.id !== ticket.id)
+    if (detailTicket.value?.id === ticket.id) detailTicket.value = null
+    if (refreshTicketCount) refreshTicketCount()
   } catch (e) {
     alert(e.response?.data?.error || t('admin.failedDeleteTicket'))
   }
+}
+
+function hasUnreadReplies(ticket) {
+  return ticket.replies && ticket.replies.length > 0 && !ticket.reply_read_at
+}
+
+function formatPriority(p) {
+  const map = { high: t('common.high'), medium: t('common.medium'), low: t('common.low') }
+  return map[p] || p
 }
 
 function formatStatus(status) {
@@ -216,14 +345,32 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
-onMounted(() => {
-  fetchTickets()
+function formatDateTime(dateStr) {
+  return new Date(dateStr).toLocaleString()
+}
+
+onMounted(async () => {
+  await fetchTickets()
+  // Auto-open ticket from route query (e.g. from AdminDashboard click)
+  const hid = route.query.highlight
+  if (hid) {
+    highlightId.value = Number(hid)
+    const target = tickets.value.find(tk => tk.id === Number(hid))
+    if (target) {
+      openDetail(target)
+      // Scroll highlight into view after render
+      setTimeout(() => {
+        const el = document.querySelector('.row-highlight')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+    }
+  }
 })
 </script>
 
 <style scoped>
 .admin-page {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -242,27 +389,29 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-/* Filter tabs — replaces the dropdown */
-.filters-bar {
-  margin-bottom: 20px;
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .filter-tabs {
   display: flex;
   gap: 4px;
-  background: var(--bg-secondary);
-  padding: 4px;
-  border-radius: var(--radius-md);
-  width: fit-content;
-  border: 1px solid var(--border-subtle);
+  flex: 1;
+  flex-wrap: wrap;
 }
 
 .filter-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border-radius: calc(var(--radius-md) - 2px);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
   color: var(--text-muted);
@@ -276,9 +425,8 @@ onMounted(() => {
 }
 
 .filter-tab.active {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-primary);
 }
 
 .tab-count {
@@ -288,109 +436,160 @@ onMounted(() => {
   background: var(--bg-tertiary);
   border-radius: 999px;
   color: var(--text-muted);
-  min-width: 20px;
+  min-width: 18px;
   text-align: center;
 }
 
 .filter-tab.active .tab-count {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.2);
   color: var(--accent-primary);
 }
 
-/* Ticket cards */
-.tickets-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ticket-card {
-  padding: 18px 20px;
-}
-
-.ticket-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.ticket-left {
-  flex: 1;
-  min-width: 0;
-}
-
-.ticket-title-row {
+.search-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.ticket-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text-primary);
-  flex: 1;
-  min-width: 0;
-}
-
-/* Clickable status badge */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-  user-select: none;
-}
-
-.status-badge:hover {
-  filter: brightness(1.2);
-  transform: translateY(-1px);
-}
-
-.status-badge.open         { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-.status-badge.in_progress  { background: rgba(234, 179, 8, 0.15);  color: #eab308; }
-.status-badge.resolved     { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
-.status-badge.closed       { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
-
-/* Meta row */
-.ticket-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 13px;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   color: var(--text-muted);
-  flex-wrap: wrap;
+  min-width: 220px;
 }
 
-.meta-user {
+.search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ticket-table thead tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ticket-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.ticket-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.ticket-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ticket-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.row-highlight {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+
+.col-id      { width: 48px; }
+.col-title   { min-width: 200px; }
+.col-user    { width: 130px; }
+.col-priority{ width: 90px; }
+.col-status  { width: 140px; }
+.col-date    { width: 110px; white-space: nowrap; }
+.col-actions { width: 90px; }
+
+.text-muted { color: var(--text-muted); }
+
+.title-cell {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
 }
 
-.meta-priority {
+.unread-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+.title-text {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* Priority badge */
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
   font-weight: 600;
   text-transform: capitalize;
 }
+.priority-badge.high   { background: rgba(239, 68, 68, 0.12);  color: #ef4444; }
+.priority-badge.medium { background: rgba(234, 179, 8, 0.12);  color: #d97706; }
+.priority-badge.low    { background: rgba(107, 114, 128, 0.12); color: #6b7280; }
 
-.meta-priority.high   { color: #ef4444; }
-.meta-priority.medium { color: #eab308; }
-.meta-priority.low    { color: #6b7280; }
+/* Status select */
+.status-select {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
 
-/* Icon action buttons */
-.ticket-actions {
+.status-select.open        { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.status-select.in_progress { background: rgba(234, 179, 8, 0.15);  color: #d97706; }
+.status-select.resolved    { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
+.status-select.closed      { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+/* Row action buttons */
+.row-actions {
   display: flex;
+  align-items: center;
   gap: 4px;
-  flex-shrink: 0;
 }
 
 .action-btn {
@@ -398,8 +597,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
@@ -411,55 +610,23 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
-.reply-btn:hover { color: var(--accent-primary); }
+.reply-btn:hover  { color: var(--accent-primary); }
 .delete-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
 
-/* Red dot on reply button if reply exists */
-.reply-dot {
+.reply-count {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  top: 1px;
+  right: 1px;
+  font-size: 9px;
+  font-weight: 700;
   background: var(--accent-primary);
-  border: 1.5px solid var(--bg-secondary);
-}
-
-/* Description & reply body */
-.ticket-description {
-  padding: 10px 14px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-  margin-bottom: 10px;
-}
-
-.ticket-reply {
-  padding: 10px 14px;
-  background: rgba(20, 184, 166, 0.08);
-  border-left: 2px solid rgba(20, 184, 166, 0.5);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  font-size: 14px;
-}
-
-.reply-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #14b8a6;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
-
-.reply-text {
-  color: var(--text-secondary);
-  white-space: pre-wrap;
+  color: #fff;
+  border-radius: 999px;
+  min-width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  padding: 0 2px;
 }
 
 /* Empty state */
@@ -473,7 +640,47 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* Modal */
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font-size: 16px;
+  transition: all var(--transition-fast);
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-primary);
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ===== Modal ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -488,7 +695,10 @@ onMounted(() => {
 
 .modal {
   width: 100%;
-  max-width: 520px;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -498,9 +708,10 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  flex-shrink: 0;
 }
 
-.modal-header h2 {
+.modal-title-wrap h2 {
   font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
@@ -534,32 +745,180 @@ onMounted(() => {
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  overflow-y: auto;
+  flex: 1;
 }
 
-.form-label {
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
 }
 
-.modal-body textarea {
+.status-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-chip.open        { background: rgba(59, 130, 246, 0.15);  color: #3b82f6; }
+.status-chip.in_progress { background: rgba(234, 179, 8, 0.15);   color: #d97706; }
+.status-chip.resolved    { background: rgba(34, 197, 94, 0.15);   color: #22c55e; }
+.status-chip.closed      { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.detail-desc {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.desc-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* Reply thread */
+.reply-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.no-replies {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+.reply-item {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 2px solid rgba(20, 184, 166, 0.4);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 12px;
+}
+
+.reply-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.reply-admin-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #14b8a6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.reply-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.reply-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.reply-content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* Add reply */
+.reply-textarea {
   width: 100%;
-  padding: 12px;
+  padding: 10px 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   resize: vertical;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
+  font-family: inherit;
 }
 
+.reply-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* Modal footer */
 .modal-footer {
-  padding: 16px 24px;
+  padding: 14px 24px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--accent-primary);
+  color: #fff;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
