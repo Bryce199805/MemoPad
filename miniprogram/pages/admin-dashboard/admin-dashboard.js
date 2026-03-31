@@ -80,12 +80,12 @@ Page({
         detailFrom: t('admin.by'),
         detailStatus: t('common.status'),
         detailDescription: t('feedback.description'),
-        reply: t('admin.yourReply'),
-        updateReply: t('admin.updateReply'),
+        reply: t('admin.addReply'),
         replyPlaceholder: t('admin.replyPlaceholder'),
         sendReply: t('admin.sendReply'),
         deleteReply: t('admin.deleteReply'),
         adminReply: t('feedback.adminReplyLabel'),
+        noReplies: t('admin.noReplies'),
         inProgress: t('feedback.statusInProgress'),
         resolve: t('feedback.statusResolved'),
         close: t('common.close'),
@@ -261,10 +261,10 @@ Page({
     const id = e.currentTarget.dataset.id
     const ticket = this.data.tickets.find(tk => tk.id === id)
     if (ticket) {
-      this.setData({ 
-        showTicketDetail: true, 
+      this.setData({
+        showTicketDetail: true,
         currentTicket: ticket,
-        replyText: ticket.reply || ''
+        replyText: ''
       })
     }
   },
@@ -297,13 +297,13 @@ Page({
   onSendReply() {
     const ticket = this.data.currentTicket
     if (!ticket) return
-    const reply = this.data.replyText.trim()
-    if (!reply) return
+    const content = this.data.replyText.trim()
+    if (!content) return
 
     wx.showLoading({ title: t('common.loading') })
-    api.put('/api/admin/tickets/' + ticket.id, { reply }).then(() => {
+    api.post('/api/admin/tickets/' + ticket.id + '/replies', { content }).then(() => {
       wx.hideLoading()
-      wx.showToast({ title: t('common.updated'), icon: 'success' })
+      wx.showToast({ title: t('admin.replySent'), icon: 'success' })
       this.setData({ replyText: '' })
       this.onCloseTicketDetail()
       this.fetchAll()
@@ -313,9 +313,10 @@ Page({
     })
   },
 
-  onClearReply() {
+  onDeleteReply(e) {
+    const replyId = e.currentTarget.dataset.replyId
     const ticket = this.data.currentTicket
-    if (!ticket) return
+    if (!ticket || !replyId) return
 
     wx.showModal({
       title: t('common.confirm'),
@@ -326,9 +327,9 @@ Page({
       success: (res) => {
         if (!res.confirm) return
         wx.showLoading({ title: t('common.loading') })
-        api.put('/api/admin/tickets/' + ticket.id, { reply: '' }).then(() => {
+        api.del('/api/admin/tickets/' + ticket.id + '/replies/' + replyId).then(() => {
           wx.hideLoading()
-          wx.showToast({ title: t('common.deleted'), icon: 'success' })
+          wx.showToast({ title: t('admin.replyDeleted'), icon: 'success' })
           this.onCloseTicketDetail()
           this.fetchAll()
         }).catch(() => {

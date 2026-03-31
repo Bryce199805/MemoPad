@@ -240,18 +240,25 @@ module.exports = {
         <text class="detail-value detail-value--block">{{currentTicket.description || i.noDescription}}</text>
       </view>
 
-      <!-- Existing reply (read-only) -->
-      <view class="detail-row" wx:if="{{currentTicket.reply}}">
+      <!-- Reply Thread -->
+      <view class="detail-row reply-thread">
         <text class="detail-label">{{i.adminReply}}</text>
-        <view class="existing-reply">
-          <text class="existing-reply-text">{{currentTicket.reply}}</text>
-          <text class="action-btn action-btn--danger action-btn--sm" bind:tap="onClearReply">{{i.deleteReply}}</text>
+        <view wx:if="{{!currentTicket.replies || currentTicket.replies.length === 0}}" class="no-replies-hint">
+          <text>{{i.noReplies}}</text>
+        </view>
+        <view wx:for="{{currentTicket.replies}}" wx:key="id" class="reply-item">
+          <view class="reply-item-header">
+            <text class="reply-item-label">{{i.adminReply}}</text>
+            <text class="reply-item-time">{{utils.formatDate(item.created_at)}}</text>
+          </view>
+          <text class="reply-item-content">{{item.content}}</text>
+          <text class="action-btn action-btn--danger action-btn--sm" bind:tap="onDeleteReply" data-reply-id="{{item.id}}">{{i.deleteReply}}</text>
         </view>
       </view>
 
-      <!-- Reply input -->
+      <!-- Add reply input -->
       <view class="detail-row">
-        <text class="detail-label">{{currentTicket.reply ? i.updateReply : i.reply}}</text>
+        <text class="detail-label">{{i.reply}}</text>
         <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
       </view>
       <view class="reply-send-row">

@@ -411,20 +411,52 @@
   box-sizing: border-box;
 }
 
-.existing-reply {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
+/* Reply Thread */
+.reply-thread {
+  padding-top: 16rpx;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.existing-reply-text {
-  padding: 16rpx;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  border-radius: 12rpx;
-  color: #e5e5e5;
+.no-replies-hint {
+  font-size: 24rpx;
+  color: #525252;
+  padding: 8rpx 0;
+}
+
+.reply-item {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 4rpx solid rgba(20, 184, 166, 0.4);
+  border-radius: 0 12rpx 12rpx 0;
+  padding: 16rpx 20rpx;
+  margin-top: 12rpx;
+}
+
+.reply-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.reply-item-label {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #14b8a6;
+  text-transform: uppercase;
+}
+
+.reply-item-time {
+  font-size: 20rpx;
+  color: #525252;
+}
+
+.reply-item-content {
   font-size: 26rpx;
+  color: #a3a3a3;
+  white-space: pre-wrap;
   line-height: 1.5;
+  display: block;
+  margin-bottom: 8rpx;
 }
 
 .reply-send-row {
