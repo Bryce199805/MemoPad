@@ -63,8 +63,10 @@ module.exports = {
   </block>
 
   <!-- Ticket Detail Modal -->
-  <view class="detail-overlay" wx:if="{{showDetail}}" bind:tap="onCloseDetail">
-    <view class="detail-modal" catchtap="">
+  <view class="detail-overlay" wx:if="{{showDetail}}">
+    <!-- Background tap area to close -->
+    <view class="detail-overlay-bg" bind:tap="onCloseDetail"></view>
+    <view class="detail-modal">
       <view class="detail-modal-header">
         <text class="detail-modal-title">{{i.ticketDetails}}</text>
         <text class="detail-close-btn" bind:tap="onCloseDetail">✕</text>
@@ -105,18 +107,19 @@ module.exports = {
             <text class="reply-content">{{item.content}}</text>
           </view>
         </view>
+      </scroll-view>
 
-        <!-- User Reply Input -->
-        <view class="detail-field" wx:if="{{selectedTicket.status !== 'closed'}}">
-          <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" placeholder-style="color: var(--text-muted)"
-            value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
-          <view class="reply-send-row">
-            <view class="reply-send-btn" bind:tap="onSendReply">
-              <text>{{i.sendReply}}</text>
-            </view>
+      <!-- Reply Input: outside scroll-view to avoid native component layer issues -->
+      <view class="reply-area" wx:if="{{selectedTicket && selectedTicket.status !== 'closed'}}">
+        <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" placeholder-style="color: var(--text-muted)"
+          value="{{replyText}}" bindinput="onReplyInput" maxlength="2000" fixed="{{true}}"></textarea>
+        <view class="reply-send-row">
+          <view class="reply-send-btn" bind:tap="onSendReply">
+            <text>{{i.sendReply}}</text>
           </view>
         </view>
-      </scroll-view>
+      </view>
+
       <view class="detail-modal-footer">
         <view class="close-ticket-btn" wx:if="{{selectedTicket && (selectedTicket.status === 'open' || selectedTicket.status === 'in_progress' || selectedTicket.status === 'resolved')}}" bind:tap="onCloseTicket">
           <text>{{i.closeTicket}}</text>
