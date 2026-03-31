@@ -2,7 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 const ws = require('../../utils/websocket')
-const { t, getLang } = require('../../utils/i18n')
+const { t } = require('../../utils/i18n')
 
 // Map expandedCard key → translated label
 const CARD_LABEL_KEYS = {
@@ -97,7 +97,7 @@ Page({
         pinnedTasks: t('dashboard.pinned'),
         overdueTasks: t('dashboard.overdueTasks'),
         overdueAlert: '',
-        welcomeTitle: 'Welcome to MemoPad',
+        welcomeTitle: t('dashboard.welcomeTitle'),
         welcomeDesc: t('todo.noTasksHint')
       }
     })
@@ -132,7 +132,6 @@ Page({
   },
 
   processData(stats, todos, countdowns) {
-    const lang = getLang()
     const allTasks = todos
     const completedTasks = allTasks.filter(td => td.done)
     const pendingTasks = allTasks.filter(td => !td.done)
@@ -146,9 +145,9 @@ Page({
       return due < today
     })
 
-    const overdueLabel = lang === 'zh' ? '天前' : 'd overdue'
-    const todayLabel = lang === 'zh' ? '今天' : 'Today'
-    const tomorrowLabel = lang === 'zh' ? '明天' : 'Tomorrow'
+    const overdueLabel = t('dashboard.overdueLabel')
+    const todayLabel = t('dashboard.todayLabel')
+    const tomorrowLabel = t('dashboard.tomorrowLabel')
 
     const upcomingCountdowns = countdowns
       .map(c => {
@@ -177,9 +176,9 @@ Page({
 
     // Update overdue alert text
     const overdueCount = overdueTodos.length
-    const alertText = lang === 'zh'
-      ? '你有 ' + overdueCount + ' 个过期任务'
-      : 'You have ' + overdueCount + ' overdue task' + (overdueCount > 1 ? 's' : '')
+    const alertText = overdueCount > 1
+      ? t('dashboard.overdueAlertPlural', { count: overdueCount })
+      : t('dashboard.overdueAlert', { count: overdueCount })
 
     this.setData({
       stats,
