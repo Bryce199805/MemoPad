@@ -13,7 +13,7 @@
 
 | Platform | Tech Stack | Description |
 |----------|------------|-------------|
-| Backend API | Go 1.23 / Gin / GORM / SQLite | RESTful API server |
+| Backend API | Go 1.23 / Gin / GORM / SQLite | RESTful API + WebSocket server |
 | Web Dashboard | Vue 3 / Vue Router / Pinia / TailwindCSS | Responsive admin panel |
 | Desktop Widget | Tauri 2.0 / Vue 3 / Rust | Windows floating widget |
 | WeChat Mini Program | WeChat Mini Program Framework | Mobile access in WeChat |
@@ -25,20 +25,21 @@
 ### Core Features
 
 #### Todo Management
-- **Priority Levels**: High/Medium/Low with color coding
+- **Priority Levels**: High / Medium / Low with color coding
 - **Pin to Top**: Keep important tasks visible
 - **Categories**: Custom categories with colors
 - **Due Dates**: Set task deadlines
+- **Batch Operations**: Toggle, complete, or delete multiple todos at once
 - **Completion Tracking**: Visual progress statistics
 
 #### Countdown Timers
 - **Visual Progress**: Progress bars show time remaining
-- **Urgency Indicators**: Overdue/Due soon/Normal status
+- **Urgency Indicators**: Overdue / Due soon / Normal status
 - **Pin Important Dates**: Keep critical countdowns at the top
 
 #### Multi-Device Sync
 - **Unified API**: Single backend serves all clients
-- **Real-time Sync**: Changes sync across devices instantly
+- **Real-time Sync**: WebSocket pushes changes across devices instantly
 - **Secure Authentication**: API Key based authentication
 
 ### Platform Features
@@ -53,15 +54,16 @@
 
 #### Web Dashboard
 - **Modern Interface**: Card-based design with smooth animations
-- **Dark Mode**: Full dark theme support
+- **Dark / Light Theme**: Full theme support with toggle
 - **Statistics**: Visual progress tracking and completion rates
 - **Responsive Design**: Desktop, tablet, and mobile support
 - **Admin Panel**: User management, ticket handling, system config
+- **i18n**: English and Chinese (Simplified) language support
 
 #### WeChat Mini Program
 - **Quick Access**: Use directly within WeChat
 - **Full Features**: Todo and countdown management
-- **Admin Entry**: Admin functions available
+- **Admin Entry**: Admin functions available in-app
 
 ---
 
@@ -77,14 +79,14 @@ cd MemoPad
 # 2. Start services
 docker compose up -d
 
-# 3. Get API Key (auto-generated on first run)
+# 3. Get admin credentials and API key (auto-generated on first run)
 docker logs memopad-backend
 
 # 4. Access web interface
 # Open http://YOUR_SERVER_IP in browser
 ```
 
-**Ports**: Only port 80 needs to be open. The backend API is proxied internally through Nginx.
+**Ports**: Only port 80 (and 443 for HTTPS) need to be open. The backend runs internally and is proxied through Nginx.
 
 ### Development
 
@@ -95,7 +97,7 @@ cd backend && go run main.go
 # Web frontend (new terminal)
 cd web && npm install && npm run dev
 
-# Desktop app (new terminal)
+# Desktop app (new terminal) — requires Rust + Tauri CLI
 cd desktop && npm install && npm run tauri dev
 ```
 
@@ -106,16 +108,19 @@ cd desktop && npm install && npm run tauri dev
 ```
 MemoPad/
 ├── backend/                 # Go backend service
-│   ├── main.go              # Main program (single file architecture)
-│   ├── go.mod               # Go module definition
-│   └── Dockerfile           # Docker build file
+│   ├── main.go              # Single-file architecture: routes, models, handlers
+│   ├── go.mod
+│   └── Dockerfile
 │
 ├── web/                     # Vue 3 web dashboard
 │   ├── src/
-│   │   ├── main.js          # Entry point
-│   │   ├── App.vue          # Root component
+│   │   ├── main.js
+│   │   ├── App.vue
 │   │   ├── router/          # Vue Router configuration
-│   │   ├── stores/          # Pinia state management
+│   │   ├── stores/          # Pinia stores (auth, todo, countdown, category)
+│   │   ├── i18n/            # vue-i18n setup
+│   │   ├── locales/         # Translation files (en.json, zh.json)
+│   │   ├── styles/          # Global CSS variables and design tokens
 │   │   ├── views/           # Page components
 │   │   │   ├── Dashboard.vue
 │   │   │   ├── LoginView.vue
@@ -123,121 +128,48 @@ MemoPad/
 │   │   │   ├── CountdownManage.vue
 │   │   │   ├── Settings.vue
 │   │   │   ├── Feedback.vue
-│   │   │   └── admin/       # Admin pages
-│   │   ├── components/      # Reusable components
-│   │   ├── layouts/         # Layout components
-│   │   └── api/             # API client
+│   │   │   └── admin/       # AdminDashboard, AdminUsers, AdminTickets, AdminConfig
+│   │   ├── components/      # TodoItem.vue + ui/ (Badge, Button, Card, StatCard)
+│   │   ├── layouts/         # DefaultLayout.vue
+│   │   └── api/             # client.js, websocket.js
 │   ├── package.json
-│   ├── Dockerfile           # Docker build file
-│   └── nginx.conf           # Nginx config with rate limiting
+│   ├── Dockerfile
+│   └── nginx.conf           # Nginx with rate limiting, WebSocket proxy, HTTPS
 │
-├── desktop/                 # Tauri desktop app
+├── desktop/                 # Tauri desktop widget
 │   ├── src/
 │   │   ├── main.js
-│   │   ├── App.vue          # Main widget UI
+│   │   ├── App.vue
+│   │   ├── components/      # TodoCard.vue
 │   │   ├── stores/          # Pinia state management
-│   │   └── locales/         # i18n translations
+│   │   ├── locales/         # i18n translations
+│   │   └── style.css
 │   ├── src-tauri/           # Rust backend
-│   │   ├── src/main.rs      # Tauri main program
-│   │   ├── Cargo.toml       # Rust dependencies
-│   │   └── tauri.conf.json  # Tauri configuration
+│   │   ├── src/main.rs
+│   │   ├── Cargo.toml
+│   │   └── tauri.conf.json
 │   └── package.json
 │
 ├── miniprogram/             # WeChat mini program
-│   ├── pages/               # Pages
-│   │   ├── login/           # Login page
-│   │   ├── dashboard/       # Dashboard
-│   │   ├── todos/           # Todo management
-│   │   ├── countdowns/      # Countdowns
-│   │   ├── settings/        # Settings
-│   │   ├── tickets/         # Feedback tickets
-│   │   └── admin-dashboard/ # Admin panel
-│   ├── components/          # Reusable components
-│   ├── utils/               # Utility functions
-│   └── app.json             # Mini program config
+│   ├── pages/               # login, dashboard, todos, countdowns, settings,
+│   │                        # tickets, admin-dashboard
+│   ├── components/
+│   ├── utils/
+│   ├── locales/             # en.js, zh.js
+│   ├── images/
+│   ├── config.example.js    # Copy to config.js and fill in AppID + server URL
+│   └── app.json
 │
-├── .github/workflows/       # GitHub Actions
-│   └── build.yml            # Tauri build workflow
+├── .github/workflows/
+│   └── build.yml            # Tauri desktop release build
 │
 ├── docker-compose.yml       # Production deployment
-├── compose.yml              # Development deployment
 ├── README.md
 ├── INSTALL.md
 ├── DEPLOY.md
 ├── API.md
 └── LICENSE
 ```
-
----
-
-## API Endpoints
-
-### Authentication `/api/auth`
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/register` | Register new user | No |
-| POST | `/login` | Login with credentials | No |
-| GET | `/verify` | Verify API key | Yes |
-| GET | `/check-admin` | Check if admin exists | No |
-| GET | `/api-key` | Get current API key | Yes |
-| POST | `/api-key/regenerate` | Regenerate API key | Yes |
-
-### Todos `/api/todos`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | List all todos |
-| POST | `/` | Create todo |
-| PUT | `/:id` | Update todo |
-| DELETE | `/:id` | Delete todo |
-| PATCH | `/:id/toggle` | Toggle done status |
-| PATCH | `/:id/pin` | Toggle pinned status |
-
-### Countdowns `/api/countdowns`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | List all countdowns |
-| POST | `/` | Create countdown |
-| PUT | `/:id` | Update countdown |
-| DELETE | `/:id` | Delete countdown |
-
-### Categories `/api/categories`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | List categories |
-| POST | `/` | Create category |
-| PUT | `/:id` | Update category |
-| DELETE | `/:id` | Delete category |
-
-### Statistics `/api/stats`
-
-- Returns todo completion rate, priority breakdown, countdown statistics
-
-### Tickets `/api/tickets`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | List user's tickets |
-| POST | `/` | Create ticket |
-| GET | `/:id` | Get ticket details |
-
-### Admin `/api/admin`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/users` | List all users |
-| PATCH | `/users/:id/disable` | Disable user |
-| PATCH | `/users/:id/enable` | Enable user |
-| DELETE | `/users/:id` | Delete user |
-| GET | `/config` | Get system config |
-| PUT | `/config` | Update system config |
-| GET | `/stats` | System statistics |
-| GET | `/tickets` | List all tickets |
-| PUT | `/tickets/:id` | Update ticket |
-| DELETE | `/tickets/:id` | Delete ticket |
 
 ---
 
@@ -255,52 +187,16 @@ MemoPad/
 - Ticket handling (reply, update status)
 - System configuration (enable/disable registration)
 - Global statistics
-- No personal task management features
-
----
-
-## Security Features
-
-1. **Authentication**
-   - bcrypt password hashing
-   - API Key format: `mp_` prefix + 64 hex characters
-   - API key regeneration support
-
-2. **Access Control**
-   - Role-based permissions (admin/user)
-   - User data isolation
-   - Admin-only endpoints protection
-
-3. **Rate Limiting**
-   - Backend: IP-based rate limiting with auto-blocking
-   - Nginx: Request frequency and connection limits
-
-4. **HTTPS/TLS**
-   - TLS 1.2 / 1.3 support
-   - Secure cipher suites
-
----
-
-## Data Storage
-
-- **Database**: SQLite (`memo.db`)
-- **Location**: `/app/data/` in Docker container
-- **Persistence**: Docker Volume `backend-data`
-- **Backup**: Simple directory copy
-
----
-
-## Downloads
-
-- **Desktop App**: [GitHub Releases](https://github.com/Bryce199805/MemoPad/releases)
 
 ---
 
 ## Documentation
 
-- [Installation Guide](INSTALL.md) - Detailed installation steps
-- [Deployment Guide](DEPLOY.md) - Production deployment with Docker
-- [API Reference](API.md) - Complete API documentation
+| Document | Description |
+|----------|-------------|
+| [INSTALL.md](INSTALL.md) | Client setup, WeChat mini program, development environment |
+| [DEPLOY.md](DEPLOY.md) | Production Docker deployment, HTTPS, backup, monitoring |
+| [API.md](API.md) | Complete REST API and WebSocket reference |
 
 ---
 
