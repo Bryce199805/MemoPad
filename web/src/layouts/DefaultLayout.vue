@@ -54,6 +54,7 @@
             <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
           </svg>
           <span>{{ $t('nav.feedback') }}</span>
+          <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
         </router-link>
       </nav>
 
@@ -110,6 +111,7 @@
         </router-link>
         <router-link to="/feedback" class="mobile-nav-item" @click="showMobileMenu = false">
           <span>{{ $t('nav.feedback') }}</span>
+          <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
         </router-link>
         <button @click="handleLogout" class="mobile-logout">
           {{ $t('nav.logout') }}
@@ -125,22 +127,44 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import api from '../api/client'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const showMobileMenu = ref(false)
+const unreadCount = ref(0)
 
 const userInitial = computed(() => {
   return authStore.user?.username?.charAt(0).toUpperCase() || '?'
 })
 
+async function fetchUnreadCount() {
+  if (authStore.isAdmin) return
+  try {
+    const res = await api.get('/api/tickets/unread-count')
+    unreadCount.value = res.data.count || 0
+  } catch (e) {
+    // silently ignore
+  }
+}
+
+function refreshUnreadCount() {
+  fetchUnreadCount()
+}
+
+provide('refreshUnreadCount', refreshUnreadCount)
+
 function handleLogout() {
   authStore.logout()
   router.push('/login')
 }
+
+onMounted(() => {
+  fetchUnreadCount()
+})
 </script>
 
 <style scoped>
@@ -222,6 +246,19 @@ function handleLogout() {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+}
+
+.nav-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 16px;
 }
 
 .nav-item:hover {
