@@ -85,6 +85,7 @@ Page({
         sendReply: t('admin.sendReply'),
         deleteReply: t('admin.deleteReply'),
         adminReply: t('feedback.adminReplyLabel'),
+        userReply: t('feedback.userReply'),
         noReplies: t('admin.noReplies'),
         inProgress: t('feedback.statusInProgress'),
         resolve: t('feedback.statusResolved'),

@@ -124,27 +124,22 @@ module.exports = {
       <!-- Users Tab -->
       <view class="tab-content" wx:if="{{activeTab === 'users'}}">
         <view class="user-list">
-          <view class="user-card" wx:for="{{users}}" wx:key="id">
-            <view class="user-row">
-              <view class="user-avatar">
-                <text class="avatar-letter">{{item.username[0].toUpperCase()}}</text>
-              </view>
-              <view class="user-info">
-                <view class="user-name-row">
-                  <text class="user-name">{{item.username}}</text>
-                  <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
-                  <text class="badge badge--disabled" wx:if="{{item.disabled}}">{{i.disable}}</text>
-                </view>
-                <text class="user-email">{{item.email || i.noEmail}}</text>
-                <text class="user-stats">{{item.todo_count}} {{i.tasks}} · {{item.countdown_count}} {{i.countdowns}}</text>
-              </view>
+          <view class="user-row-compact" wx:for="{{users}}" wx:key="id">
+            <view class="user-avatar-sm">
+              <text class="avatar-letter-sm">{{item.username[0].toUpperCase()}}</text>
             </view>
-            <view class="user-actions" wx:if="{{item.id !== user.id}}">
-              <text wx:if="{{item.disabled}}" class="action-btn action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">{{i.enable}}</text>
-              <text wx:else class="action-btn" bind:tap="onDisableUser" data-id="{{item.id}}">{{i.disable}}</text>
-              <text class="action-btn action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">{{i.delete}}</text>
+            <view class="user-info-compact">
+              <text class="user-name-compact">{{item.username}}</text>
+              <text class="badge badge--admin" wx:if="{{item.role === 'admin'}}">Admin</text>
+              <text class="badge badge--disabled" wx:if="{{item.disabled}}">{{i.disable}}</text>
             </view>
-            <view class="user-actions user-actions--self" wx:else>
+            <text class="user-stats-compact">{{item.todo_count}}/{{item.countdown_count}}</text>
+            <view class="user-actions-compact" wx:if="{{item.id !== user.id}}">
+              <text wx:if="{{item.disabled}}" class="action-btn action-btn--compact action-btn--primary" bind:tap="onEnableUser" data-id="{{item.id}}">{{i.enable}}</text>
+              <text wx:else class="action-btn action-btn--compact" bind:tap="onDisableUser" data-id="{{item.id}}">{{i.disable}}</text>
+              <text class="action-btn action-btn--compact action-btn--danger" bind:tap="onDeleteUser" data-id="{{item.id}}">✕</text>
+            </view>
+            <view class="user-actions-compact" wx:else>
               <text class="self-label">{{i.you}}</text>
             </view>
           </view>
@@ -246,9 +241,9 @@ module.exports = {
         <view wx:if="{{!currentTicket.replies || currentTicket.replies.length === 0}}" class="no-replies-hint">
           <text>{{i.noReplies}}</text>
         </view>
-        <view wx:for="{{currentTicket.replies}}" wx:key="id" class="reply-item">
+        <view wx:for="{{currentTicket.replies}}" wx:key="id" class="reply-item {{item.is_admin ? 'reply-item--admin' : 'reply-item--user'}}">
           <view class="reply-item-header">
-            <text class="reply-item-label">{{i.adminReply}}</text>
+            <text class="{{item.is_admin ? 'reply-item-label' : 'reply-item-label--user'}}">{{item.is_admin ? i.adminReply : (currentTicket.username || i.userReply)}}</text>
             <text class="reply-item-time">{{utils.formatDate(item.created_at)}}</text>
           </view>
           <text class="reply-item-content">{{item.content}}</text>
