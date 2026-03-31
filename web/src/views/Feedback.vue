@@ -113,12 +113,24 @@
               <div v-if="!selectedTicket.replies || selectedTicket.replies.length === 0" class="no-replies-text">
                 {{ $t('feedback.noReplies') }}
               </div>
-              <div v-for="reply in selectedTicket.replies" :key="reply.id" class="reply-item">
+              <div v-for="reply in selectedTicket.replies" :key="reply.id" :class="['reply-item', reply.is_admin ? 'reply-item--admin' : 'reply-item--user']">
                 <div class="reply-item-header">
-                  <span class="reply-admin-label">{{ $t('feedback.adminReplyLabel') }}</span>
+                  <span :class="reply.is_admin ? 'reply-admin-label' : 'reply-user-label'">{{ reply.is_admin ? $t('feedback.adminReplyLabel') : $t('feedback.userReply') }}</span>
                   <span class="reply-time">{{ formatDate(reply.created_at) }}</span>
                 </div>
                 <p class="reply-content">{{ reply.content }}</p>
+              </div>
+            </div>
+            <!-- User Reply Input -->
+            <div v-if="selectedTicket && selectedTicket.status !== 'closed'" class="detail-row">
+              <label>{{ $t('feedback.sendReply') }}</label>
+              <div class="user-reply-form">
+                <textarea v-model="userReplyText" :placeholder="$t('feedback.replyPlaceholder')" rows="3" maxlength="2000" class="user-reply-input"></textarea>
+                <div class="user-reply-actions">
+                  <Button variant="primary" size="sm" :disabled="!userReplyText.trim() || sendingReply" @click="sendUserReply">
+                    {{ sendingReply ? '...' : $t('feedback.sendReply') }}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -157,6 +169,8 @@ const loading = ref(false)
 const submitting = ref(false)
 const showModal = ref(false)
 const selectedTicket = ref(null)
+const userReplyText = ref('')
+const sendingReply = ref(false)
 
 async function fetchTickets() {
   loading.value = true
@@ -213,6 +227,25 @@ function showTicketDetail(ticket) {
 function closeModal() {
   showModal.value = false
   selectedTicket.value = null
+  userReplyText.value = ''
+}
+
+async function sendUserReply() {
+  if (!selectedTicket.value || !userReplyText.value.trim()) return
+  sendingReply.value = true
+  try {
+    await api.post(`/api/tickets/${selectedTicket.value.id}/replies`, { content: userReplyText.value.trim() })
+    userReplyText.value = ''
+    // Refresh ticket data
+    await fetchTickets()
+    // Re-select the ticket to show new reply
+    const updated = tickets.value.find(tk => tk.id === selectedTicket.value.id)
+    if (updated) selectedTicket.value = updated
+  } catch (err) {
+    alert(err.response?.data?.error || t('common.error'))
+  } finally {
+    sendingReply.value = false
+  }
 }
 
 async function closeTicket() {
@@ -541,11 +574,19 @@ onMounted(() => {
 }
 
 .reply-item {
-  background: rgba(20, 184, 166, 0.06);
-  border-left: 2px solid rgba(20, 184, 166, 0.4);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: 10px 12px;
   margin-top: 8px;
+}
+
+.reply-item--admin {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 2px solid rgba(20, 184, 166, 0.4);
+}
+
+.reply-item--user {
+  background: rgba(99, 102, 241, 0.06);
+  border-left: 2px solid rgba(99, 102, 241, 0.4);
 }
 
 .reply-item-header {
@@ -564,6 +605,15 @@ onMounted(() => {
   flex: 1;
 }
 
+.reply-user-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+
 .reply-time {
   font-size: 11px;
   color: var(--text-muted);
@@ -575,6 +625,29 @@ onMounted(() => {
   white-space: pre-wrap;
   line-height: 1.5;
   margin: 0;
+}
+
+.user-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-reply-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.user-reply-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .modal-footer {
