@@ -60,37 +60,33 @@ module.exports = {
         <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
       </view>
 
-      <view class="filter-row">
-        <view class="filter-left">
-          <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
-            <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
-              <text>{{priorityLabels[filterPriority]}}</text>
-              <text class="chip-arrow">▾</text>
-            </view>
-          </picker>
-
-          <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
-            <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
-              <text>{{statusLabels[filterStatus]}}</text>
-              <text class="chip-arrow">▾</text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="filter-right">
-          <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
-            <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
-              <text>{{filterCategory === 0 ? i.category : categoryNames[filterCategory]}}</text>
-              <text class="chip-arrow">▾</text>
-            </view>
-          </picker>
-
-          <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
-            <text>{{selectMode ? '✕' : '☑'}}</text>
-            <text>{{selectMode ? i.cancel : i.select}}</text>
+      <scroll-view class="filter-row" scroll-x enable-flex>
+        <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
+          <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{priorityLabels[filterPriority]}}</text>
+            <text class="chip-arrow">▾</text>
           </view>
+        </picker>
+
+        <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
+          <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{statusLabels[filterStatus]}}</text>
+            <text class="chip-arrow">▾</text>
+          </view>
+        </picker>
+
+        <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
+          <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
+            <text>{{filterCategory === 0 ? i.category : categoryNames[filterCategory]}}</text>
+            <text class="chip-arrow">▾</text>
+          </view>
+        </picker>
+
+        <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
+          <text>{{selectMode ? '✕' : '☑'}}</text>
+          <text>{{selectMode ? i.cancel : i.select}}</text>
         </view>
-      </view>
+      </scroll-view>
     </view>
 
     <!-- Select Mode Actions -->

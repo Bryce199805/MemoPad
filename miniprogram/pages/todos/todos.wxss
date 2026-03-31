@@ -150,32 +150,21 @@
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-}
-
-.filter-left {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.filter-right {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-left: auto;
+  gap: 12rpx;
+  white-space: nowrap;
 }
 
 .filter-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6rpx;
-  padding: 12rpx 20rpx;
+  padding: 10rpx 16rpx;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .filter-chip--active {
