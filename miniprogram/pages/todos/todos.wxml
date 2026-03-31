@@ -46,9 +46,14 @@ module.exports = {
           <text class="summary-done">{{completedCount}} {{i.completed}}</text>
         </text>
       </view>
-      <view class="add-btn" bind:tap="onAddTask">
-        <text class="add-icon">+</text>
-        <text class="add-text">{{i.add}}</text>
+      <view class="header-btns">
+        <view class="select-toggle-btn {{selectMode ? 'select-toggle-btn--active' : ''}}" bind:tap="onToggleSelectMode">
+          <text>{{selectMode ? '✕' : '☑'}}</text>
+        </view>
+        <view class="add-btn" bind:tap="onAddTask">
+          <text class="add-icon">+</text>
+          <text class="add-text">{{i.add}}</text>
+        </view>
       </view>
     </view>
 
@@ -60,33 +65,28 @@ module.exports = {
         <text wx:if="{{searchText}}" class="search-clear" bind:tap="onSearchClear">✕</text>
       </view>
 
-      <scroll-view class="filter-row" scroll-x enable-flex>
-        <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange">
+      <view class="filter-row">
+        <picker mode="selector" range="{{priorityLabels}}" value="{{filterPriority}}" bindchange="onPriorityChange" class="filter-picker-wrap">
           <view class="filter-chip {{filterPriority > 0 ? 'filter-chip--active' : ''}}">
             <text>{{priorityLabels[filterPriority]}}</text>
             <text class="chip-arrow">▾</text>
           </view>
         </picker>
 
-        <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange">
+        <picker mode="selector" range="{{statusLabels}}" value="{{filterStatus}}" bindchange="onStatusChange" class="filter-picker-wrap">
           <view class="filter-chip {{filterStatus > 0 ? 'filter-chip--active' : ''}}">
             <text>{{statusLabels[filterStatus]}}</text>
             <text class="chip-arrow">▾</text>
           </view>
         </picker>
 
-        <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange">
+        <picker wx:if="{{categoryNames.length > 0}}" mode="selector" range="{{categoryNames}}" value="{{filterCategory}}" bindchange="onCategoryChange" class="filter-picker-wrap">
           <view class="filter-chip {{filterCategory > 0 ? 'filter-chip--active' : ''}}">
             <text>{{filterCategory === 0 ? i.category : categoryNames[filterCategory]}}</text>
             <text class="chip-arrow">▾</text>
           </view>
         </picker>
-
-        <view class="filter-chip {{selectMode ? 'filter-chip--danger' : ''}}" bind:tap="onToggleSelectMode">
-          <text>{{selectMode ? '✕' : '☑'}}</text>
-          <text>{{selectMode ? i.cancel : i.select}}</text>
-        </view>
-      </scroll-view>
+      </view>
     </view>
 
     <!-- Select Mode Actions -->
