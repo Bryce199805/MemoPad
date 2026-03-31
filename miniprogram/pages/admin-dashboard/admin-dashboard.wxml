@@ -262,7 +262,7 @@ module.exports = {
         <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
       </view>
       <view class="reply-send-row">
-        <text class="action-btn action-btn--primary" bind:tap="onSendReply">{{i.sendReply}}</text>
+        <text class="action-btn action-btn--accent" bind:tap="onSendReply">{{i.sendReply}}</text>
       </view>
 
       <!-- Status actions -->

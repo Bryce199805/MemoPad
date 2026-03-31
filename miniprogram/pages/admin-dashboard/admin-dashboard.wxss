@@ -373,6 +373,11 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+.action-btn--accent {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+}
+
 /* Detail Modal */
 .ticket-detail {
   padding: 0 8rpx;
