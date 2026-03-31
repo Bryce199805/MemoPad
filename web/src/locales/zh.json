@@ -32,7 +32,10 @@
     "newPasswordPlaceholder": "设置密码（至少6位）",
     "createAccount": "创建账户",
     "noAccount": "还没有账户？",
-    "hasAccount": "已有账户？"
+    "hasAccount": "已有账户？",
+    "invalidUsername": "用户名只能包含字母、数字和下划线",
+    "usernameTooShort": "用户名至少需要3个字符",
+    "usernameTooLong": "用户名不能超过50个字符"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -183,7 +186,7 @@
     "confirmDeleteCategory": "删除分类「{name}」？",
     "about": "关于",
     "version": "版本",
-    "sourceCode": "源代码"
+    "sourceCode": "项目地址"
   },
   "feedback": {
     "title": "反馈",
@@ -211,7 +214,8 @@
     "statusInProgress": "处理中",
     "statusResolved": "已解决",
     "statusClosed": "已关闭",
-    "failedToSubmit": "提交工单失败"
+    "failedToSubmit": "提交工单失败",
+    "newReply": "新回复"
   },
   "admin": {
     "dashboard": "仪表盘",

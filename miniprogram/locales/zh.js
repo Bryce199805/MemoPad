@@ -29,7 +29,10 @@ module.exports = {
     emailInvalid: '请输入有效的邮箱地址',
     accountDisabled: '该账户已被禁用',
     rateLimited: '尝试次数过多，请5分钟后再试',
-    usernameExists: '用户名已存在'
+    usernameExists: '用户名已存在',
+    invalidUsername: '用户名只能包含字母、数字和下划线',
+    usernameTooShort: '用户名至少需要3个字符',
+    usernameTooLong: '用户名不能超过50个字符'
   },
   dashboard: {
     title: '仪表盘',
@@ -186,7 +189,7 @@ module.exports = {
     confirmDeleteCategory: '删除分类"{name}"？',
     about: '关于',
     version: '版本',
-    sourceCode: '源代码',
+    sourceCode: '项目地址',
     copyLink: '复制链接',
     linkCopied: 'GitHub 链接已复制！'
   },
@@ -216,7 +219,8 @@ module.exports = {
     statusInProgress: '处理中',
     statusResolved: '已解决',
     statusClosed: '已关闭',
-    failedToSubmit: '提交工单失败'
+    failedToSubmit: '提交工单失败',
+    newReply: '新回复'
   },
   admin: {
     title: '管理后台',

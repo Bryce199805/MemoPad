@@ -29,7 +29,10 @@ module.exports = {
     emailInvalid: 'Please enter a valid email address',
     accountDisabled: 'This account has been disabled',
     rateLimited: 'Too many attempts, please try again in 5 minutes',
-    usernameExists: 'Username already exists'
+    usernameExists: 'Username already exists',
+    invalidUsername: 'Username can only contain letters, numbers, and underscores',
+    usernameTooShort: 'Username must be at least 3 characters',
+    usernameTooLong: 'Username must be at most 50 characters'
   },
   dashboard: {
     title: 'Dashboard',
@@ -186,7 +189,7 @@ module.exports = {
     confirmDeleteCategory: 'Delete category "{name}"?',
     about: 'About',
     version: 'Version',
-    sourceCode: 'Source Code',
+    sourceCode: 'Project URL',
     copyLink: 'Copy Link',
     linkCopied: 'GitHub link copied!'
   },
@@ -216,7 +219,8 @@ module.exports = {
     statusInProgress: 'In Progress',
     statusResolved: 'Resolved',
     statusClosed: 'Closed',
-    failedToSubmit: 'Failed to submit ticket'
+    failedToSubmit: 'Failed to submit ticket',
+    newReply: 'New Reply'
   },
   admin: {
     title: 'Admin Dashboard',

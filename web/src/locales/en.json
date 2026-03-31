@@ -32,7 +32,10 @@
     "newPasswordPlaceholder": "Create a password (min 6 chars)",
     "createAccount": "Create Account",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "invalidUsername": "Username can only contain letters, numbers, and underscores",
+    "usernameTooShort": "Username must be at least 3 characters",
+    "usernameTooLong": "Username must be at most 50 characters"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -183,7 +186,7 @@
     "confirmDeleteCategory": "Delete category \"{name}\"?",
     "about": "About",
     "version": "Version",
-    "sourceCode": "Source Code"
+    "sourceCode": "Project URL"
   },
   "feedback": {
     "title": "Feedback",
@@ -211,7 +214,8 @@
     "statusInProgress": "In Progress",
     "statusResolved": "Resolved",
     "statusClosed": "Closed",
-    "failedToSubmit": "Failed to submit ticket"
+    "failedToSubmit": "Failed to submit ticket",
+    "newReply": "New Reply"
   },
   "admin": {
     "dashboard": "Dashboard",
