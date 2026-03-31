@@ -2,7 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const { t, getLang, setLang } = require('../../utils/i18n')
 
-const APP_VERSION = 'v0.6'
+const APP_VERSION = 'v0.7'
 const GITHUB_URL = 'https://github.com/Bryce199805/MemoPad'
 
 Page({

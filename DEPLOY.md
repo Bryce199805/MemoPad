@@ -384,7 +384,7 @@ docker compose up -d
 
 ```bash
 # Checkout specific version
-git checkout v1.0.0
+git checkout v0.7.0
 
 # Deploy
 docker compose up -d --build
