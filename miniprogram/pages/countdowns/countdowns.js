@@ -15,6 +15,8 @@ Page({
     upcomingCount: 0,
     dueSoonCount: 0,
     overdueCount: 0,
+    dueTodayCount: 0,
+    dueIn3DaysCount: 0,
     selectMode: false,
     selectedIds: [],
     showFormModal: false,
@@ -104,6 +106,8 @@ Page({
         selectTime: t('countdown.selectTime'),
         countdownName: t('countdown.countdownName'),
         countdowns: t('countdown.title'),
+        reminderTodayBanner: t('countdown.reminderTodayBanner'),
+        reminderSoonBanner: t('countdown.reminderSoonBanner'),
         priorityLabels: priorityLabels
       },
       formPriorityLabel: t('countdown.medium')
@@ -160,13 +164,31 @@ Page({
     let upcomingCount = 0
     let dueSoonCount = 0
     let overdueCount = 0
+    let dueTodayCount = 0
+    let dueIn3DaysCount = 0
+
     countdowns.forEach(c => {
       const days = util.daysLeft(c.target_date)
       if (days < 0) overdueCount++
       else if (days <= 7) dueSoonCount++
       else upcomingCount++
+
+      if (days === 0) dueTodayCount++
+      else if (days >= 1 && days <= 3) dueIn3DaysCount++
     })
-    this.setData({ upcomingCount, dueSoonCount, overdueCount })
+
+    const reminderTodayBanner = t('countdown.reminderTodayBanner', { n: dueTodayCount })
+    const reminderSoonBanner = t('countdown.reminderSoonBanner', { n: dueIn3DaysCount })
+
+    this.setData({
+      upcomingCount,
+      dueSoonCount,
+      overdueCount,
+      dueTodayCount,
+      dueIn3DaysCount,
+      'i.reminderTodayBanner': reminderTodayBanner,
+      'i.reminderSoonBanner': reminderSoonBanner
+    })
   },
 
   applyFilter() {

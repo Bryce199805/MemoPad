@@ -26,6 +26,8 @@ Page({
     pinnedTodos: [],
     overdueTodos: [],
     upcomingCountdowns: [],
+    dueTodayCount: 0,
+    dueIn3DaysCount: 0,
     priorityBars: [],
     completionRate: 0,
     expandedCard: '',
@@ -94,6 +96,9 @@ Page({
         viewAllTasks: t('dashboard.viewAll') + ' ' + t('nav.tasks'),
         viewAllCountdowns: t('dashboard.viewAll') + ' ' + t('nav.countdowns'),
         upcoming: t('dashboard.upcomingCountdowns'),
+        reminderTodayBanner: t('countdown.reminderTodayBanner'),
+        reminderSoonBanner: t('countdown.reminderSoonBanner'),
+        viewReminders: t('countdown.viewReminders'),
         pinnedTasks: t('dashboard.pinned'),
         overdueTasks: t('dashboard.overdueTasks'),
         overdueAlert: '',
@@ -174,6 +179,15 @@ Page({
     const priorityBars = (stats && stats.todos && stats.todos.by_priority) || []
     const categories = (stats && stats.categories && stats.categories.list) || []
 
+    // Countdown reminders: due today (0 days) and due within 3 days (1-3 days)
+    const dueTodayCount = countdowns.filter(c => util.daysLeft(c.target_date) === 0).length
+    const dueIn3DaysCount = countdowns.filter(c => {
+      const days = util.daysLeft(c.target_date)
+      return days >= 1 && days <= 3
+    }).length
+    const reminderTodayBanner = t('countdown.reminderTodayBanner', { n: dueTodayCount })
+    const reminderSoonBanner = t('countdown.reminderSoonBanner', { n: dueIn3DaysCount })
+
     // Update overdue alert text
     const overdueCount = overdueTodos.length
     const alertText = overdueCount > 1
@@ -191,9 +205,13 @@ Page({
       pinnedTodos,
       overdueTodos,
       upcomingCountdowns,
+      dueTodayCount,
+      dueIn3DaysCount,
       priorityBars,
       completionRate,
-      'i.overdueAlert': alertText
+      'i.overdueAlert': alertText,
+      'i.reminderTodayBanner': reminderTodayBanner,
+      'i.reminderSoonBanner': reminderSoonBanner
     })
   },
 

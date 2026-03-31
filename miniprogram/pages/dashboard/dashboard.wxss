@@ -456,3 +456,54 @@
 .text-danger { color: var(--danger); }
 .text-warning { color: var(--warning); }
 .text-accent { color: var(--accent-primary); }
+
+/* Countdown Reminder Banners */
+.reminder-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 28rpx;
+  border-radius: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.reminder-banner--today {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.reminder-banner--soon {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.reminder-banner-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  flex: 1;
+}
+
+.reminder-banner--today .reminder-banner-text {
+  color: var(--danger);
+}
+
+.reminder-banner--soon .reminder-banner-text {
+  color: var(--warning);
+}
+
+.reminder-banner-link {
+  font-size: 24rpx;
+  font-weight: 500;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+.reminder-banner--today .reminder-banner-link {
+  color: var(--danger);
+  opacity: 0.8;
+}
+
+.reminder-banner--soon .reminder-banner-link {
+  color: var(--warning);
+  opacity: 0.8;
+}

@@ -22,6 +22,14 @@
       </view>
     </view>
 
+    <!-- Reminder Banner -->
+    <view class="reminder-banner reminder-banner--today" wx:if="{{dueTodayCount > 0 && !selectMode}}">
+      <text class="reminder-banner-text">{{i.reminderTodayBanner}}</text>
+    </view>
+    <view class="reminder-banner reminder-banner--soon" wx:elif="{{dueIn3DaysCount > 0 && !selectMode}}">
+      <text class="reminder-banner-text">{{i.reminderSoonBanner}}</text>
+    </view>
+
     <!-- Stats Row -->
     <view class="stats-row">
       <view class="stat-card glass-card">

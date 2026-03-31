@@ -35,6 +35,16 @@ module.exports = {
       <text class="header-date">{{todayStr}}</text>
     </view>
 
+    <!-- Countdown Reminder Banners -->
+    <view class="reminder-banner reminder-banner--today" wx:if="{{dueTodayCount > 0}}" bind:tap="onViewAllCountdowns">
+      <text class="reminder-banner-text">{{i.reminderTodayBanner}}</text>
+      <text class="reminder-banner-link">{{i.viewReminders}} →</text>
+    </view>
+    <view class="reminder-banner reminder-banner--soon" wx:elif="{{dueIn3DaysCount > 0}}" bind:tap="onViewAllCountdowns">
+      <text class="reminder-banner-text">{{i.reminderSoonBanner}}</text>
+      <text class="reminder-banner-link">{{i.viewReminders}} →</text>
+    </view>
+
     <!-- Stat Cards 2x2 Grid -->
     <view class="stat-grid">
       <stat-card key="total" label="{{i.total}}" value="{{allTasks.length}}" icon="📝" active="{{expandedCard === 'total'}}" bind:stattap="onStatTap"></stat-card>
