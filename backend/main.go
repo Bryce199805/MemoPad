@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -490,9 +491,10 @@ type Ticket struct {
 	Description string    `json:"description" gorm:"size:2000"`
 	Priority    string    `json:"priority" gorm:"size:10;default:medium"`  // high/medium/low
 	Status      string    `json:"status" gorm:"size:20;default:open"`      // open/in_progress/resolved/closed
-	Reply       string    `json:"reply" gorm:"size:2000"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	Reply       string     `json:"reply" gorm:"size:2000"`
+	ReplyReadAt *time.Time `json:"reply_read_at" gorm:"default:null"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // Stats for dashboard
@@ -677,6 +679,7 @@ func setupRoutes(r *gin.Engine) {
 		api.GET("/tickets", getTickets)
 		api.POST("/tickets", createTicket)
 		api.GET("/tickets/:id", getTicket)
+		api.PUT("/tickets/:id/read", markTicketRead)
 
 		// Account management
 		api.DELETE("/auth/account", deleteOwnAccount)
@@ -967,6 +970,13 @@ func registerHandler(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse("Invalid input: "+err.Error(), "VALIDATION_ERROR"))
+		return
+	}
+
+	// Validate username format: letters, numbers, underscores only
+	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	if !usernameRegex.MatchString(input.Username) {
+		c.JSON(http.StatusBadRequest, errorResponse("Username can only contain letters, numbers, and underscores", "INVALID_USERNAME"))
 		return
 	}
 
@@ -1520,6 +1530,32 @@ func getTicket(c *gin.Context) {
 		return
 	}
 
+	// Auto-mark reply as read when user views the ticket
+	if ticket.Reply != "" && ticket.ReplyReadAt == nil {
+		now := time.Now()
+		db.Model(&ticket).Update("reply_read_at", now)
+		ticket.ReplyReadAt = &now
+	}
+
+	c.JSON(http.StatusOK, successResponse(ticket))
+}
+
+func markTicketRead(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+	id := c.Param("id")
+
+	var ticket Ticket
+	if err := db.Where("id = ? AND user_id = ?", id, userID).First(&ticket).Error; err != nil {
+		c.JSON(http.StatusNotFound, errorResponse("Ticket not found", "NOT_FOUND"))
+		return
+	}
+
+	if ticket.Reply != "" && ticket.ReplyReadAt == nil {
+		now := time.Now()
+		db.Model(&ticket).Update("reply_read_at", now)
+		ticket.ReplyReadAt = &now
+	}
+
 	c.JSON(http.StatusOK, successResponse(ticket))
 }
 
@@ -1643,16 +1679,17 @@ func adminGetTickets(c *gin.Context) {
 
 	// Return user info without sensitive data
 	type TicketWithUser struct {
-		ID          uint      `json:"id"`
-		UserID      uint      `json:"user_id"`
-		Username    string    `json:"username"`
-		Title       string    `json:"title"`
-		Description string    `json:"description"`
-		Priority    string    `json:"priority"`
-		Status      string    `json:"status"`
-		Reply       string    `json:"reply"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
+		ID          uint       `json:"id"`
+		UserID      uint       `json:"user_id"`
+		Username    string     `json:"username"`
+		Title       string     `json:"title"`
+		Description string     `json:"description"`
+		Priority    string     `json:"priority"`
+		Status      string     `json:"status"`
+		Reply       string     `json:"reply"`
+		ReplyReadAt *time.Time `json:"reply_read_at"`
+		CreatedAt   time.Time  `json:"created_at"`
+		UpdatedAt   time.Time  `json:"updated_at"`
 	}
 
 	var result []TicketWithUser
@@ -1670,6 +1707,7 @@ func adminGetTickets(c *gin.Context) {
 			Priority:    t.Priority,
 			Status:      t.Status,
 			Reply:       t.Reply,
+			ReplyReadAt: t.ReplyReadAt,
 			CreatedAt:   t.CreatedAt,
 			UpdatedAt:   t.UpdatedAt,
 		})
@@ -1720,6 +1758,10 @@ func adminUpdateTicket(c *gin.Context) {
 	}
 
 	db.Model(&ticket).Updates(updates)
+	// When admin sets a reply, reset reply_read_at to NULL (GORM skips nil in Updates, use explicit Update)
+	if reply, ok := updates["reply"].(string); ok && reply != "" {
+		db.Model(&ticket).Update("reply_read_at", nil)
+	}
 	db.First(&ticket, id)
 	c.JSON(http.StatusOK, successResponse(ticket))
 }

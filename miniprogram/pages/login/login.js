@@ -86,6 +86,21 @@ Page({
       this.setData({ error: t('login.usernamePlaceholder') })
       return
     }
+    if (mode === 'register') {
+      const uname = username.trim()
+      if (uname.length < 3) {
+        this.setData({ error: t('login.usernameTooShort') })
+        return
+      }
+      if (uname.length > 50) {
+        this.setData({ error: t('login.usernameTooLong') })
+        return
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(uname)) {
+        this.setData({ error: t('login.invalidUsername') })
+        return
+      }
+    }
     if (!password) {
       this.setData({ error: t('login.passwordPlaceholder') })
       return
@@ -128,6 +143,8 @@ Page({
         msg = t('login.' + (mode === 'login' ? 'loginFailed' : 'registerFailed'))
       } else if (code === 'USERNAME_EXISTS') {
         msg = t('login.usernameExists')
+      } else if (code === 'INVALID_USERNAME') {
+        msg = t('login.invalidUsername')
       } else {
         msg = mode === 'login' ? t('login.loginFailed') : t('login.registerFailed')
       }

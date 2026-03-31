@@ -95,7 +95,9 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -114,7 +116,24 @@ function switchMode(newMode) {
 
 async function handleSubmit() {
   authStore.clearError()
-  
+
+  // Client-side validation for registration
+  if (mode.value === 'register') {
+    const uname = form.username.trim()
+    if (uname.length < 3) {
+      authStore.error = t('login.usernameTooShort')
+      return
+    }
+    if (uname.length > 50) {
+      authStore.error = t('login.usernameTooLong')
+      return
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(uname)) {
+      authStore.error = t('login.invalidUsername')
+      return
+    }
+  }
+
   let success
   if (mode.value === 'login') {
     success = await authStore.login(form.username, form.password)
