@@ -88,7 +88,12 @@
       <Card>
         <template #header>{{ $t('admin.recentTickets') }}</template>
         <div class="recent-tickets">
-          <div v-for="ticket in recentTickets" :key="ticket.id" class="recent-ticket">
+          <div
+            v-for="ticket in recentTickets"
+            :key="ticket.id"
+            class="recent-ticket"
+            @click="goToTicket(ticket)"
+          >
             <div class="ticket-info">
               <span class="ticket-title">{{ ticket.title }}</span>
               <span class="ticket-user">{{ $t('admin.by') }} {{ ticket.username }}</span>
@@ -105,8 +110,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import Card from '../../components/ui/Card.vue'
 import api from '../../api/client'
+
+const router = useRouter()
 
 const { t } = useI18n()
 
@@ -147,6 +155,10 @@ function formatStatus(status) {
     'closed': t('feedback.statusClosed')
   }
   return map[status] || status
+}
+
+function goToTicket(ticket) {
+  router.push({ path: '/admin/tickets', query: { highlight: ticket.id } })
 }
 
 onMounted(() => {
@@ -296,6 +308,12 @@ onMounted(() => {
   padding: 12px 16px;
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.recent-ticket:hover {
+  background: var(--bg-hover);
 }
 
 .ticket-info {
