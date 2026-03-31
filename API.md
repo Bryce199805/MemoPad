@@ -11,6 +11,52 @@ This document provides detailed description of all MemoPad backend API endpoints
 - **Content Format**: JSON
 - **Character Encoding**: UTF-8
 
+### CORS Configuration
+
+Cross-origin requests are controlled by the `ALLOWED_ORIGINS` environment variable. Set it to a comma-separated list of allowed origins in production:
+
+```
+ALLOWED_ORIGINS=https://your-domain.com,https://app.your-domain.com
+```
+
+If unset, all cross-origin requests will be blocked.
+
+---
+
+## Health Check
+
+### Health Status
+
+**GET** `/health`
+
+Check if the backend service is running. No authentication required.
+
+**Response** `200`:
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+## WebSocket
+
+### Real-time Sync
+
+**GET** `/ws`
+
+Establish a WebSocket connection for real-time data sync across devices.
+
+**Authentication**: Pass the API key as a query parameter:
+```
+wss://YOUR_SERVER_IP/ws?api_key=mp_your_api_key_here
+```
+
+**Note**: The WebSocket endpoint uses URL query parameter authentication (not the `X-API-Key` header) because the WebSocket protocol does not support custom headers during the handshake.
+
+The server pushes update events whenever todo/countdown data changes. Clients should re-fetch relevant data upon receiving a message.
+
 ---
 
 ## Authentication
@@ -73,7 +119,7 @@ Create a new user account.
     "username": "john",
     "email": "john@example.com",
     "role": "user",
-    "created_at": "2024-01-15T10:30:00Z"
+    "created_at": "2026-01-15T10:30:00Z"
   },
   "api_key": "mp_xxxx..."
 }
@@ -109,7 +155,7 @@ Login with username and password.
     "email": "john@example.com",
     "role": "user",
     "disabled": false,
-    "created_at": "2024-01-15T10:30:00Z"
+    "created_at": "2026-01-15T10:30:00Z"
   },
   "api_key": "mp_xxxx..."
 }
@@ -190,6 +236,21 @@ Generate a new API key. The old key becomes invalid immediately.
 
 ---
 
+### Delete Account
+
+**DELETE** `/api/auth/account`
+
+Permanently delete the current user's account and all associated data.
+
+**Response** `200`:
+```json
+{
+  "message": "Account deleted"
+}
+```
+
+---
+
 ## Todo Endpoints `/api/todos`
 
 ### List Todos
@@ -208,15 +269,15 @@ Get all todos for the current user.
       "priority": "high",
       "done": false,
       "pinned": true,
-      "due_date": "2024-02-01T00:00:00Z",
+      "due_date": "2026-02-01T00:00:00Z",
       "category_id": 1,
       "category": {
         "id": 1,
         "name": "Work",
         "color": "#3B82F6"
       },
-      "created_at": "2024-01-15T10:30:00Z",
-      "updated_at": "2024-01-15T12:00:00Z"
+      "created_at": "2026-01-15T10:30:00Z",
+      "updated_at": "2026-01-15T12:00:00Z"
     }
   ]
 }
@@ -251,7 +312,7 @@ Create a new todo.
     "priority": "medium",
     "done": false,
     "pinned": false,
-    "created_at": "2024-01-15T10:30:00Z"
+    "created_at": "2026-01-15T10:30:00Z"
   }
 }
 ```
@@ -340,6 +401,72 @@ Toggle the pinned status of a todo.
 
 ---
 
+### Batch Delete Todos
+
+**DELETE** `/api/todos/batch`
+
+Delete multiple todos at once.
+
+**Request Body**:
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+**Response** `200`:
+```json
+{
+  "message": "Todos deleted"
+}
+```
+
+---
+
+### Batch Toggle Done Status
+
+**PATCH** `/api/todos/batch/toggle`
+
+Toggle done status for multiple todos.
+
+**Request Body**:
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+**Response** `200`:
+```json
+{
+  "message": "Todos toggled"
+}
+```
+
+---
+
+### Batch Mark as Done
+
+**PATCH** `/api/todos/batch/done`
+
+Mark multiple todos as done.
+
+**Request Body**:
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+**Response** `200`:
+```json
+{
+  "message": "Todos marked as done"
+}
+```
+
+---
+
 ## Countdown Endpoints `/api/countdowns`
 
 ### List Countdowns
@@ -355,10 +482,10 @@ Get all countdowns for the current user.
     {
       "id": 1,
       "title": "Project Deadline",
-      "target_date": "2024-06-01T00:00:00Z",
+      "target_date": "2026-06-01T00:00:00Z",
       "priority": "high",
       "pinned": true,
-      "created_at": "2024-01-15T10:30:00Z"
+      "created_at": "2026-01-15T10:30:00Z"
     }
   ]
 }
@@ -433,6 +560,28 @@ Delete a specific countdown.
 
 ---
 
+### Batch Delete Countdowns
+
+**DELETE** `/api/countdowns/batch`
+
+Delete multiple countdowns at once.
+
+**Request Body**:
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+**Response** `200`:
+```json
+{
+  "message": "Countdowns deleted"
+}
+```
+
+---
+
 ## Category Endpoints `/api/categories`
 
 ### List Categories
@@ -449,7 +598,7 @@ Get all categories for the current user.
       "id": 1,
       "name": "Work",
       "color": "#3B82F6",
-      "created_at": "2024-01-15T10:30:00Z"
+      "created_at": "2026-01-15T10:30:00Z"
     }
   ]
 }
@@ -568,12 +717,14 @@ Get tickets for the current user.
   "data": [
     {
       "id": 1,
-      "subject": "Feature request",
-      "message": "I would like to suggest...",
+      "title": "Feature request",
+      "description": "I would like to suggest...",
+      "priority": "medium",
       "status": "open",
       "reply": null,
-      "created_at": "2024-01-15T10:30:00Z",
-      "updated_at": "2024-01-15T10:30:00Z"
+      "reply_read_at": null,
+      "created_at": "2026-01-15T10:30:00Z",
+      "updated_at": "2026-01-15T10:30:00Z"
     }
   ]
 }
@@ -590,8 +741,9 @@ Create a new ticket.
 **Request Body**:
 ```json
 {
-  "subject": "string (required)",
-  "message": "string (required)"
+  "title": "string (required)",
+  "description": "string (optional)",
+  "priority": "high|medium|low (default: medium)"
 }
 ```
 
@@ -616,13 +768,30 @@ Get details of a specific ticket.
 {
   "data": {
     "id": 1,
-    "subject": "Feature request",
-    "message": "I would like to suggest...",
+    "title": "Feature request",
+    "description": "I would like to suggest...",
+    "priority": "medium",
     "status": "resolved",
     "reply": "Thank you for your suggestion!",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-16T09:00:00Z"
+    "reply_read_at": null,
+    "created_at": "2026-01-15T10:30:00Z",
+    "updated_at": "2026-01-16T09:00:00Z"
   }
+}
+```
+
+---
+
+### Mark Reply as Read
+
+**PUT** `/api/tickets/:id/read`
+
+Mark an admin reply as read. Called automatically when the user opens a ticket with an unread reply.
+
+**Response** `200`:
+```json
+{
+  "success": true
 }
 ```
 
@@ -648,7 +817,7 @@ Get all users with statistics.
       "email": "john@example.com",
       "role": "user",
       "disabled": false,
-      "created_at": "2024-01-15T10:30:00Z",
+      "created_at": "2026-01-15T10:30:00Z",
       "stats": {
         "todos": 15,
         "countdowns": 3
@@ -791,11 +960,12 @@ Get all tickets from all users.
       "id": 1,
       "user_id": 2,
       "username": "john",
-      "subject": "Bug report",
-      "message": "...",
+      "title": "Bug report",
+      "description": "...",
+      "priority": "high",
       "status": "open",
       "reply": null,
-      "created_at": "2024-01-15T10:30:00Z"
+      "created_at": "2026-01-15T10:30:00Z"
     }
   ]
 }
@@ -914,7 +1084,7 @@ Exceeding limits returns `429 Too Many Requests`.
 | id | number | Countdown ID |
 | title | string | Title |
 | target_date | datetime | Target date |
-| priority | string | Priority |
+| priority | string | Priority (high/medium/low) |
 | pinned | boolean | Whether pinned |
 | created_at | datetime | Created timestamp |
 
@@ -932,9 +1102,11 @@ Exceeding limits returns `429 Too Many Requests`.
 | Field | Type | Description |
 |-------|------|-------------|
 | id | number | Ticket ID |
-| subject | string | Subject |
-| message | string | Message content |
+| title | string | Ticket title |
+| description | string | Detailed description |
+| priority | string | Priority (high/medium/low) |
 | status | string | Status (open/in_progress/resolved/closed) |
 | reply | string | Admin reply |
+| reply_read_at | datetime | When user read the reply (null = unread) |
 | created_at | datetime | Created timestamp |
 | updated_at | datetime | Updated timestamp |
