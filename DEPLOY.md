@@ -35,7 +35,7 @@ Access: `http://YOUR_SERVER_IP`
               ┌─────────────────┴─────────────────┐
               │                                   │
     ┌─────────┴─────────┐           ┌────────────┴────────────┐
-    │   Static Files    │           │    /api/* Proxied       │
+    │   Static Files    │           │  /api/* + /ws Proxied   │
     │   (Vue SPA)       │           │    → backend:3000       │
     │   index.html      │           │    (Internal Network)   │
     │   /assets/*       │           └────────────┬────────────┘
@@ -43,6 +43,7 @@ Access: `http://YOUR_SERVER_IP`
                                       ┌──────────┴──────────┐
                                       │   Go Backend (3000)  │
                                       │   REST API           │
+                                      │   WebSocket (/ws)    │
                                       │   SQLite Database    │
                                       │   Rate Limiting      │
                                       └─────────────────────┘
@@ -57,8 +58,6 @@ Access: `http://YOUR_SERVER_IP`
 ### Full Configuration
 
 ```yaml
-version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -72,6 +71,8 @@ services:
       # Optional: Pre-configure admin account
       # - ADMIN_USERNAME=admin
       # - ADMIN_PASSWORD=secure_password
+      # Required for production: CORS origin whitelist (comma-separated)
+      # - ALLOWED_ORIGINS=https://your-domain.com
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -88,8 +89,7 @@ services:
     volumes:
       - /opt/memopad/ssl:/etc/nginx/ssl:ro
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
 
 volumes:
   backend-data:
@@ -104,6 +104,7 @@ volumes:
 | `DATA_DIR=/app/data` | Data storage path |
 | `ADMIN_USERNAME` | Optional, pre-set admin username |
 | `ADMIN_PASSWORD` | Optional, pre-set admin password |
+| `ALLOWED_ORIGINS` | CORS whitelist — comma-separated origins (e.g. `https://your-domain.com`). If unset, all cross-origin requests are blocked. |
 
 ---
 
@@ -170,7 +171,7 @@ sudo certbot certonly --standalone -d yourdomain.com
 4. Copy certificates:
 ```bash
 sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /opt/memopad/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /opt/memopad/ssl/key.pem
+sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /opt/memopad/ssl/cert.key
 ```
 
 5. Set up auto-renewal:
@@ -180,7 +181,7 @@ cat << 'EOF' | sudo tee /opt/memopad/renew-cert.sh
 #!/bin/bash
 certbot renew --quiet
 cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /opt/memopad/ssl/cert.pem
-cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /opt/memopad/ssl/key.pem
+cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /opt/memopad/ssl/cert.key
 docker restart memopad-web
 EOF
 
@@ -198,7 +199,7 @@ sudo mkdir -p /opt/memopad/ssl
 
 # Generate self-signed certificate (365 days validity)
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /opt/memopad/ssl/key.pem \
+  -keyout /opt/memopad/ssl/cert.key \
   -out /opt/memopad/ssl/cert.pem \
   -subj "/CN=localhost"
 ```
@@ -232,15 +233,15 @@ Security features are built-in (`web/nginx.conf`):
 
 | Zone | Limit | Description |
 |------|-------|-------------|
-| general | 10 req/s, burst 30 | General API |
-| auth | 5 req/min | Login/Register |
-| admin | 10 req/s, burst 20 | Admin endpoints |
+| api_limit (general) | 10 req/s, burst 30 | General API endpoints |
+| api_limit (admin) | 10 req/s, burst 20 | Admin endpoints (same zone, smaller burst) |
+| login_limit | 5 req/min | Login/Register endpoints |
 | conn_limit | 20 connections/IP | Concurrent connections |
 
 ### Security Headers
 
 ```
-X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 X-XSS-Protection: 1; mode=block
 Referrer-Policy: strict-origin-when-cross-origin
@@ -366,7 +367,7 @@ docker stats memopad-backend memopad-web
 
 ```bash
 # Pull latest code
-git pull origin main
+git pull origin master
 
 # Rebuild and restart
 docker compose up -d --build
