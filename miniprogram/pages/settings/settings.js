@@ -2,7 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const { t, getLang, setLang } = require('../../utils/i18n')
 
-const APP_VERSION = '2.1.0'
+const APP_VERSION = 'v0.6'
 const GITHUB_URL = 'https://github.com/Bryce199805/MemoPad'
 
 Page({
@@ -54,9 +54,9 @@ Page({
         save: t('common.save'),
         cancel: t('common.cancel'),
         noCategories: t('settings.noCategories'),
-        support: 'Support',
-        feedbackIssues: t('feedback.title'),
-        admin: 'Admin',
+        support: t('feedback.title'),
+        feedbackIssues: t('feedback.subtitle'),
+        admin: t('nav.admin'),
         adminPanel: t('admin.title'),
         logout: t('settings.logout'),
         deleteAccount: t('settings.deleteAccount'),
@@ -268,7 +268,7 @@ Page({
   onDeleteAccount() {
     const { user } = this.data
     if (user.role === 'admin') {
-      wx.showToast({ title: 'Admin cannot delete account', icon: 'none' })
+      wx.showToast({ title: t('common.error'), icon: 'none' })
       return
     }
     wx.showModal({

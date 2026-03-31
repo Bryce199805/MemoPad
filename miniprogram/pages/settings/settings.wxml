@@ -28,20 +28,6 @@
       </view>
     </view>
 
-    <!-- Language Section -->
-    <view class="section-card glass-card">
-      <text class="section-card-title">{{i.language}}</text>
-      <text class="section-desc">{{i.languageDesc}}</text>
-      <view class="lang-options">
-        <view class="lang-btn {{currentLang === 'en' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="en">
-          <text>🌐 English</text>
-        </view>
-        <view class="lang-btn {{currentLang === 'zh' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="zh">
-          <text>🌏 中文</text>
-        </view>
-      </view>
-    </view>
-
     <!-- Categories Section -->
     <view class="section-card glass-card">
       <text class="section-card-title">{{i.categories}}</text>
@@ -123,6 +109,20 @@
       <view class="admin-link" bind:tap="onGoAdmin">
         <text class="admin-link-text">{{i.adminPanel}}</text>
         <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- Language Section -->
+    <view class="section-card glass-card">
+      <text class="section-card-title">{{i.language}}</text>
+      <text class="section-desc">{{i.languageDesc}}</text>
+      <view class="lang-options">
+        <view class="lang-btn {{currentLang === 'en' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="en">
+          <text>🌐 English</text>
+        </view>
+        <view class="lang-btn {{currentLang === 'zh' ? 'lang-btn--active' : ''}}" bind:tap="setLang" data-lang="zh">
+          <text>🌏 中文</text>
+        </view>
       </view>
     </view>
 
