@@ -109,20 +109,29 @@ Page({
         res = await auth.register(username.trim(), password, email.trim())
       }
 
-      if (res.success) {
-        // Connect WebSocket after successful login
-        ws.connect()
-        const user = res.data && res.data.user
-        if (user && user.role === 'admin') {
-          wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
-        } else {
-          wx.switchTab({ url: '/pages/dashboard/dashboard' })
-        }
+      // Connect WebSocket after successful login
+      ws.connect()
+      const user = res.data && res.data.user
+      if (user && user.role === 'admin') {
+        wx.redirectTo({ url: '/pages/admin-dashboard/admin-dashboard' })
       } else {
-        this.setData({ error: res.message || (mode === 'login' ? t('login.loginFailed') : t('login.registerFailed')) })
+        wx.switchTab({ url: '/pages/dashboard/dashboard' })
       }
     } catch (err) {
-      this.setData({ error: err.message || t('common.error') })
+      const code = err.errorCode
+      let msg
+      if (code === 'ACCOUNT_DISABLED') {
+        msg = t('login.accountDisabled')
+      } else if (code === 'RATE_LIMITED') {
+        msg = t('login.rateLimited')
+      } else if (code === 'INVALID_CREDENTIALS') {
+        msg = t('login.' + (mode === 'login' ? 'loginFailed' : 'registerFailed'))
+      } else if (code === 'USERNAME_EXISTS') {
+        msg = t('login.usernameExists')
+      } else {
+        msg = mode === 'login' ? t('login.loginFailed') : t('login.registerFailed')
+      }
+      this.setData({ error: msg })
     } finally {
       this.setData({ loading: false })
     }

@@ -26,7 +26,10 @@ module.exports = {
     hasAccount: 'Already have an account?',
     loginFailed: 'Login failed',
     registerFailed: 'Registration failed',
-    emailInvalid: 'Please enter a valid email address'
+    emailInvalid: 'Please enter a valid email address',
+    accountDisabled: 'This account has been disabled',
+    rateLimited: 'Too many attempts, please try again in 5 minutes',
+    usernameExists: 'Username already exists'
   },
   dashboard: {
     title: 'Dashboard',
@@ -260,6 +263,9 @@ module.exports = {
     failedUpdateStatus: 'Failed to update status',
     failedSubmitReply: 'Failed to submit reply',
     failedDeleteTicket: 'Failed to delete ticket',
+    updateReply: 'Update Reply',
+    deleteReply: 'Delete Reply',
+    confirmDeleteReply: 'Delete this reply?',
     userRegistration: 'User Registration',
     userRegistrationDesc: 'Allow new users to register',
     platformVersion: 'Platform Version',

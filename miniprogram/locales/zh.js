@@ -26,7 +26,10 @@ module.exports = {
     hasAccount: '已有账户？',
     loginFailed: '登录失败',
     registerFailed: '注册失败',
-    emailInvalid: '请输入有效的邮箱地址'
+    emailInvalid: '请输入有效的邮箱地址',
+    accountDisabled: '该账户已被禁用',
+    rateLimited: '尝试次数过多，请5分钟后再试',
+    usernameExists: '用户名已存在'
   },
   dashboard: {
     title: '仪表盘',
@@ -260,6 +263,9 @@ module.exports = {
     failedUpdateStatus: '更新状态失败',
     failedSubmitReply: '发送回复失败',
     failedDeleteTicket: '删除工单失败',
+    updateReply: '更新回复',
+    deleteReply: '删除回复',
+    confirmDeleteReply: '删除此回复？',
     userRegistration: '用户注册',
     userRegistrationDesc: '允许新用户注册',
     platformVersion: '平台版本',

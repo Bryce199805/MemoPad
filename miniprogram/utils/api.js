@@ -37,6 +37,14 @@ function request(options) {
           reject(new Error('Unauthorized'))
           return
         }
+        // Surface server-side errors as rejections so callers can handle error codes
+        if (res.data && !res.data.success) {
+          const err = new Error(res.data.error || 'Request failed')
+          err.errorCode = res.data.error_code
+          err.statusCode = res.statusCode
+          reject(err)
+          return
+        }
         resolve(res.data)
       },
       fail(err) {
