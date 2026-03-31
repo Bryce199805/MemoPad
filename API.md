@@ -786,12 +786,42 @@ Get details of a specific ticket.
 
 **PUT** `/api/tickets/:id/read`
 
-Mark an admin reply as read. Called automatically when the user opens a ticket with an unread reply.
+Mark admin replies as read. Called automatically when the user opens a ticket with unread replies.
 
 **Response** `200`:
 ```json
 {
   "success": true
+}
+```
+
+---
+
+### Get Unread Reply Count
+
+**GET** `/api/tickets/unread-count`
+
+Get the number of tickets that have unread admin replies.
+
+**Response** `200`:
+```json
+{
+  "count": 3
+}
+```
+
+---
+
+### Close Ticket
+
+**PUT** `/api/tickets/:id/close`
+
+Close a ticket owned by the current user. Only tickets with status `open`, `in_progress`, or `resolved` can be closed.
+
+**Response** `200`:
+```json
+{
+  "message": "Ticket closed"
 }
 ```
 
@@ -1012,6 +1042,48 @@ Delete a ticket.
 
 ---
 
+### Add Ticket Reply
+
+**POST** `/api/admin/tickets/:id/replies`
+
+Append a reply to a ticket. Resets the user's read status so they see a notification. If the ticket is closed, it is automatically reopened to `in_progress`.
+
+**Request Body**:
+```json
+{
+  "content": "We've fixed the issue. Please try again."
+}
+```
+
+**Response** `201`:
+```json
+{
+  "data": {
+    "id": 1,
+    "ticket_id": 5,
+    "content": "We've fixed the issue. Please try again.",
+    "created_at": "2026-03-31T14:30:00Z"
+  }
+}
+```
+
+---
+
+### Delete Ticket Reply
+
+**DELETE** `/api/admin/tickets/:id/replies/:replyId`
+
+Delete a specific reply from a ticket.
+
+**Response** `200`:
+```json
+{
+  "message": "Reply deleted"
+}
+```
+
+---
+
 ## Error Response Format
 
 All errors follow a consistent format:
@@ -1106,7 +1178,20 @@ Exceeding limits returns `429 Too Many Requests`.
 | description | string | Detailed description |
 | priority | string | Priority (high/medium/low) |
 | status | string | Status (open/in_progress/resolved/closed) |
-| reply | string | Admin reply |
-| reply_read_at | datetime | When user read the reply (null = unread) |
+| reply | string | Legacy admin reply (deprecated, use replies) |
+| reply_read_at | datetime | When user read the replies (null = unread) |
+| resolved_at | datetime | When ticket was set to resolved (used for auto-close) |
+| replies | TicketReply[] | Array of admin replies |
 | created_at | datetime | Created timestamp |
 | updated_at | datetime | Updated timestamp |
+
+### TicketReply
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | number | Reply ID |
+| ticket_id | number | Parent ticket ID |
+| content | string | Reply content (max 2000 chars) |
+| created_at | datetime | Created timestamp |
+
+> **Note**: Resolved tickets are automatically closed after 3 days.
