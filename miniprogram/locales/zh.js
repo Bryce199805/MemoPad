@@ -220,7 +220,12 @@ module.exports = {
     statusResolved: '已解决',
     statusClosed: '已关闭',
     failedToSubmit: '提交工单失败',
-    newReply: '新回复'
+    newReply: '新回复',
+    replies: '回复记录',
+    noReplies: '暂无回复',
+    closeTicket: '关闭工单',
+    closeTicketConfirm: '确认关闭此工单？关闭后不可撤销。',
+    ticketClosed: '工单已关闭'
   },
   admin: {
     title: '管理后台',
@@ -270,6 +275,10 @@ module.exports = {
     updateReply: '更新回复',
     deleteReply: '删除回复',
     confirmDeleteReply: '删除此回复？',
+    addReply: '追加回复',
+    replySent: '回复已发送',
+    replyDeleted: '回复已删除',
+    noReplies: '暂无回复',
     userRegistration: '用户注册',
     userRegistrationDesc: '允许新用户注册',
     platformVersion: '平台版本',

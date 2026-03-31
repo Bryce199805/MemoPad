@@ -220,7 +220,12 @@ module.exports = {
     statusResolved: 'Resolved',
     statusClosed: 'Closed',
     failedToSubmit: 'Failed to submit ticket',
-    newReply: 'New Reply'
+    newReply: 'New Reply',
+    replies: 'Replies',
+    noReplies: 'No replies yet',
+    closeTicket: 'Close Ticket',
+    closeTicketConfirm: 'Close this ticket? This cannot be undone.',
+    ticketClosed: 'Ticket closed'
   },
   admin: {
     title: 'Admin Dashboard',
@@ -270,6 +275,10 @@ module.exports = {
     updateReply: 'Update Reply',
     deleteReply: 'Delete Reply',
     confirmDeleteReply: 'Delete this reply?',
+    addReply: 'Add Reply',
+    replySent: 'Reply sent',
+    replyDeleted: 'Reply deleted',
+    noReplies: 'No replies yet',
     userRegistration: 'User Registration',
     userRegistrationDesc: 'Allow new users to register',
     platformVersion: 'Platform Version',
