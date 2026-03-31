@@ -38,9 +38,12 @@ module.exports = {
 
     <!-- Ticket List -->
     <view class="ticket-list" wx:if="{{tickets.length > 0}}">
-      <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id">
+      <view class="ticket-card glass-card" wx:for="{{tickets}}" wx:key="id" bind:tap="onViewTicket" data-id="{{item.id}}">
         <view class="ticket-header">
-          <text class="ticket-title">{{item.title}}</text>
+          <view class="ticket-title-row">
+            <text class="ticket-title">{{item.title}}</text>
+            <view class="unread-dot" wx:if="{{item.reply && !item.reply_read_at}}"></view>
+          </view>
           <badge text="{{utils.statusLabel(item.status, i)}}" variant="{{utils.statusVariant(item.status)}}"></badge>
         </view>
         <view class="ticket-body" wx:if="{{item.description}}">
@@ -51,7 +54,10 @@ module.exports = {
           <text class="ticket-date">{{utils.formatDate(item.created_at)}}</text>
         </view>
         <view class="ticket-reply" wx:if="{{item.reply}}">
-          <text class="reply-label">{{i.adminReply}}</text>
+          <view class="reply-label-row">
+            <text class="reply-label">{{i.adminReply}}</text>
+            <text class="new-reply-badge" wx:if="{{!item.reply_read_at}}">{{i.newReply}}</text>
+          </view>
           <text class="reply-text">{{item.reply}}</text>
         </view>
       </view>

@@ -53,7 +53,10 @@
       <div class="tickets-list">
         <div v-for="ticket in tickets" :key="ticket.id" class="ticket-item" @click="showTicketDetail(ticket)">
           <div class="ticket-header">
-            <span class="ticket-title">{{ ticket.title }}</span>
+            <div class="ticket-title-row">
+              <span class="ticket-title">{{ ticket.title }}</span>
+              <span v-if="ticket.reply && !ticket.reply_read_at" class="unread-dot" :title="$t('feedback.newReply')"></span>
+            </div>
             <span :class="['ticket-status', ticket.status]">{{ formatStatus(ticket.status) }}</span>
           </div>
           <div class="ticket-meta">
@@ -61,7 +64,9 @@
             <span class="ticket-date">{{ formatDate(ticket.created_at) }}</span>
           </div>
           <div v-if="ticket.reply" class="ticket-reply-preview">
-            <strong>{{ $t('feedback.adminReply') }}</strong> {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
+            <strong>{{ $t('feedback.adminReply') }}</strong>
+            <span v-if="!ticket.reply_read_at" class="new-reply-badge">{{ $t('feedback.newReply') }}</span>
+            {{ ticket.reply.substring(0, 100) }}{{ ticket.reply.length > 100 ? '...' : '' }}
           </div>
         </div>
         <div v-if="tickets.length === 0 && !loading" class="empty-text">
@@ -167,6 +172,16 @@ async function submitTicket() {
 function showTicketDetail(ticket) {
   selectedTicket.value = ticket
   showModal.value = true
+  // Mark reply as read if unread
+  if (ticket.reply && !ticket.reply_read_at) {
+    api.put(`/api/tickets/${ticket.id}/read`).then(res => {
+      if (res.data?.success) {
+        const idx = tickets.value.findIndex(t => t.id === ticket.id)
+        if (idx !== -1) tickets.value[idx].reply_read_at = new Date().toISOString()
+        selectedTicket.value = { ...ticket, reply_read_at: new Date().toISOString() }
+      }
+    }).catch(() => {})
+  }
 }
 
 function closeModal() {
@@ -291,6 +306,33 @@ onMounted(() => {
   font-weight: 500;
   color: var(--text-primary);
   flex: 1;
+}
+
+.ticket-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+}
+
+.new-reply-badge {
+  display: inline-block;
+  font-size: 11px;
+  color: #fff;
+  background: #ef4444;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-right: 4px;
+  vertical-align: middle;
 }
 
 .ticket-status {

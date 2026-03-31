@@ -35,6 +35,7 @@ Page({
         noTickets: t('feedback.noTickets'),
         noTicketsDesc: t('feedback.submitTicket'),
         adminReply: t('feedback.adminReply'),
+        newReply: t('feedback.newReply'),
         statusOpen: t('feedback.statusOpen'),
         statusInProgress: t('feedback.statusInProgress'),
         statusResolved: t('feedback.statusResolved'),
@@ -75,6 +76,20 @@ Page({
       console.error('Fetch tickets error:', err)
     } finally {
       if (!silent) this.setData({ loading: false })
+    }
+  },
+
+  onViewTicket(e) {
+    const id = e.currentTarget.dataset.id
+    const tickets = this.data.tickets
+    const idx = tickets.findIndex(t => t.id === id)
+    if (idx === -1) return
+
+    const ticket = tickets[idx]
+    // Mark reply as read if unread
+    if (ticket.reply && !ticket.reply_read_at) {
+      api.put('/api/tickets/' + id + '/read').catch(() => {})
+      this.setData({ ['tickets[' + idx + '].reply_read_at']: new Date().toISOString() })
     }
   },
 
