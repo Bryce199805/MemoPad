@@ -202,19 +202,19 @@ module.exports = {
     <!-- Bottom Tabs -->
     <view class="bottom-tabs">
       <view class="bottom-tab {{activeTab === 'dashboard' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="dashboard">
-        <text class="bottom-tab-icon">&#128202;</text>
+        <text class="bottom-tab-icon">📊</text>
         <text class="bottom-tab-text">{{i.tabDashboard}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'users' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="users">
-        <text class="bottom-tab-icon">&#128101;</text>
+        <text class="bottom-tab-icon">👥</text>
         <text class="bottom-tab-text">{{i.tabUsers}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'tickets' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="tickets">
-        <text class="bottom-tab-icon">&#127915;</text>
+        <text class="bottom-tab-icon">🎫</text>
         <text class="bottom-tab-text">{{i.tabTickets}}</text>
       </view>
       <view class="bottom-tab {{activeTab === 'config' ? 'bottom-tab--active' : ''}}" bind:tap="onSwitchTab" data-tab="config">
-        <text class="bottom-tab-icon">&#9881;</text>
+        <text class="bottom-tab-icon">⚙️</text>
         <text class="bottom-tab-text">{{i.tabConfig}}</text>
       </view>
     </view>
@@ -239,10 +239,26 @@ module.exports = {
         <text class="detail-label">{{i.detailDescription}}</text>
         <text class="detail-value detail-value--block">{{currentTicket.description || i.noDescription}}</text>
       </view>
+
+      <!-- Existing reply (read-only) -->
+      <view class="detail-row" wx:if="{{currentTicket.reply}}">
+        <text class="detail-label">{{i.adminReply}}</text>
+        <view class="existing-reply">
+          <text class="existing-reply-text">{{currentTicket.reply}}</text>
+          <text class="action-btn action-btn--danger action-btn--sm" bind:tap="onClearReply">{{i.deleteReply}}</text>
+        </view>
+      </view>
+
+      <!-- Reply input -->
       <view class="detail-row">
-        <text class="detail-label">{{i.reply}}</text>
+        <text class="detail-label">{{currentTicket.reply ? i.updateReply : i.reply}}</text>
         <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
       </view>
+      <view class="reply-send-row">
+        <text class="action-btn action-btn--primary" bind:tap="onSendReply">{{i.sendReply}}</text>
+      </view>
+
+      <!-- Status actions -->
       <view class="detail-actions">
         <text class="action-btn action-btn--primary" bind:tap="onUpdateStatus" data-status="in_progress">{{i.inProgress}}</text>
         <text class="action-btn action-btn--success" bind:tap="onUpdateStatus" data-status="resolved">{{i.resolve}}</text>
