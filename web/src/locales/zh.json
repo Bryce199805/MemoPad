@@ -221,7 +221,12 @@
     "closeTicket": "关闭工单",
     "closeTicketConfirm": "确认关闭此工单？关闭后不可撤销。",
     "ticketClosed": "工单已关闭",
-    "autoCloseNote": "已解决的工单将在 3 天后自动关闭"
+    "autoCloseNote": "已解决的工单将在 3 天后自动关闭",
+    "userReply": "我",
+    "replyPlaceholder": "输入回复...",
+    "sendReply": "发送",
+    "replySent": "回复已发送",
+    "cannotReplyToClosed": "已关闭的工单不能回复"
   },
   "admin": {
     "dashboard": "仪表盘",

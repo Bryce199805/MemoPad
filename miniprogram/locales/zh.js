@@ -97,6 +97,7 @@ module.exports = {
     clearCompleted: '清除已完成',
     confirmDelete: '删除此任务？',
     confirmBatchDelete: '删除 {n} 个任务？',
+    batchDeleteHint: '此操作不可撤销。',
     confirmClearCompleted: '删除 {n} 个已完成任务？',
     select: '选择',
     doneSelect: '完成',
@@ -140,6 +141,7 @@ module.exports = {
     pinned: '已置顶',
     confirmDelete: '删除此倒计时？',
     confirmBatchDelete: '删除 {n} 个倒计时？',
+    batchDeleteHint: '此操作不可撤销。',
     priority: '优先级',
     high: '高',
     medium: '中',
@@ -225,7 +227,12 @@ module.exports = {
     noReplies: '暂无回复',
     closeTicket: '关闭工单',
     closeTicketConfirm: '确认关闭此工单？关闭后不可撤销。',
-    ticketClosed: '工单已关闭'
+    ticketClosed: '工单已关闭',
+    userReply: '我',
+    replyPlaceholder: '输入回复...',
+    sendReply: '发送',
+    replySent: '回复已发送',
+    cannotReplyToClosed: '已关闭的工单不能回复'
   },
   admin: {
     title: '管理后台',

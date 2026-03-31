@@ -97,6 +97,7 @@ module.exports = {
     clearCompleted: 'Clear completed',
     confirmDelete: 'Delete this task?',
     confirmBatchDelete: 'Delete {n} tasks?',
+    batchDeleteHint: 'This action cannot be undone.',
     confirmClearCompleted: 'Delete {n} completed tasks?',
     select: 'Select',
     doneSelect: 'Done',
@@ -140,6 +141,7 @@ module.exports = {
     pinned: 'Pinned',
     confirmDelete: 'Delete this countdown?',
     confirmBatchDelete: 'Delete {n} countdowns?',
+    batchDeleteHint: 'This action cannot be undone.',
     priority: 'Priority',
     high: 'High',
     medium: 'Medium',
@@ -225,7 +227,12 @@ module.exports = {
     noReplies: 'No replies yet',
     closeTicket: 'Close Ticket',
     closeTicketConfirm: 'Close this ticket? This cannot be undone.',
-    ticketClosed: 'Ticket closed'
+    ticketClosed: 'Ticket closed',
+    userReply: 'You',
+    replyPlaceholder: 'Write a reply...',
+    sendReply: 'Send',
+    replySent: 'Reply sent',
+    cannotReplyToClosed: 'Cannot reply to a closed ticket'
   },
   admin: {
     title: 'Admin Dashboard',

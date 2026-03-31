@@ -221,7 +221,12 @@
     "closeTicket": "Close Ticket",
     "closeTicketConfirm": "Close this ticket? This cannot be undone.",
     "ticketClosed": "Ticket closed",
-    "autoCloseNote": "Resolved tickets are automatically closed after 3 days"
+    "autoCloseNote": "Resolved tickets are automatically closed after 3 days",
+    "userReply": "You",
+    "replyPlaceholder": "Write a reply...",
+    "sendReply": "Send",
+    "replySent": "Reply sent",
+    "cannotReplyToClosed": "Cannot reply to a closed ticket"
   },
   "admin": {
     "dashboard": "Dashboard",
