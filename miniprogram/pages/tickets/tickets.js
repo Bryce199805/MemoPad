@@ -9,6 +9,7 @@ Page({
     showModal: false,
     showDetail: false,
     selectedTicket: null,
+    replyText: '',
     form: {
       title: '',
       description: '',
@@ -55,7 +56,10 @@ Page({
         closeTicket: t('feedback.closeTicket'),
         close: t('common.close'),
         submitted: t('feedback.submitted'),
-        noDescription: t('feedback.noDescription')
+        noDescription: t('feedback.noDescription'),
+        userReply: t('feedback.userReply'),
+        replyPlaceholder: t('feedback.replyPlaceholder'),
+        sendReply: t('feedback.sendReply')
       }
     })
   },
@@ -110,7 +114,35 @@ Page({
   },
 
   onCloseDetail() {
-    this.setData({ showDetail: false, selectedTicket: null })
+    this.setData({ showDetail: false, selectedTicket: null, replyText: '' })
+  },
+
+  onReplyInput(e) {
+    this.setData({ replyText: e.detail.value })
+  },
+
+  async onSendReply() {
+    const ticket = this.data.selectedTicket
+    if (!ticket) return
+    const content = this.data.replyText.trim()
+    if (!content) return
+
+    if (ticket.status === 'closed') {
+      wx.showToast({ title: t('feedback.cannotReplyToClosed'), icon: 'none' })
+      return
+    }
+
+    wx.showLoading({ title: t('common.loading') })
+    try {
+      await api.post('/api/tickets/' + ticket.id + '/replies', { content })
+      wx.hideLoading()
+      wx.showToast({ title: t('feedback.replySent'), icon: 'success' })
+      this.setData({ showDetail: false, selectedTicket: null, replyText: '' })
+      this.fetchTickets(true)
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: t('common.error'), icon: 'none' })
+    }
   },
 
   onCloseTicket() {

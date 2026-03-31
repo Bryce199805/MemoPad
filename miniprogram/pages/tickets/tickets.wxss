@@ -239,11 +239,19 @@
 }
 
 .reply-item {
-  background: rgba(20, 184, 166, 0.06);
-  border-left: 4rpx solid rgba(20, 184, 166, 0.4);
   border-radius: 0 12rpx 12rpx 0;
   padding: 16rpx 20rpx;
   margin-top: 12rpx;
+}
+
+.reply-item--admin {
+  background: rgba(20, 184, 166, 0.06);
+  border-left: 4rpx solid rgba(20, 184, 166, 0.4);
+}
+
+.reply-item--user {
+  background: rgba(99, 102, 241, 0.06);
+  border-left: 4rpx solid rgba(99, 102, 241, 0.4);
 }
 
 .reply-item-header {
@@ -257,6 +265,13 @@
   font-size: 20rpx;
   font-weight: 600;
   color: #14b8a6;
+  text-transform: uppercase;
+}
+
+.reply-user-label {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #6366f1;
   text-transform: uppercase;
 }
 
@@ -300,4 +315,36 @@
   font-size: 26rpx;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* User Reply Input */
+.reply-input {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 16rpx 20rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
+  color: var(--text-primary);
+  font-size: 26rpx;
+  box-sizing: border-box;
+}
+
+.reply-send-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12rpx;
+}
+
+.reply-send-btn {
+  padding: 12rpx 32rpx;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.reply-send-btn:active {
+  opacity: 0.7;
 }

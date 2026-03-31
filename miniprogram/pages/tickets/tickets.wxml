@@ -97,12 +97,23 @@ module.exports = {
           <view wx:if="{{!selectedTicket.replies || selectedTicket.replies.length === 0}}" class="no-replies-text">
             <text>{{i.noReplies}}</text>
           </view>
-          <view wx:for="{{selectedTicket.replies}}" wx:key="id" class="reply-item">
+          <view wx:for="{{selectedTicket.replies}}" wx:key="id" class="reply-item {{item.is_admin ? 'reply-item--admin' : 'reply-item--user'}}">
             <view class="reply-item-header">
-              <text class="reply-admin-label">{{i.adminReply}}</text>
+              <text class="{{item.is_admin ? 'reply-admin-label' : 'reply-user-label'}}">{{item.is_admin ? i.adminReply : i.userReply}}</text>
               <text class="reply-time">{{utils.formatDate(item.created_at)}}</text>
             </view>
             <text class="reply-content">{{item.content}}</text>
+          </view>
+        </view>
+
+        <!-- User Reply Input -->
+        <view class="detail-field" wx:if="{{selectedTicket.status !== 'closed'}}">
+          <textarea class="reply-input" placeholder="{{i.replyPlaceholder}}" placeholder-style="color: var(--text-muted)"
+            value="{{replyText}}" bindinput="onReplyInput" maxlength="2000"></textarea>
+          <view class="reply-send-row">
+            <view class="reply-send-btn" bind:tap="onSendReply">
+              <text>{{i.sendReply}}</text>
+            </view>
           </view>
         </view>
       </scroll-view>
