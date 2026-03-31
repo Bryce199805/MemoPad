@@ -2,7 +2,7 @@ const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const util = require('../../utils/util')
 const ws = require('../../utils/websocket')
-const { t, getLang } = require('../../utils/i18n')
+const { t } = require('../../utils/i18n')
 
 Page({
   data: {
@@ -239,9 +239,7 @@ Page({
       cancelText: t('common.cancel'),
       success: async (res) => {
         if (!res.confirm) return
-        wx.showLoading({ title: '' })
-        try {
-          await Promise.all(selectedIds.map(id => api.del('/api/countdowns/' + id)))
+        wx.showLoading({ title: t('common.loading') })
           this.setData({ selectMode: false, selectedIds: [] })
           this.fetchData(true)
           wx.hideLoading()
@@ -375,7 +373,7 @@ Page({
       priority: form.priority
     }
 
-    wx.showLoading({ title: '' })
+    wx.showLoading({ title: t('common.loading') })
     try {
       if (editingId) {
         await api.put('/api/countdowns/' + editingId, data)
