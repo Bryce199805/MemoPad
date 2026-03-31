@@ -175,6 +175,8 @@
   flex-direction: column;
   border-radius: 24rpx;
   overflow: hidden;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .detail-modal-header {

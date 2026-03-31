@@ -64,7 +64,7 @@ module.exports = {
 
   <!-- Ticket Detail Modal -->
   <view class="detail-overlay" wx:if="{{showDetail}}" bind:tap="onCloseDetail">
-    <view class="detail-modal glass-card" catchtap="">
+    <view class="detail-modal" catchtap="">
       <view class="detail-modal-header">
         <text class="detail-modal-title">{{i.ticketDetails}}</text>
         <text class="detail-close-btn" bind:tap="onCloseDetail">✕</text>
