@@ -231,6 +231,20 @@ func startRateLimitCleanup() {
 					}
 				}
 				rateLimiter.mu.Unlock()
+
+				// Also clean up login failure tracker
+				loginFailLimiter.mu.Lock()
+				for ip, info := range loginFailLimiter.failures {
+					if now.Sub(info.firstSeen) > time.Hour {
+						delete(loginFailLimiter.failures, ip)
+					}
+					if info.blocked && now.Sub(info.blockedAt) > 5*time.Minute {
+						info.blocked = false
+						info.count = 0
+						info.firstSeen = now
+					}
+				}
+				loginFailLimiter.mu.Unlock()
 			case <-rateLimitStop:
 				return
 			}
@@ -304,9 +318,91 @@ func rateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 	}
 }
 
-// loginRateLimitMiddleware - stricter limits for auth endpoints
+// loginRateLimiter tracks failed login attempts separately from general rate limiting
+type loginRateLimiter struct {
+	failures map[string]*ClientInfo
+	mu       sync.Mutex
+}
+
+var loginFailLimiter = &loginRateLimiter{
+	failures: make(map[string]*ClientInfo),
+}
+
+// recordLoginFailure increments the failed-attempt counter for the given IP.
+// Returns true if the IP should be blocked (too many failures).
+func (l *loginRateLimiter) recordFailure(ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	now := time.Now()
+	info, exists := l.failures[ip]
+	if !exists {
+		l.failures[ip] = &ClientInfo{count: 1, firstSeen: now}
+		return false
+	}
+
+	// Unblock after 5 minutes
+	if info.blocked && now.Sub(info.blockedAt) > 5*time.Minute {
+		info.blocked = false
+		info.count = 1
+		info.firstSeen = now
+		return false
+	}
+	if info.blocked {
+		return true
+	}
+
+	// Reset window after 15 minutes of no failures
+	if now.Sub(info.firstSeen) > 15*time.Minute {
+		info.count = 1
+		info.firstSeen = now
+		return false
+	}
+
+	info.count++
+	if info.count > 10 {
+		info.blocked = true
+		info.blockedAt = now
+		return true
+	}
+	return false
+}
+
+func (l *loginRateLimiter) isBlocked(ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	info, exists := l.failures[ip]
+	if !exists {
+		return false
+	}
+	if info.blocked && time.Since(info.blockedAt) > 5*time.Minute {
+		info.blocked = false
+		info.count = 0
+		return false
+	}
+	return info.blocked
+}
+
+func (l *loginRateLimiter) resetOnSuccess(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.failures, ip)
+}
+
+// loginRateLimitMiddleware - only checks if IP is currently blocked; counting happens in loginHandler
 func loginRateLimitMiddleware() gin.HandlerFunc {
-	return rateLimitMiddleware(10, time.Minute) // 10 login attempts per minute
+	return func(c *gin.Context) {
+		if loginFailLimiter.isBlocked(c.ClientIP()) {
+			c.JSON(http.StatusTooManyRequests, Response{
+				Success:   false,
+				Error:     "Too many failed attempts. Please try again in 5 minutes.",
+				ErrorCode: "RATE_LIMITED",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
 }
 
 // registerRateLimitMiddleware - limits for registration
@@ -917,13 +1013,17 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 
+	ip := c.ClientIP()
+
 	var user User
 	if err := db.Where("username = ?", input.Username).First(&user).Error; err != nil {
+		loginFailLimiter.recordFailure(ip)
 		c.JSON(http.StatusUnauthorized, errorResponse("Invalid credentials", "INVALID_CREDENTIALS"))
 		return
 	}
 
 	if !checkPassword(input.Password, user.Password) {
+		loginFailLimiter.recordFailure(ip)
 		c.JSON(http.StatusUnauthorized, errorResponse("Invalid credentials", "INVALID_CREDENTIALS"))
 		return
 	}
@@ -932,6 +1032,9 @@ func loginHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, errorResponse("Account is disabled", "ACCOUNT_DISABLED"))
 		return
 	}
+
+	// Successful login — clear failure counter for this IP
+	loginFailLimiter.resetOnSuccess(ip)
 
 	c.JSON(http.StatusOK, successResponse(map[string]interface{}{
 		"user": map[string]interface{}{
