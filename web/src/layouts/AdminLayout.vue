@@ -21,7 +21,7 @@
 
       <!-- Mobile Nav -->
       <nav v-if="showMobileMenu" class="mobile-nav">
-        <router-link to="/admin" class="mobile-nav-item" @click="showMobileMenu = false">
+        <router-link to="/admin" class="mobile-nav-item" active-class="" exact-active-class="mobile-nav-item--active" @click="showMobileMenu = false">
           <span>{{ $t('nav.dashboard') }}</span>
         </router-link>
         <router-link to="/admin/users" class="mobile-nav-item" @click="showMobileMenu = false">
@@ -53,7 +53,7 @@
       </div>
 
       <nav class="sidebar-nav">
-        <router-link to="/admin" class="nav-item" exact-active-class="active">
+        <router-link to="/admin" class="nav-item" active-class="" exact-active-class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7" rx="1" />
             <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -379,7 +379,8 @@ defineExpose({ fetchTicketCount })
   font-weight: 500;
 }
 
-.mobile-nav-item.router-link-active {
+.mobile-nav-item.router-link-active,
+.mobile-nav-item.mobile-nav-item--active {
   background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
   color: white;
 }

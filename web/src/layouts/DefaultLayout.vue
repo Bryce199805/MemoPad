@@ -12,7 +12,7 @@
       </div>
 
       <nav class="sidebar-nav">
-        <router-link to="/" class="nav-item">
+        <router-link to="/" class="nav-item" active-class="" exact-active-class="nav-item--active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7" rx="1" />
             <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -93,7 +93,7 @@
 
       <!-- Mobile Nav -->
       <nav v-if="showMobileMenu" class="mobile-nav">
-        <router-link to="/" class="mobile-nav-item" @click="showMobileMenu = false">
+        <router-link to="/" class="mobile-nav-item" active-class="" exact-active-class="mobile-nav-item--active" @click="showMobileMenu = false">
           <span>{{ $t('nav.dashboard') }}</span>
         </router-link>
         <!-- 业务功能：仅非管理员可见 -->
@@ -229,7 +229,8 @@ function handleLogout() {
   color: var(--text-primary);
 }
 
-.nav-item.router-link-active {
+.nav-item.router-link-active,
+.nav-item.nav-item--active {
   background: var(--accent-gradient);
   color: white;
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
@@ -352,7 +353,8 @@ function handleLogout() {
   font-weight: 500;
 }
 
-.mobile-nav-item.router-link-active {
+.mobile-nav-item.router-link-active,
+.mobile-nav-item.mobile-nav-item--active {
   background: var(--bg-tertiary);
   color: var(--accent-primary);
 }
