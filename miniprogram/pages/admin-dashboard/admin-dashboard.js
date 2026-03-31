@@ -81,7 +81,11 @@ Page({
         detailStatus: t('common.status'),
         detailDescription: t('feedback.description'),
         reply: t('admin.yourReply'),
+        updateReply: t('admin.updateReply'),
         replyPlaceholder: t('admin.replyPlaceholder'),
+        sendReply: t('admin.sendReply'),
+        deleteReply: t('admin.deleteReply'),
+        adminReply: t('feedback.adminReplyLabel'),
         inProgress: t('feedback.statusInProgress'),
         resolve: t('feedback.statusResolved'),
         close: t('common.close'),
@@ -279,7 +283,7 @@ Page({
     if (!ticket) return
 
     wx.showLoading({ title: t('common.loading') })
-    api.put('/api/admin/tickets/' + ticket.id, { status, reply: this.data.replyText }).then(() => {
+    api.put('/api/admin/tickets/' + ticket.id, { status }).then(() => {
       wx.hideLoading()
       wx.showToast({ title: t('common.updated'), icon: 'success' })
       this.onCloseTicketDetail()
@@ -287,6 +291,51 @@ Page({
     }).catch(() => {
       wx.hideLoading()
       wx.showToast({ title: t('admin.failedUpdateStatus'), icon: 'none' })
+    })
+  },
+
+  onSendReply() {
+    const ticket = this.data.currentTicket
+    if (!ticket) return
+    const reply = this.data.replyText.trim()
+    if (!reply) return
+
+    wx.showLoading({ title: t('common.loading') })
+    api.put('/api/admin/tickets/' + ticket.id, { reply }).then(() => {
+      wx.hideLoading()
+      wx.showToast({ title: t('common.updated'), icon: 'success' })
+      this.setData({ replyText: '' })
+      this.onCloseTicketDetail()
+      this.fetchAll()
+    }).catch(() => {
+      wx.hideLoading()
+      wx.showToast({ title: t('admin.failedSubmitReply'), icon: 'none' })
+    })
+  },
+
+  onClearReply() {
+    const ticket = this.data.currentTicket
+    if (!ticket) return
+
+    wx.showModal({
+      title: t('common.confirm'),
+      content: t('admin.confirmDeleteReply'),
+      confirmColor: '#ef4444',
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      success: (res) => {
+        if (!res.confirm) return
+        wx.showLoading({ title: t('common.loading') })
+        api.put('/api/admin/tickets/' + ticket.id, { reply: '' }).then(() => {
+          wx.hideLoading()
+          wx.showToast({ title: t('common.deleted'), icon: 'success' })
+          this.onCloseTicketDetail()
+          this.fetchAll()
+        }).catch(() => {
+          wx.hideLoading()
+          wx.showToast({ title: t('admin.failedSubmitReply'), icon: 'none' })
+        })
+      }
     })
   },
 

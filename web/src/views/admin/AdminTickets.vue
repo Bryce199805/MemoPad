@@ -51,7 +51,6 @@
           <div class="ticket-actions">
             <button class="action-btn reply-btn" @click="openReplyModal(ticket)" :title="$t('admin.reply')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              <span v-if="ticket.reply" class="reply-dot"></span>
             </button>
             <button class="action-btn delete-btn" @click="deleteTicket(ticket)" :title="$t('common.delete')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
