@@ -26,9 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
       apiKey.value = data.api_key
       user.value = data.user
       isAuthenticated.value = true
-      
+      initialized.value = true
+
       localStorage.setItem('memo_api_key', data.api_key)
-      
+
       return true
     } catch (e) {
       error.value = e.response?.data?.error || 'Login failed'
@@ -41,19 +42,20 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(username, password, email = '') {
     loading.value = true
     error.value = null
-    
+
     try {
-      const res = await api.post('/api/auth/register', { 
-        username, 
+      const res = await api.post('/api/auth/register', {
+        username,
         password,
         email: email || undefined
       })
       const data = res.data.data
-      
+
       apiKey.value = data.api_key
       user.value = data.user
       isAuthenticated.value = true
-      
+      initialized.value = true
+
       localStorage.setItem('memo_api_key', data.api_key)
       
       return true
