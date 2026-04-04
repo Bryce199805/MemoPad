@@ -11,7 +11,9 @@ function request(options) {
   return new Promise((resolve, reject) => {
     let baseUrl = getBaseUrl()
     if (!baseUrl) {
-      reject(new Error('Server URL not configured'))
+      const err = new Error('Server URL not configured')
+      err.errorCode = 'SERVER_NOT_CONFIGURED'
+      reject(err)
       return
     }
 
@@ -48,6 +50,10 @@ function request(options) {
         resolve(res.data)
       },
       fail(err) {
+        // wx.request fail: network error, timeout, domain not whitelisted, etc.
+        if (!err.errorCode) {
+          err.errorCode = 'NETWORK_ERROR'
+        }
         reject(err)
       }
     })
