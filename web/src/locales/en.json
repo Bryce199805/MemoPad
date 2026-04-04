@@ -27,7 +27,7 @@
     "optional": "(optional)",
     "password": "Password",
     "usernamePlaceholder": "Enter your username",
-    "emailPlaceholder": "e.g. name@example.com",
+    "emailPlaceholder": "Enter your email",
     "passwordPlaceholder": "Enter your password",
     "newPasswordPlaceholder": "Create a password (min 6 chars)",
     "createAccount": "Create Account",

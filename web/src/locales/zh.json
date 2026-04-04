@@ -27,7 +27,7 @@
     "optional": "（可选）",
     "password": "密码",
     "usernamePlaceholder": "请输入用户名",
-    "emailPlaceholder": "如：name@example.com",
+    "emailPlaceholder": "请输入邮箱地址",
     "passwordPlaceholder": "请输入密码",
     "newPasswordPlaceholder": "设置密码（至少6位）",
     "createAccount": "创建账户",
