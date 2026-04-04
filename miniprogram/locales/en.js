@@ -32,7 +32,11 @@ module.exports = {
     usernameExists: 'Username already exists',
     invalidUsername: 'Username can only contain letters, numbers, and underscores',
     usernameTooShort: 'Username must be at least 3 characters',
-    usernameTooLong: 'Username must be at most 50 characters'
+    usernameTooLong: 'Username must be at most 50 characters',
+    passwordTooShort: 'Password must be at least 6 characters',
+    registrationDisabled: 'Registration is currently disabled',
+    serverNotConfigured: 'Server URL is not configured, please check settings',
+    networkError: 'Network error, please check your connection and try again'
   },
   dashboard: {
     title: 'Dashboard',

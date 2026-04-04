@@ -32,7 +32,11 @@ module.exports = {
     usernameExists: '用户名已存在',
     invalidUsername: '用户名只能包含字母、数字和下划线',
     usernameTooShort: '用户名至少需要3个字符',
-    usernameTooLong: '用户名不能超过50个字符'
+    usernameTooLong: '用户名不能超过50个字符',
+    passwordTooShort: '密码至少需要6位',
+    registrationDisabled: '注册功能暂未开放',
+    serverNotConfigured: '服务器地址未配置，请检查设置',
+    networkError: '网络连接失败，请检查网络后重试'
   },
   dashboard: {
     title: '仪表盘',
