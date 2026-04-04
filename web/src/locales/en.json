@@ -31,7 +31,7 @@
     "passwordPlaceholder": "Enter your password",
     "newPasswordPlaceholder": "Create a password (min 6 chars)",
     "createAccount": "Create Account",
-    "noAccount": "Don't have an account?",
+    "noAccount": "Don''t have an account?",
     "hasAccount": "Already have an account?",
     "invalidUsername": "Username can only contain letters, numbers, and underscores",
     "usernameTooShort": "Username must be at least 3 characters",
