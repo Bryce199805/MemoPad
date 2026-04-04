@@ -414,7 +414,7 @@ func loginRateLimitMiddleware() gin.HandlerFunc {
 
 // registerRateLimitMiddleware - limits for registration
 func registerRateLimitMiddleware() gin.HandlerFunc {
-	return rateLimitMiddleware(5, time.Hour) // 5 registrations per hour per IP
+	return rateLimitMiddleware(10, time.Hour) // 10 registrations per hour per IP
 }
 
 // apiRateLimitMiddleware - general API rate limit (60 req/min per IP)
