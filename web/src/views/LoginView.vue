@@ -37,7 +37,7 @@
       </div>
 
       <!-- Form -->
-      <form @submit.prevent="handleSubmit" class="login-form">
+      <form @submit.prevent="handleSubmit" novalidate class="login-form">
         <div class="form-group">
           <label>{{ $t('login.username') }}</label>
           <input
@@ -130,6 +130,14 @@ async function handleSubmit() {
     }
     if (!/^[a-zA-Z0-9_]+$/.test(uname)) {
       authStore.error = t('login.invalidUsername')
+      return
+    }
+    if (form.password.length < 6) {
+      authStore.error = t('login.passwordTooShort')
+      return
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      authStore.error = t('login.emailInvalid')
       return
     }
   }

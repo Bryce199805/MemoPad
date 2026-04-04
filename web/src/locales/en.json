@@ -35,7 +35,9 @@
     "hasAccount": "Already have an account?",
     "invalidUsername": "Username can only contain letters, numbers, and underscores",
     "usernameTooShort": "Username must be at least 3 characters",
-    "usernameTooLong": "Username must be at most 50 characters"
+    "usernameTooLong": "Username must be at most 50 characters",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "emailInvalid": "Please enter a valid email address"
   },
   "dashboard": {
     "title": "Dashboard",
