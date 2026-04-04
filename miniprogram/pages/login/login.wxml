@@ -14,10 +14,10 @@
 
     <!-- Tab switcher -->
     <view class="tab-switcher">
-      <view class="tab-item {{mode === 'login' ? 'tab-active' : ''}}" bindtap="switchMode">
+      <view class="tab-item {{mode === 'login' ? 'tab-active' : ''}}" data-mode="login" bindtap="switchMode">
         <text>{{i.signIn}}</text>
       </view>
-      <view class="tab-item {{mode === 'register' ? 'tab-active' : ''}}" bindtap="switchMode">
+      <view class="tab-item {{mode === 'register' ? 'tab-active' : ''}}" data-mode="register" bindtap="switchMode">
         <text>{{i.signUp}}</text>
       </view>
       <view class="tab-indicator" style="left: {{mode === 'login' ? '0%' : '50%'}}"></view>

@@ -53,9 +53,13 @@ Page({
     }
   },
 
-  switchMode() {
+  switchMode(e) {
+    // target mode is passed via data-mode attribute, or fallback to toggle
+    const target = e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.mode
+    const newMode = target || (this.data.mode === 'login' ? 'register' : 'login')
+    if (newMode === this.data.mode) return
     this.setData({
-      mode: this.data.mode === 'login' ? 'register' : 'login',
+      mode: newMode,
       error: '',
       username: '',
       password: '',
@@ -106,7 +110,7 @@ Page({
       return
     }
     if (mode === 'register' && password.length < 6) {
-      this.setData({ error: t('login.newPasswordPlaceholder') })
+      this.setData({ error: t('login.passwordTooShort') })
       return
     }
     if (mode === 'register' && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -139,6 +143,12 @@ Page({
         msg = t('login.accountDisabled')
       } else if (code === 'RATE_LIMITED') {
         msg = t('login.rateLimited')
+      } else if (code === 'REGISTRATION_DISABLED') {
+        msg = t('login.registrationDisabled')
+      } else if (code === 'SERVER_NOT_CONFIGURED') {
+        msg = t('login.serverNotConfigured')
+      } else if (code === 'NETWORK_ERROR') {
+        msg = t('login.networkError')
       } else if (code === 'INVALID_CREDENTIALS') {
         msg = t('login.' + (mode === 'login' ? 'loginFailed' : 'registerFailed'))
       } else if (code === 'USERNAME_EXISTS') {
